@@ -10,6 +10,7 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -38,7 +39,7 @@ serve(async (req) => {
     }
 
     const emailResponse = await resend.emails.send({
-      from: "Action Central <notifications@yourdomain.com>",
+      from: "Action Central <notifications@actioncentral.app>",
       to: [action.owner_email],
       subject,
       html: content,
