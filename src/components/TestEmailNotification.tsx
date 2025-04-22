@@ -21,7 +21,7 @@ export function TestEmailNotification() {
       const testAction: ActionItem = {
         id: 'test-' + Date.now(),
         description: 'Test Action Item',
-        department: 'Engineering', // Using a valid Department value from the enum
+        department: 'Engineering', // Using a valid Department value
         meetingDate: new Date().toISOString(),
         priority: 'medium',
         ownerEmail: '',
@@ -54,10 +54,10 @@ export function TestEmailNotification() {
       console.error("Test email error:", error);
       toast({
         title: "Test Failed",
-        description: error.message,
+        description: error instanceof Error ? error.message : 'An unknown error occurred',
         variant: "destructive",
       });
-      setResult({ error: error.message });
+      setResult({ error: error instanceof Error ? error.message : 'An unknown error occurred' });
     } finally {
       setIsSending(false);
     }
