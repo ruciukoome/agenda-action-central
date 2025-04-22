@@ -7,7 +7,7 @@ import { sendActionNotification } from '@/lib/notifications';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { ReloadIcon } from '@radix-ui/react-icons';
+import { Send } from 'lucide-react'; // Replace ReloadIcon with a Lucide icon
 
 export function TestEmailNotification() {
   const { toast } = useToast();
@@ -107,7 +107,7 @@ export function TestEmailNotification() {
         <Button onClick={handleTestEmail} disabled={isSending}>
           {isSending ? (
             <>
-              <ReloadIcon className="mr-2 h-4 w-4 animate-spin" />
+              <Send className="mr-2 h-4 w-4 animate-spin" /> {/* Use Send icon */}
               Sending...
             </>
           ) : (
@@ -118,3 +118,4 @@ export function TestEmailNotification() {
     </Card>
   );
 }
+
