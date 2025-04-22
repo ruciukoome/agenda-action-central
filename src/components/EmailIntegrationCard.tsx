@@ -1,0 +1,129 @@
+
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CheckCircle, Clock, Mail } from "lucide-react";
+
+export function EmailIntegrationCard() {
+  return (
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle>Email Notifications</CardTitle>
+        <CardDescription>
+          Configure automated email notifications for action items
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Tabs defaultValue="overview">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="settings">Settings</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="overview" className="space-y-4 pt-4">
+            <div className="flex items-start space-x-4">
+              <div className="mt-0.5 bg-blue-100 p-2 rounded-full">
+                <Mail className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <h3 className="text-sm font-medium">Assignment Notifications</h3>
+                <p className="text-sm text-muted-foreground">
+                  Automatically send emails when new actions are assigned
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-start space-x-4">
+              <div className="mt-0.5 bg-amber-100 p-2 rounded-full">
+                <Clock className="h-5 w-5 text-amber-600" />
+              </div>
+              <div>
+                <h3 className="text-sm font-medium">Due Date Reminders</h3>
+                <p className="text-sm text-muted-foreground">
+                  Send reminders when action items are approaching their due date
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-start space-x-4">
+              <div className="mt-0.5 bg-green-100 p-2 rounded-full">
+                <CheckCircle className="h-5 w-5 text-green-600" />
+              </div>
+              <div>
+                <h3 className="text-sm font-medium">Completion Updates</h3>
+                <p className="text-sm text-muted-foreground">
+                  Notify stakeholders when action items are completed
+                </p>
+              </div>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="settings" className="pt-4">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-medium">Assignment Notifications</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Email sent when action is assigned
+                  </p>
+                </div>
+                <div className="flex h-5 items-center">
+                  <Button size="sm" variant="outline" className="h-7 px-2">
+                    Enabled
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-medium">Due Date Reminders</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Remind 3 days before due date
+                  </p>
+                </div>
+                <div className="flex h-5 items-center">
+                  <Button size="sm" variant="outline" className="h-7 px-2">
+                    Enabled
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-medium">Overdue Alerts</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Sent when action becomes overdue
+                  </p>
+                </div>
+                <div className="flex h-5 items-center">
+                  <Button size="sm" variant="outline" className="h-7 px-2">
+                    Enabled
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-medium">Weekly Digest</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Summary of pending actions
+                  </p>
+                </div>
+                <div className="flex h-5 items-center">
+                  <Button size="sm" variant="outline" className="h-7 px-2">
+                    Disabled
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+      <CardFooter>
+        <p className="text-xs text-muted-foreground">
+          In a production environment, you would configure these settings to connect with your email provider.
+        </p>
+      </CardFooter>
+    </Card>
+  );
+}
