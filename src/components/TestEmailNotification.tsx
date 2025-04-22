@@ -6,27 +6,31 @@ import { ActionItem, Department, ProgressStatus } from '@/types/action';
 import { sendActionNotification } from '@/lib/notifications';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { ReloadIcon } from '@radix-ui/react-icons';
 
 export function TestEmailNotification() {
   const { toast } = useToast();
   const [isSending, setIsSending] = useState(false);
   const [result, setResult] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const handleTestEmail = async () => {
     try {
       setIsSending(true);
       setResult(null);
+      setError(null);
       
       // Create a test action item with valid types
       const testAction: ActionItem = {
         id: 'test-' + Date.now(),
         description: 'Test Action Item',
-        department: 'Engineering', // Using a valid Department value
+        department: 'Engineering' as Department,
         meetingDate: new Date().toISOString(),
         priority: 'medium',
         ownerEmail: '',
         completed: false,
-        progressStatus: 'Not Started', // Using the correct ProgressStatus value
+        progressStatus: 'Not Started' as ProgressStatus,
         notes: 'This is a test notification from the Action Central system.',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -36,28 +40,37 @@ export function TestEmailNotification() {
       // Get current user email from Supabase session
       const { data: { session } } = await supabase.auth.getSession();
       
-      if (session?.user?.email) {
-        testAction.ownerEmail = session.user.email;
-        
-        // Send test notification
-        const response = await sendActionNotification(testAction, "assigned");
-        setResult(response);
-        
-        toast({
-          title: "Test Email Sent",
-          description: `Notification sent to ${session.user.email}`,
-        });
-      } else {
+      if (!session?.user?.email) {
         throw new Error("No user email found. Make sure you're logged in.");
       }
+      
+      testAction.ownerEmail = session.user.email;
+      console.log("Sending test email to:", testAction.ownerEmail);
+      
+      // Send test notification
+      const response = await sendActionNotification(testAction, "assigned");
+      setResult(response);
+      
+      toast({
+        title: "Test Email Sent",
+        description: `Notification sent to ${session.user.email}`,
+      });
     } catch (error) {
       console.error("Test email error:", error);
+      
+      let errorMessage = "Unknown error occurred";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
+      setError(errorMessage);
       toast({
         title: "Test Failed",
-        description: error instanceof Error ? error.message : 'An unknown error occurred',
+        description: errorMessage,
         variant: "destructive",
       });
-      setResult({ error: error instanceof Error ? error.message : 'An unknown error occurred' });
+      
+      setResult({ error: errorMessage });
     } finally {
       setIsSending(false);
     }
@@ -75,6 +88,14 @@ export function TestEmailNotification() {
         <p className="text-sm text-muted-foreground mb-4">
           This will send a test action item notification to your email address. Make sure you're logged in.
         </p>
+        
+        {error && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertTitle>Error sending email</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        
         {result && (
           <div className="bg-muted p-3 rounded-md mt-4">
             <h4 className="font-medium mb-2">Result:</h4>
@@ -84,7 +105,14 @@ export function TestEmailNotification() {
       </CardContent>
       <CardFooter>
         <Button onClick={handleTestEmail} disabled={isSending}>
-          {isSending ? "Sending..." : "Send Test Email"}
+          {isSending ? (
+            <>
+              <ReloadIcon className="mr-2 h-4 w-4 animate-spin" />
+              Sending...
+            </>
+          ) : (
+            "Send Test Email"
+          )}
         </Button>
       </CardFooter>
     </Card>

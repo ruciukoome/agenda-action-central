@@ -2,8 +2,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 
+// Get the API key from environment variables
+const resendApiKey = Deno.env.get("RESEND_API_KEY");
+console.log("Edge function starting. API key present:", !!resendApiKey);
+
 // Initialize Resend with the environment variable
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+const resend = new Resend(resendApiKey);
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -13,6 +17,7 @@ const corsHeaders = {
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
+    console.log("Handling OPTIONS request");
     return new Response(null, { headers: corsHeaders });
   }
 
@@ -34,8 +39,49 @@ serve(async (req) => {
     }
     
     console.log("Processing email notification request");
-    const { action, type } = await req.json();
+    
+    // Check if we can parse the request body
+    let requestData;
+    try {
+      requestData = await req.json();
+      console.log("Received request data:", JSON.stringify(requestData));
+    } catch (parseError) {
+      console.error("Failed to parse request JSON:", parseError.message);
+      return new Response(
+        JSON.stringify({ error: "Invalid JSON in request body", details: parseError.message }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
+    }
+    
+    const { action, type } = requestData;
+    
+    if (!action || !type) {
+      console.error("Missing required fields in request body");
+      return new Response(
+        JSON.stringify({ error: "Missing required fields: action and type are required" }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
+    }
+    
     console.log(`Preparing to send ${type} notification for action:`, action.id);
+    
+    // Validate API key is present
+    if (!resendApiKey) {
+      console.error("RESEND_API_KEY environment variable is not set");
+      return new Response(
+        JSON.stringify({ error: "Email service configuration error: API key missing", code: 500 }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
+    }
     
     let subject, content;
     
@@ -60,27 +106,56 @@ serve(async (req) => {
         <p><strong>Notes:</strong> ${action.notes || 'None'}</p>
         <p>Please log in to the Action Central system to view the latest updates.</p>
       `;
+    } else {
+      console.error(`Invalid notification type: ${type}`);
+      return new Response(
+        JSON.stringify({ error: `Invalid notification type: ${type}` }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
     }
 
     console.log("Sending email to:", action.owner_email);
-    const emailResponse = await resend.emails.send({
-      from: "Action Central <notifications@actioncentral.app>",
-      to: [action.owner_email],
-      subject,
-      html: content,
-    });
     
-    console.log("Email sent successfully:", emailResponse);
-    return new Response(JSON.stringify(emailResponse), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    try {
+      const emailResponse = await resend.emails.send({
+        from: "Action Central <notifications@actioncentral.app>",
+        to: [action.owner_email],
+        subject,
+        html: content,
+      });
+      
+      console.log("Email sent successfully:", emailResponse);
+      return new Response(JSON.stringify(emailResponse), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    } catch (emailError) {
+      console.error("Error from Resend API:", emailError);
+      return new Response(
+        JSON.stringify({ 
+          error: "Failed to send email through Resend API", 
+          details: emailError.message || String(emailError) 
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
   } catch (error) {
-    console.error("Error sending notification:", error.message);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    console.error("Unhandled error in edge function:", error.message, error.stack);
+    return new Response(
+      JSON.stringify({ 
+        error: "Unhandled error in email notification service", 
+        message: error.message || String(error),
+      }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
   }
 });
-
