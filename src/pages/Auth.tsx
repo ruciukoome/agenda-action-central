@@ -1,20 +1,34 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { signIn, signUp } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const { signIn, signUp, user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Redirect if user is already logged in
+  useEffect(() => {
+    if (user) {
+      const from = location.state?.from?.pathname || '/';
+      navigate(from, { replace: true });
+    }
+  }, [user, navigate, location]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
+    
     try {
       if (isLogin) {
         await signIn(email, password);
@@ -31,6 +45,8 @@ export default function Auth() {
         description: (error as Error).message,
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -75,14 +91,15 @@ export default function Auth() {
             </div>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
-            <Button type="submit" className="w-full">
-              {isLogin ? 'Sign In' : 'Sign Up'}
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? 'Processing...' : isLogin ? 'Sign In' : 'Sign Up'}
             </Button>
             <Button
               type="button"
               variant="link"
               className="w-full"
               onClick={() => setIsLogin(!isLogin)}
+              disabled={isLoading}
             >
               {isLogin 
                 ? "Don't have an account? Sign up" 
