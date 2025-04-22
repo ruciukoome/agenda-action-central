@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { ActionItem } from "@/types/action";
+import { mapActionItemToDatabaseAction } from "@/lib/mappers";
 
 export async function sendActionNotification(action: ActionItem, type: "assigned" | "updated") {
   const response = await fetch(
@@ -11,7 +12,15 @@ export async function sendActionNotification(action: ActionItem, type: "assigned
         "Content-Type": "application/json",
         "Authorization": `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
       },
-      body: JSON.stringify({ action, type })
+      body: JSON.stringify({ 
+        action: {
+          ...mapActionItemToDatabaseAction(action),
+          id: action.id,
+          created_at: action.createdAt,
+          updated_at: action.updatedAt
+        }, 
+        type 
+      })
     }
   );
 
