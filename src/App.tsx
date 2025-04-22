@@ -16,6 +16,7 @@ import EditAction from "./pages/EditAction";
 import MyActions from "./pages/MyActions";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import { TestEmailNotification } from "@/components/TestEmailNotification";
 
 const queryClient = new QueryClient();
 
@@ -79,6 +80,17 @@ const App = () => {
                         />
                       )}
                     </AuthUserWrapper>
+                  </AuthGuard>
+                } 
+              />
+              <Route 
+                path="/test-email" 
+                element={
+                  <AuthGuard>
+                    <div className="container py-8">
+                      <h1 className="text-2xl font-bold mb-6">Email Notification Test</h1>
+                      <TestEmailNotification />
+                    </div>
                   </AuthGuard>
                 } 
               />
