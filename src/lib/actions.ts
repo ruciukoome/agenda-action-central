@@ -66,8 +66,24 @@ export function subscribeToActions(callback: (action: ActionItem) => void) {
             'priority' in payload.new &&
             'owner_email' in payload.new &&
             'progress_status' in payload.new) {
-          // Now we know payload.new has the required properties
-          callback(mapDatabaseActionToActionItem(payload.new));
+          // Use type assertion since we've verified the essential properties exist
+          const databaseAction = payload.new as {
+            id: string;
+            description: string;
+            department: string;
+            meeting_date: string;
+            priority: string;
+            owner_email: string;
+            completed: boolean;
+            progress_status: string;
+            notes: string;
+            created_at: string;
+            updated_at: string;
+            due_date?: string;
+            created_by: string;
+          };
+          
+          callback(mapDatabaseActionToActionItem(databaseAction));
         } else {
           console.error('Received incomplete payload:', payload);
         }
