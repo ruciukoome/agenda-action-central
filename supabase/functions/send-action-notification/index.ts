@@ -109,8 +109,9 @@ serve(async (req) => {
     console.log("Sending email to:", action.owner_email);
     
     try {
+      // Use Resend's default onboarding domain instead of custom domain
       const emailResponse = await resend.emails.send({
-        from: "Action Central <notifications@actioncentral.app>",
+        from: "Action Central <onboarding@resend.dev>",
         to: [action.owner_email],
         subject,
         html: content,
