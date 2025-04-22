@@ -10,7 +10,6 @@ import { EmailIntegrationCard } from "@/components/EmailIntegrationCard";
 export default function Index() {
   const navigate = useNavigate();
   const [actions, setActions] = useState<ActionItem[]>(mockActions);
-  const [currentUserEmail] = useState<string>("james.wilson@example.com");
   
   const handleEditAction = (action: ActionItem) => {
     navigate(`/edit/${action.id}`);
@@ -28,7 +27,7 @@ export default function Index() {
   
   return (
     <div className="min-h-screen flex flex-col">
-      <Header userEmail={currentUserEmail} />
+      <Header />
       
       <main className="flex-1 container py-10">
         <div className="grid gap-6 md:grid-cols-7">
