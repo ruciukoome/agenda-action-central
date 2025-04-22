@@ -50,14 +50,21 @@ export async function sendActionNotification(action: ActionItem, type: "assigned
 
     console.info("[Email Service] Response status:", response.status);
     
+    let responseData;
+    try {
+      responseData = await response.json();
+      console.info("[Email Service] Response data:", responseData);
+    } catch (parseError) {
+      console.error("[Email Service] Failed to parse response:", parseError);
+      responseData = { error: "Failed to parse response" };
+    }
+    
     if (!response.ok) {
-      const errorData = await response.json().catch(e => ({ error: "Failed to parse error response" }));
-      console.error("Notification error details:", errorData);
-      throw new Error(errorData.error || `Failed to send notification. Status: ${response.status}`);
+      console.error("[Email Service] Error response:", responseData);
+      throw new Error(responseData.error || responseData.message || `Failed to send notification. Status: ${response.status}`);
     }
 
-    const result = await response.json();
-    console.log("Notification sent successfully:", result);
+    console.log("Notification sent successfully:", responseData);
     
     // Show a success toast
     toast({
@@ -65,7 +72,7 @@ export async function sendActionNotification(action: ActionItem, type: "assigned
       description: `Email sent to ${action.ownerEmail}`,
     });
     
-    return result;
+    return responseData;
   } catch (error) {
     console.error("Failed to send notification:", error);
     
