@@ -1,10 +1,11 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/components/ui/use-toast';
-import { ActionItem } from '@/types/action';
+import { useToast } from '@/hooks/use-toast';
+import { ActionItem, Department, ProgressStatus } from '@/types/action';
 import { sendActionNotification } from '@/lib/notifications';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { supabase } from '@/integrations/supabase/client';
 
 export function TestEmailNotification() {
   const { toast } = useToast();
@@ -16,30 +17,27 @@ export function TestEmailNotification() {
       setIsSending(true);
       setResult(null);
       
-      // Create a test action item
+      // Create a test action item with valid types
       const testAction: ActionItem = {
         id: 'test-' + Date.now(),
         description: 'Test Action Item',
-        department: 'IT',
+        department: 'Engineering', // Using a valid Department value from the enum
         meetingDate: new Date().toISOString(),
         priority: 'medium',
-        ownerEmail: '', // Will be filled with the current user's email
+        ownerEmail: '',
         completed: false,
-        progressStatus: 'not_started',
+        progressStatus: 'Not Started', // Using the correct ProgressStatus value
         notes: 'This is a test notification from the Action Central system.',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 1 week from now
-        createdBy: ''
       };
       
-      // Get current user email from Supabase
-      const { data } = await fetch("/api/current-user");
-      const user = await data.json();
+      // Get current user email from Supabase session
+      const { data: { session } } = await supabase.auth.getSession();
       
-      if (user?.email) {
-        testAction.ownerEmail = user.email;
-        testAction.createdBy = user.email;
+      if (session?.user?.email) {
+        testAction.ownerEmail = session.user.email;
         
         // Send test notification
         const response = await sendActionNotification(testAction, "assigned");
@@ -47,7 +45,7 @@ export function TestEmailNotification() {
         
         toast({
           title: "Test Email Sent",
-          description: `Notification sent to ${user.email}`,
+          description: `Notification sent to ${session.user.email}`,
         });
       } else {
         throw new Error("No user email found. Make sure you're logged in.");
