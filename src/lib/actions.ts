@@ -55,7 +55,23 @@ export function subscribeToActions(callback: (action: ActionItem) => void) {
         schema: 'public',
         table: 'actions'
       },
-      (payload) => callback(mapDatabaseActionToActionItem(payload.new))
+      (payload) => {
+        // Make sure payload.new contains all required fields before mapping
+        if (payload.new && 
+            typeof payload.new === 'object' && 
+            'id' in payload.new && 
+            'description' in payload.new &&
+            'department' in payload.new &&
+            'meeting_date' in payload.new &&
+            'priority' in payload.new &&
+            'owner_email' in payload.new &&
+            'progress_status' in payload.new) {
+          // Now we know payload.new has the required properties
+          callback(mapDatabaseActionToActionItem(payload.new));
+        } else {
+          console.error('Received incomplete payload:', payload);
+        }
+      }
     )
     .subscribe();
 }
