@@ -22,16 +22,6 @@ export async function sendActionNotification(action: ActionItem, type: "assigned
     // Get the sender's email from the authenticated user
     const senderEmail = session.user.email;
     
-    if (!senderEmail) {
-      console.error("No sender email found in the user's session");
-      toast({
-        title: "Email Error",
-        description: "Your email address couldn't be retrieved from your profile.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
     // Prepare request information for logging
     const edgeFunctionUrl = "https://mdwrmfqjxakhpwmfyvft.functions.supabase.co/send-action-notification";
     console.info("[Email Service] Sending request from:", senderEmail);
