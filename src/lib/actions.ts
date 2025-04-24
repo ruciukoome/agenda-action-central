@@ -4,27 +4,64 @@ import { ActionItem } from "@/types/action";
 import { mapDatabaseActionToActionItem, mapActionItemToDatabaseAction } from "@/lib/mappers";
 
 export async function fetchActions() {
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+
+  if (sessionError) {
+    console.error("Authentication error:", sessionError);
+    throw sessionError;
+  }
+
+  if (!sessionData.session) {
+    console.error("No active session found");
+    throw new Error("Authentication required");
+  }
+
   const { data, error } = await supabase
     .from('actions')
     .select('*')
     .order('created_at', { ascending: false });
     
-  if (error) throw error;
+  if (error) {
+    console.error("Error fetching actions:", error);
+    throw error;
+  }
+  
   return data.map(mapDatabaseActionToActionItem);
 }
 
 export async function createAction(action: Omit<ActionItem, 'id' | 'createdAt' | 'updatedAt'>) {
+  const { data: sessionData } = await supabase.auth.getSession();
+  
+  if (!sessionData.session) {
+    throw new Error("Authentication required");
+  }
+  
+  const actionWithCreator = {
+    ...mapActionItemToDatabaseAction(action),
+    created_by: sessionData.session.user.id
+  };
+  
   const { data, error } = await supabase
     .from('actions')
-    .insert([mapActionItemToDatabaseAction(action)])
+    .insert([actionWithCreator])
     .select()
     .single();
     
-  if (error) throw error;
+  if (error) {
+    console.error("Error creating action:", error);
+    throw error;
+  }
+  
   return mapDatabaseActionToActionItem(data);
 }
 
 export async function updateAction(action: ActionItem) {
+  const { data: sessionData } = await supabase.auth.getSession();
+  
+  if (!sessionData.session) {
+    throw new Error("Authentication required");
+  }
+  
   const { data, error } = await supabase
     .from('actions')
     .update(mapActionItemToDatabaseAction(action))
@@ -32,17 +69,30 @@ export async function updateAction(action: ActionItem) {
     .select()
     .single();
     
-  if (error) throw error;
+  if (error) {
+    console.error("Error updating action:", error);
+    throw error;
+  }
+  
   return mapDatabaseActionToActionItem(data);
 }
 
 export async function deleteAction(id: string) {
+  const { data: sessionData } = await supabase.auth.getSession();
+  
+  if (!sessionData.session) {
+    throw new Error("Authentication required");
+  }
+  
   const { error } = await supabase
     .from('actions')
     .delete()
     .eq('id', id);
     
-  if (error) throw error;
+  if (error) {
+    console.error("Error deleting action:", error);
+    throw error;
+  }
 }
 
 export function subscribeToActions(callback: (action: ActionItem) => void) {
