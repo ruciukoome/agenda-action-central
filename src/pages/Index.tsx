@@ -21,8 +21,10 @@ export default function Index() {
     queryKey: ['actions'],
     queryFn: fetchActions,
     retry: 2,
-    onError: (err) => {
-      console.error("Error fetching actions:", err);
+    meta: {
+      onError: (err) => {
+        console.error("Error fetching actions:", err);
+      }
     }
   });
   
@@ -99,7 +101,7 @@ export default function Index() {
       
       <main className="flex-1 container py-10">
         {realtimeError && (
-          <Alert variant="warning" className="mb-6">
+          <Alert variant="default" className="mb-6">
             <AlertTitle>Real-time Updates Issue</AlertTitle>
             <AlertDescription>
               {realtimeError}. You may need to refresh to see the latest actions.
