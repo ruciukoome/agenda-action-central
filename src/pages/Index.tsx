@@ -8,19 +8,28 @@ import { ActionItem } from "@/types/action";
 import { EmailIntegrationCard } from "@/components/EmailIntegrationCard";
 import { fetchActions, subscribeToActions } from "@/lib/actions";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { useAuth } from "@/lib/auth";
+import { Button } from "@/components/ui/button";
 
 export default function Index() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [actions, setActions] = useState<ActionItem[]>([]);
   const [realtimeError, setRealtimeError] = useState<string | null>(null);
+  const { user, isLoading: authLoading } = useAuth();
   
-  const { data: initialActions, isLoading, error } = useQuery({
+  const { 
+    data: initialActions, 
+    isLoading, 
+    error,
+    refetch
+  } = useQuery({
     queryKey: ['actions'],
     queryFn: fetchActions,
     retry: 2,
+    enabled: !!user, // Only run query when user is authenticated
     meta: {
       onError: (err) => {
         console.error("Error fetching actions:", err);
@@ -36,6 +45,8 @@ export default function Index() {
   }, [initialActions]);
   
   useEffect(() => {
+    if (!user) return; // Don't set up subscription if not authenticated
+    
     console.log("Setting up real-time subscription...");
     try {
       const subscription = subscribeToActions((updatedAction) => {
@@ -67,11 +78,37 @@ export default function Index() {
       setRealtimeError(error instanceof Error ? error.message : "Unknown error with real-time updates");
       return () => {}; // Empty cleanup function if setup failed
     }
-  }, [toast]);
+  }, [toast, user]);
   
   const handleEditAction = (action: ActionItem) => {
     navigate(`/edit/${action.id}`);
   };
+  
+  if (authLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin mb-4" />
+        <p className="text-lg">Checking authentication...</p>
+      </div>
+    );
+  }
+  
+  if (!user) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <Alert className="max-w-md">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Authentication Required</AlertTitle>
+          <AlertDescription>
+            You need to be logged in to view and manage actions.
+          </AlertDescription>
+        </Alert>
+        <Button onClick={() => navigate("/auth")} className="mt-4">
+          Sign In
+        </Button>
+      </div>
+    );
+  }
   
   if (isLoading) {
     return (
@@ -85,12 +122,16 @@ export default function Index() {
   if (error) {
     return (
       <div className="container py-10">
-        <Alert variant="destructive">
+        <Header />
+        <Alert variant="destructive" className="my-6">
           <AlertTitle>Error loading actions</AlertTitle>
           <AlertDescription>
             {error instanceof Error ? error.message : "An unknown error occurred while loading actions."}
           </AlertDescription>
         </Alert>
+        <Button onClick={() => refetch()} className="mt-4">
+          Retry Loading Actions
+        </Button>
       </div>
     );
   }

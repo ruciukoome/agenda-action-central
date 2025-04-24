@@ -7,6 +7,14 @@ import { toast } from "@/hooks/use-toast";
 export async function fetchActions() {
   try {
     console.log("Fetching actions from database...");
+    
+    // Ensure user is authenticated before fetching
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      console.log("No active session found, user must be authenticated to fetch actions");
+      throw new Error("Authentication required to access actions");
+    }
+    
     const { data, error } = await supabase
       .from('actions')
       .select('*')
