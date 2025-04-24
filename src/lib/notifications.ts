@@ -6,7 +6,6 @@ import { toast } from "@/hooks/use-toast";
 
 export async function sendActionNotification(action: ActionItem, type: "assigned" | "updated") {
   try {
-    console.log("[Email Service] Starting notification send process");
     // Get the current session token and user email
     const { data: { session } } = await supabase.auth.getSession();
     
@@ -23,16 +22,6 @@ export async function sendActionNotification(action: ActionItem, type: "assigned
     // Get the sender's email from the authenticated user
     const senderEmail = session.user.email;
     
-    if (!senderEmail) {
-      console.error("No email address found in user session");
-      toast({
-        title: "Authentication Error",
-        description: "No email address associated with your account.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
     // Prepare request information for logging
     const edgeFunctionUrl = "https://mdwrmfqjxakhpwmfyvft.functions.supabase.co/send-action-notification";
     console.info("[Email Service] Sending request from:", senderEmail);
@@ -45,11 +34,10 @@ export async function sendActionNotification(action: ActionItem, type: "assigned
         ...mapActionItemToDatabaseAction(action),
         id: action.id,
         created_at: action.createdAt,
-        updated_at: action.updatedAt,
-        created_by: session.user.id  // Ensure created_by is included
+        updated_at: action.updatedAt
       },
       type,
-      senderEmail
+      senderEmail // Add sender's email to the payload
     };
     
     console.info("[Email Service] Payload:", JSON.stringify(payload));
