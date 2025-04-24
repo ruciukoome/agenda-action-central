@@ -56,12 +56,12 @@ serve(async (req) => {
       );
     }
     
-    const { action, type } = requestData;
+    const { action, type, senderEmail } = requestData;
     
-    if (!action || !type) {
+    if (!action || !type || !senderEmail) {
       console.error("Missing required fields in request body");
       return new Response(
-        JSON.stringify({ error: "Missing required fields: action and type are required" }),
+        JSON.stringify({ error: "Missing required fields: action, type, and senderEmail are required" }),
         { 
           status: 400, 
           headers: { ...corsHeaders, "Content-Type": "application/json" } 
@@ -106,12 +106,11 @@ serve(async (req) => {
       );
     }
 
-    console.log("Sending email to:", action.owner_email);
+    console.log("Sending email from:", senderEmail, "to:", action.owner_email);
     
     try {
-      // Use Resend's default onboarding domain instead of custom domain
       const emailResponse = await resend.emails.send({
-        from: "Action Central <onboarding@resend.dev>",
+        from: `Action Central <${senderEmail}>`,
         to: [action.owner_email],
         subject,
         html: content,

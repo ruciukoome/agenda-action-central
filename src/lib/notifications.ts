@@ -6,10 +6,10 @@ import { toast } from "@/hooks/use-toast";
 
 export async function sendActionNotification(action: ActionItem, type: "assigned" | "updated") {
   try {
-    // Get the current session token
+    // Get the current session token and user email
     const { data: { session } } = await supabase.auth.getSession();
     
-    if (!session) {
+    if (!session || !session.user) {
       console.error("No active session found. User must be authenticated to send notifications.");
       toast({
         title: "Authentication Error",
@@ -19,10 +19,13 @@ export async function sendActionNotification(action: ActionItem, type: "assigned
       return;
     }
     
+    // Get the sender's email from the authenticated user
+    const senderEmail = session.user.email;
+    
     // Prepare request information for logging
     const edgeFunctionUrl = "https://mdwrmfqjxakhpwmfyvft.functions.supabase.co/send-action-notification";
-    console.info("[Email Service] Sending request to:", edgeFunctionUrl);
-    console.info("[Email Service] Recipient:", action.ownerEmail);
+    console.info("[Email Service] Sending request from:", senderEmail);
+    console.info("[Email Service] Sending to recipient:", action.ownerEmail);
     console.info("[Email Service] Type:", type);
     
     // Prepare the payload that will be sent to the edge function
@@ -32,8 +35,9 @@ export async function sendActionNotification(action: ActionItem, type: "assigned
         id: action.id,
         created_at: action.createdAt,
         updated_at: action.updatedAt
-      }, 
-      type
+      },
+      type,
+      senderEmail // Add sender's email to the payload
     };
     
     console.info("[Email Service] Payload:", JSON.stringify(payload));
