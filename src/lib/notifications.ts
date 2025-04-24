@@ -45,10 +45,11 @@ export async function sendActionNotification(action: ActionItem, type: "assigned
         ...mapActionItemToDatabaseAction(action),
         id: action.id,
         created_at: action.createdAt,
-        updated_at: action.updatedAt
+        updated_at: action.updatedAt,
+        created_by: session.user.id  // Ensure created_by is included
       },
       type,
-      senderEmail // Add sender's email to the payload
+      senderEmail
     };
     
     console.info("[Email Service] Payload:", JSON.stringify(payload));

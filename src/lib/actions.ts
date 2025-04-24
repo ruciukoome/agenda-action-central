@@ -15,9 +15,13 @@ export async function fetchActions() {
       throw new Error("Authentication required to access actions");
     }
     
+    const userId = session.user.id;
+    console.log("Fetching actions for user:", userId);
+    
     const { data, error } = await supabase
       .from('actions')
       .select('*')
+      .eq('created_by', userId)
       .order('created_at', { ascending: false });
       
     if (error) {
@@ -83,10 +87,21 @@ export async function createAction(action: Omit<ActionItem, 'id' | 'createdAt' |
 export async function updateAction(action: ActionItem) {
   try {
     console.log("Updating action:", action.id);
+    
+    // Get the current user to verify ownership
+    const { data: { session } } = await supabase.auth.getSession();
+    const userId = session?.user?.id;
+    
+    if (!userId) {
+      console.error("No user ID found for action update");
+      throw new Error("You must be logged in to update actions");
+    }
+    
     const { data, error } = await supabase
       .from('actions')
       .update(mapActionItemToDatabaseAction(action))
       .eq('id', action.id)
+      .eq('created_by', userId)
       .select()
       .single();
       
@@ -111,10 +126,21 @@ export async function updateAction(action: ActionItem) {
 export async function deleteAction(id: string) {
   try {
     console.log("Deleting action:", id);
+    
+    // Get the current user to verify ownership
+    const { data: { session } } = await supabase.auth.getSession();
+    const userId = session?.user?.id;
+    
+    if (!userId) {
+      console.error("No user ID found for action deletion");
+      throw new Error("You must be logged in to delete actions");
+    }
+    
     const { error } = await supabase
       .from('actions')
       .delete()
-      .eq('id', id);
+      .eq('id', id)
+      .eq('created_by', userId);
       
     if (error) {
       console.error("Error deleting action:", error);
@@ -136,6 +162,11 @@ export async function deleteAction(id: string) {
 export function subscribeToActions(callback: (action: ActionItem) => void) {
   console.log("Setting up real-time subscription for actions...");
   
+  // Get the current user ID to filter real-time updates
+  const userId = supabase.auth.getSession().then(({ data }) => {
+    return data.session?.user?.id;
+  });
+  
   const channel = supabase
     .channel('actions_changes')
     .on(
@@ -147,6 +178,7 @@ export function subscribeToActions(callback: (action: ActionItem) => void) {
       },
       (payload) => {
         console.log("Received real-time update:", payload);
+        
         // Make sure payload.new contains all required fields before mapping
         if (payload.new && 
             typeof payload.new === 'object' && 
@@ -156,7 +188,9 @@ export function subscribeToActions(callback: (action: ActionItem) => void) {
             'meeting_date' in payload.new &&
             'priority' in payload.new &&
             'owner_email' in payload.new &&
-            'progress_status' in payload.new) {
+            'progress_status' in payload.new &&
+            'created_by' in payload.new) {
+          
           // Use type assertion since we've verified the essential properties exist
           const databaseAction = payload.new as {
             id: string;
@@ -174,9 +208,16 @@ export function subscribeToActions(callback: (action: ActionItem) => void) {
             created_by: string;
           };
           
-          const mappedAction = mapDatabaseActionToActionItem(databaseAction);
-          console.log("Mapped action for real-time update:", mappedAction);
-          callback(mappedAction);
+          // Only process updates for the current user's actions
+          userId.then(currentUserId => {
+            if (currentUserId && databaseAction.created_by === currentUserId) {
+              const mappedAction = mapDatabaseActionToActionItem(databaseAction);
+              console.log("Mapped action for real-time update:", mappedAction);
+              callback(mappedAction);
+            } else {
+              console.log("Ignoring real-time update for different user");
+            }
+          });
         } else {
           console.error('Received incomplete payload:', payload);
         }
