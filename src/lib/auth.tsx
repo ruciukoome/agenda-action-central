@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 interface AuthContextType {
   user: User | null;
   session: Session | null;
+  isLoading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -17,7 +18,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -27,6 +28,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('Auth state changed:', event, currentSession?.user?.email);
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
+        setIsLoading(false);
       }
     );
 
@@ -35,7 +37,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('Initial session check:', currentSession?.user?.email);
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
-      setIsInitialized(true);
+      setIsLoading(false);
     });
 
     return () => subscription.unsubscribe();
@@ -43,36 +45,58 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     console.log('Attempting sign in for:', email);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      console.error('Sign in error:', error.message);
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        console.error('Sign in error:', error.message);
+        setIsLoading(false);
+        throw error;
+      }
+      navigate('/');
+    } catch (error) {
+      setIsLoading(false);
       throw error;
     }
-    navigate('/');
   };
 
   const signUp = async (email: string, password: string) => {
     console.log('Attempting sign up for:', email);
-    const { error } = await supabase.auth.signUp({ email, password });
-    if (error) {
-      console.error('Sign up error:', error.message);
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.signUp({ email, password });
+      if (error) {
+        console.error('Sign up error:', error.message);
+        setIsLoading(false);
+        throw error;
+      }
+    } catch (error) {
+      setIsLoading(false);
       throw error;
     }
   };
 
   const signOut = async () => {
     console.log('Signing out');
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      console.error('Sign out error:', error.message);
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Sign out error:', error.message);
+        setIsLoading(false);
+        throw error;
+      }
+      navigate('/auth');
+    } catch (error) {
+      setIsLoading(false);
       throw error;
     }
-    navigate('/auth');
   };
 
   const value = {
     user,
     session,
+    isLoading,
     signIn,
     signUp,
     signOut,
