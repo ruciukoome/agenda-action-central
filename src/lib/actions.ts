@@ -1,56 +1,138 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { ActionItem } from "@/types/action";
 import { mapDatabaseActionToActionItem, mapActionItemToDatabaseAction } from "@/lib/mappers";
+import { toast } from "@/components/ui/use-toast";
 
 export async function fetchActions() {
-  const { data, error } = await supabase
-    .from('actions')
-    .select('*')
-    .order('created_at', { ascending: false });
+  try {
+    console.log("Fetching actions from database");
+    const { data, error } = await supabase
+      .from('actions')
+      .select('*')
+      .order('created_at', { ascending: false });
+      
+    if (error) {
+      console.error("Error fetching actions:", error);
+      throw error;
+    }
     
-  if (error) throw error;
-  return data.map(mapDatabaseActionToActionItem);
+    console.log(`Successfully fetched ${data.length} actions`);
+    return data.map(mapDatabaseActionToActionItem);
+  } catch (error) {
+    console.error("Failed to fetch actions:", error);
+    toast({
+      title: "Error fetching actions",
+      description: "Please try refreshing the page.",
+      variant: "destructive",
+    });
+    throw error;
+  }
 }
 
 export async function createAction(action: Omit<ActionItem, 'id' | 'createdAt' | 'updatedAt'>) {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) throw new Error('User must be authenticated to create actions');
+  try {
+    console.log("Creating new action:", action.description);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      console.error("No active session found");
+      toast({
+        title: "Authentication Error",
+        description: "You must be logged in to create actions.",
+        variant: "destructive",
+      });
+      throw new Error('User must be authenticated to create actions');
+    }
 
-  const { data, error } = await supabase
-    .from('actions')
-    .insert([{
-      ...mapActionItemToDatabaseAction(action),
-      created_by: session.user.id
-    }])
-    .select()
-    .single();
+    console.log("User authenticated, proceeding with action creation");
+    const { data, error } = await supabase
+      .from('actions')
+      .insert([{
+        ...mapActionItemToDatabaseAction(action),
+        created_by: session.user.id
+      }])
+      .select()
+      .single();
+      
+    if (error) {
+      console.error("Error creating action:", error);
+      throw error;
+    }
     
-  if (error) throw error;
-  return mapDatabaseActionToActionItem(data);
+    console.log("Action created successfully:", data.id);
+    return mapDatabaseActionToActionItem(data);
+  } catch (error) {
+    console.error("Failed to create action:", error);
+    toast({
+      title: "Error creating action",
+      description: "Please try again.",
+      variant: "destructive",
+    });
+    throw error;
+  }
 }
 
 export async function updateAction(action: ActionItem) {
-  const { data, error } = await supabase
-    .from('actions')
-    .update(mapActionItemToDatabaseAction(action))
-    .eq('id', action.id)
-    .select()
-    .single();
+  try {
+    console.log("Updating action:", action.id);
+    const { data, error } = await supabase
+      .from('actions')
+      .update(mapActionItemToDatabaseAction(action))
+      .eq('id', action.id)
+      .select()
+      .single();
+      
+    if (error) {
+      console.error("Error updating action:", error);
+      throw error;
+    }
     
-  if (error) throw error;
-  return mapDatabaseActionToActionItem(data);
+    console.log("Action updated successfully");
+    return mapDatabaseActionToActionItem(data);
+  } catch (error) {
+    console.error("Failed to update action:", error);
+    toast({
+      title: "Error updating action",
+      description: "Please try again.",
+      variant: "destructive",
+    });
+    throw error;
+  }
 }
 
 export async function deleteAction(id: string) {
-  const { error } = await supabase
-    .from('actions')
-    .delete()
-    .eq('id', id);
+  try {
+    console.log("Deleting action:", id);
+    const { error } = await supabase
+      .from('actions')
+      .delete()
+      .eq('id', id);
+      
+    if (error) {
+      console.error("Error deleting action:", error);
+      throw error;
+    }
     
-  if (error) throw error;
+    console.log("Action deleted successfully");
+  } catch (error) {
+    console.error("Failed to delete action:", error);
+    toast({
+      title: "Error deleting action",
+      description: "Please try again.",
+      variant: "destructive",
+    });
+    throw error;
+  }
 }
 
 export function subscribeToActions(callback: (action: ActionItem) => void) {
+  console.log("Setting up realtime subscription");
+  
+  // Enable Postgres changes for the actions table
+  supabase.rpc('supabase_realtime.enable_changes', { table_name: 'actions' })
+    .then(() => console.log("Realtime changes enabled for actions table"))
+    .catch(err => console.error("Failed to enable realtime changes:", err));
+    
   return supabase
     .channel('actions_changes')
     .on(
@@ -61,6 +143,7 @@ export function subscribeToActions(callback: (action: ActionItem) => void) {
         table: 'actions'
       },
       (payload) => {
+        console.log("Received realtime payload:", payload.eventType);
         if (payload.new && 
             typeof payload.new === 'object' && 
             'id' in payload.new && 
@@ -86,11 +169,14 @@ export function subscribeToActions(callback: (action: ActionItem) => void) {
             created_by: string;
           };
           
+          console.log("Mapped action for callback:", databaseAction.id);
           callback(mapDatabaseActionToActionItem(databaseAction));
         } else {
           console.error('Received incomplete payload:', payload);
         }
       }
     )
-    .subscribe();
+    .subscribe((status) => {
+      console.log("Subscription status:", status);
+    });
 }

@@ -16,14 +16,18 @@ export default function Index() {
   const { session } = useAuth();
   const [actions, setActions] = useState<ActionItem[]>([]);
   
-  const { data: initialActions, isLoading } = useQuery({
+  // Configure the query with refetch options
+  const { data: initialActions, isLoading, refetch } = useQuery({
     queryKey: ['actions'],
     queryFn: fetchActions,
-    enabled: !!session // Only fetch when user is authenticated
+    enabled: !!session, // Only fetch when user is authenticated
+    refetchOnWindowFocus: true,
+    retry: 3,
   });
   
   useEffect(() => {
     if (initialActions) {
+      console.log("Initial actions loaded:", initialActions.length);
       setActions(initialActions);
     }
   }, [initialActions]);
@@ -34,7 +38,9 @@ export default function Index() {
       return;
     }
 
+    console.log("Setting up realtime subscription for actions");
     const subscription = subscribeToActions((updatedAction) => {
+      console.log("Received realtime action update:", updatedAction.id);
       setActions(currentActions => {
         const exists = currentActions.some(action => action.id === updatedAction.id);
         if (exists) {
@@ -49,19 +55,33 @@ export default function Index() {
         title: "Action Updated",
         description: "An action item has been updated."
       });
+
+      // Force a refetch to ensure consistency with the backend
+      refetch();
     });
     
     return () => {
+      console.log("Unsubscribing from actions channel");
       subscription.unsubscribe();
     };
-  }, [toast, session, navigate]);
+  }, [toast, session, navigate, refetch]);
   
   const handleEditAction = (action: ActionItem) => {
     navigate(`/edit/${action.id}`);
   };
   
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-lg">Loading action items...</p>
+          </div>
+        </div>
+      </div>
+    );
   }
   
   return (

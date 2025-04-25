@@ -2,7 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { ActionItem } from "@/types/action";
 import { mapActionItemToDatabaseAction } from "@/lib/mappers";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "@/components/ui/use-toast";
 
 export async function sendActionNotification(action: ActionItem, type: "assigned" | "updated") {
   try {

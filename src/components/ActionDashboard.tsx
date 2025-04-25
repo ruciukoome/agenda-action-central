@@ -56,11 +56,27 @@ export function ActionDashboard({ actions, onEditAction }: ActionDashboardProps)
     return true;
   });
   
+  const handleAddAction = () => {
+    console.log("Navigating to add action page");
+    navigate("/add");
+  };
+  
+  const handleClearFilters = () => {
+    console.log("Clearing filters");
+    setFilters({
+      search: "",
+      priority: "all",
+      department: "all",
+      progress: "all",
+      completed: "all",
+    });
+  };
+  
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-bold tracking-tight">Action Items</h2>
-        <Button onClick={() => navigate("/add")} className="flex items-center">
+        <Button onClick={handleAddAction} className="flex items-center">
           <Plus className="mr-1 h-4 w-4" /> New Action
         </Button>
       </div>
@@ -78,17 +94,11 @@ export function ActionDashboard({ actions, onEditAction }: ActionDashboardProps)
           </p>
           {filters.search || filters.priority !== "all" || filters.department !== "all" || 
            filters.progress !== "all" || filters.completed !== "all" ? (
-            <Button variant="outline" onClick={() => setFilters({
-              search: "",
-              priority: "all",
-              department: "all",
-              progress: "all",
-              completed: "all",
-            })}>
+            <Button variant="outline" onClick={handleClearFilters}>
               Clear Filters
             </Button>
           ) : (
-            <Button onClick={() => navigate("/add")}>
+            <Button onClick={handleAddAction}>
               <Plus className="mr-1 h-4 w-4" /> Add First Action
             </Button>
           )}
