@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { ActionItem } from "@/types/action";
 import { mapDatabaseActionToActionItem, mapActionItemToDatabaseAction } from "@/lib/mappers";
@@ -14,7 +13,7 @@ export async function fetchActions() {
       
     if (error) {
       console.error("Error fetching actions:", error);
-      throw error;
+      return [];
     }
     
     console.log(`Successfully fetched ${data.length} actions`);
@@ -26,7 +25,7 @@ export async function fetchActions() {
       description: "Please try refreshing the page.",
       variant: "destructive",
     });
-    throw error;
+    return [];
   }
 }
 
@@ -127,21 +126,7 @@ export async function deleteAction(id: string) {
 
 export function subscribeToActions(callback: (action: ActionItem) => void) {
   console.log("Setting up realtime subscription for actions");
-  
-  try {
-    // Fix #1: Cast the entire function call to any to bypass TypeScript's strict typing
-    const rpcCall: any = supabase.rpc.bind(supabase);
-    const promise = rpcCall('supabase_realtime.enable_changes', { table_name: 'actions' });
-    
-    // Fix #2: Use then() with both success and error handlers instead of catch()
-    promise.then(
-      () => console.log("Realtime changes enabled for actions table"),
-      error => console.error("Failed to enable realtime changes:", error)
-    );
-  } catch (error) {
-    console.error("Exception enabling realtime changes:", error);
-  }
-    
+
   return supabase
     .channel('actions_changes')
     .on(
