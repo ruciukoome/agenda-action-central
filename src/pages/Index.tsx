@@ -8,15 +8,18 @@ import { ActionItem } from "@/types/action";
 import { EmailIntegrationCard } from "@/components/EmailIntegrationCard";
 import { fetchActions, subscribeToActions } from "@/lib/actions";
 import { useToast } from "@/components/ui/use-toast";
+import { useAuth } from "@/lib/auth";
 
 export default function Index() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { session } = useAuth();
   const [actions, setActions] = useState<ActionItem[]>([]);
   
   const { data: initialActions, isLoading } = useQuery({
     queryKey: ['actions'],
-    queryFn: fetchActions
+    queryFn: fetchActions,
+    enabled: !!session // Only fetch when user is authenticated
   });
   
   useEffect(() => {
@@ -26,6 +29,11 @@ export default function Index() {
   }, [initialActions]);
   
   useEffect(() => {
+    if (!session) {
+      navigate('/auth');
+      return;
+    }
+
     const subscription = subscribeToActions((updatedAction) => {
       setActions(currentActions => {
         const exists = currentActions.some(action => action.id === updatedAction.id);
@@ -46,7 +54,7 @@ export default function Index() {
     return () => {
       subscription.unsubscribe();
     };
-  }, [toast]);
+  }, [toast, session, navigate]);
   
   const handleEditAction = (action: ActionItem) => {
     navigate(`/edit/${action.id}`);

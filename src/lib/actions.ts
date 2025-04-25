@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { ActionItem } from "@/types/action";
 import { mapDatabaseActionToActionItem, mapActionItemToDatabaseAction } from "@/lib/mappers";
@@ -14,9 +13,15 @@ export async function fetchActions() {
 }
 
 export async function createAction(action: Omit<ActionItem, 'id' | 'createdAt' | 'updatedAt'>) {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error('User must be authenticated to create actions');
+
   const { data, error } = await supabase
     .from('actions')
-    .insert([mapActionItemToDatabaseAction(action)])
+    .insert([{
+      ...mapActionItemToDatabaseAction(action),
+      created_by: session.user.id
+    }])
     .select()
     .single();
     
@@ -56,7 +61,6 @@ export function subscribeToActions(callback: (action: ActionItem) => void) {
         table: 'actions'
       },
       (payload) => {
-        // Make sure payload.new contains all required fields before mapping
         if (payload.new && 
             typeof payload.new === 'object' && 
             'id' in payload.new && 
@@ -66,7 +70,6 @@ export function subscribeToActions(callback: (action: ActionItem) => void) {
             'priority' in payload.new &&
             'owner_email' in payload.new &&
             'progress_status' in payload.new) {
-          // Use type assertion since we've verified the essential properties exist
           const databaseAction = payload.new as {
             id: string;
             description: string;

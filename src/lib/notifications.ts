@@ -37,7 +37,7 @@ export async function sendActionNotification(action: ActionItem, type: "assigned
         updated_at: action.updatedAt
       },
       type,
-      senderEmail // Add sender's email to the payload
+      senderEmail
     };
     
     console.info("[Email Service] Payload:", JSON.stringify(payload));
@@ -64,7 +64,6 @@ export async function sendActionNotification(action: ActionItem, type: "assigned
     }
     
     if (!response.ok) {
-      console.error("[Email Service] Error response:", responseData);
       throw new Error(responseData.error || responseData.message || `Failed to send notification. Status: ${response.status}`);
     }
 
@@ -83,8 +82,6 @@ export async function sendActionNotification(action: ActionItem, type: "assigned
     let errorMessage = "Unknown error occurred";
     if (error instanceof Error) {
       errorMessage = error.message;
-    } else if (error instanceof Response) {
-      errorMessage = `HTTP Error: ${error.status}`;
     }
     
     toast({
