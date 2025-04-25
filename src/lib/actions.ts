@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { ActionItem } from "@/types/action";
 import { mapDatabaseActionToActionItem, mapActionItemToDatabaseAction } from "@/lib/mappers";
@@ -128,17 +127,13 @@ export async function deleteAction(id: string) {
 export function subscribeToActions(callback: (action: ActionItem) => void) {
   console.log("Setting up realtime subscription for actions");
   
-  // Fix: Properly type the RPC parameters and handle the Promise
-  // The issue is with the types of the RPC call and promise handling
-  const promise = supabase.rpc('supabase_realtime.enable_changes', { 
-    table_name: 'actions' 
-  } as unknown as Record<string, unknown>);  // Cast to a more generic type that won't conflict
-  
-  // Handle the promise properly with then/catch
-  if ('catch' in promise) {
-    promise
+  const changeParams = { table_name: 'actions' };
+  try {
+    supabase.rpc('supabase_realtime.enable_changes', changeParams as unknown as Record<string, unknown>)
       .then(() => console.log("Realtime changes enabled for actions table"))
-      .catch((error) => console.error("Failed to enable realtime changes:", error));
+      .catch(error => console.error("Failed to enable realtime changes:", error));
+  } catch (error) {
+    console.error("Exception enabling realtime changes:", error);
   }
     
   return supabase
