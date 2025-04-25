@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { ActionItem } from "@/types/action";
 import { mapDatabaseActionToActionItem, mapActionItemToDatabaseAction } from "@/lib/mappers";
@@ -127,12 +128,19 @@ export async function deleteAction(id: string) {
 export function subscribeToActions(callback: (action: ActionItem) => void) {
   console.log("Setting up realtime subscription for actions");
   
-  const changeParams = { table_name: 'actions' };
+  // Define a properly typed parameter object for the RPC call
+  type RpcParams = {
+    table_name: string;
+  };
+  
+  const changeParams: RpcParams = { table_name: 'actions' };
   try {
-    const promise = supabase.rpc('supabase_realtime.enable_changes', changeParams as unknown as Record<string, unknown>);
+    // Cast to any to bypass TypeScript's strict typing for this RPC call
+    // This is necessary because the Supabase TypeScript definitions may not include this custom RPC
+    const promise = (supabase.rpc('supabase_realtime.enable_changes', changeParams) as any);
     
     promise.then(() => console.log("Realtime changes enabled for actions table"))
-      .then(undefined, error => console.error("Failed to enable realtime changes:", error));
+      .catch(error => console.error("Failed to enable realtime changes:", error));
   } catch (error) {
     console.error("Exception enabling realtime changes:", error);
   }
