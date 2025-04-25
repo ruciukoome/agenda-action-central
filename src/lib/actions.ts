@@ -130,11 +130,16 @@ export function subscribeToActions(callback: (action: ActionItem) => void) {
   
   // Fix: Properly type the RPC parameters and handle the Promise
   // The issue is with the types of the RPC call and promise handling
-  supabase.rpc('supabase_realtime.enable_changes', { 
+  const promise = supabase.rpc('supabase_realtime.enable_changes', { 
     table_name: 'actions' 
-  } as { table_name: string })  // Type assertion to avoid the "never" type error
-    .then(() => console.log("Realtime changes enabled for actions table"))
-    .catch((error) => console.error("Failed to enable realtime changes:", error));
+  } as unknown as Record<string, unknown>);  // Cast to a more generic type that won't conflict
+  
+  // Handle the promise properly with then/catch
+  if ('catch' in promise) {
+    promise
+      .then(() => console.log("Realtime changes enabled for actions table"))
+      .catch((error) => console.error("Failed to enable realtime changes:", error));
+  }
     
   return supabase
     .channel('actions_changes')
