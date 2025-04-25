@@ -129,9 +129,10 @@ export function subscribeToActions(callback: (action: ActionItem) => void) {
   
   const changeParams = { table_name: 'actions' };
   try {
-    supabase.rpc('supabase_realtime.enable_changes', changeParams as unknown as Record<string, unknown>)
-      .then(() => console.log("Realtime changes enabled for actions table"))
-      .catch(error => console.error("Failed to enable realtime changes:", error));
+    const promise = supabase.rpc('supabase_realtime.enable_changes', changeParams as unknown as Record<string, unknown>);
+    
+    promise.then(() => console.log("Realtime changes enabled for actions table"))
+      .then(undefined, error => console.error("Failed to enable realtime changes:", error));
   } catch (error) {
     console.error("Exception enabling realtime changes:", error);
   }
