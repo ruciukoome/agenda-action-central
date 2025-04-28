@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getDueStatus } from "@/utils/emailUtils";
 import { fetchActions } from "@/lib/actions";
 import { Header } from "@/components/Header";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 
 interface MyActionsProps {
   userEmail: string;
