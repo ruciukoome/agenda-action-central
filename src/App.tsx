@@ -8,8 +8,6 @@ import { AuthProvider } from "@/lib/auth";
 import { AuthGuard } from "@/components/AuthGuard";
 import { AuthUserWrapper } from "@/components/AuthUserWrapper";
 import { useState } from "react";
-import { ActionItem } from "@/types/action";
-import { mockActions } from "@/data/mockActions";
 import Index from "./pages/Index";
 import AddAction from "./pages/AddAction";
 import EditAction from "./pages/EditAction";
@@ -21,23 +19,6 @@ import { TestEmailNotification } from "@/components/TestEmailNotification";
 const queryClient = new QueryClient();
 
 const App = () => {
-  const [actions, setActions] = useState<ActionItem[]>(mockActions);
-  
-  const handleAddAction = (action: ActionItem) => {
-    setActions([action, ...actions]);
-  };
-  
-  const handleUpdateAction = (updatedAction: ActionItem) => {
-    setActions(actions.map(action => 
-      action.id === updatedAction.id ? updatedAction : action
-    ));
-  };
-  
-  const handleEditAction = (action: ActionItem) => {
-    // This function is passed to components that need to trigger navigation to edit page
-    // The actual navigation happens in the components
-  };
-
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -52,7 +33,7 @@ const App = () => {
                 path="/add" 
                 element={
                   <AuthGuard>
-                    <AddAction onAddAction={handleAddAction} />
+                    <AddAction />
                   </AuthGuard>
                 } 
               />
@@ -60,10 +41,7 @@ const App = () => {
                 path="/edit/:id" 
                 element={
                   <AuthGuard>
-                    <EditAction 
-                      actions={actions} 
-                      onUpdateAction={handleUpdateAction} 
-                    />
+                    <EditAction />
                   </AuthGuard>
                 } 
               />
@@ -74,9 +52,8 @@ const App = () => {
                     <AuthUserWrapper>
                       {(userEmail) => (
                         <MyActions 
-                          actions={actions} 
                           userEmail={userEmail}
-                          onEditAction={handleEditAction} 
+                          onEditAction={(action) => {}}
                         />
                       )}
                     </AuthUserWrapper>

@@ -14,6 +14,7 @@ export default function Index() {
   const { toast } = useToast();
   const { session } = useAuth();
   const [actions, setActions] = useState<ActionItem[]>([]);
+  const [refreshKey, setRefreshKey] = useState(0); // Add a refresh key to force re-fetching
   
   useEffect(() => {
     if (!session) {
@@ -22,12 +23,35 @@ export default function Index() {
     }
 
     const loadActions = async () => {
-      const data = await fetchActions();
-      setActions(data);
+      try {
+        const data = await fetchActions();
+        setActions(data);
+      } catch (error) {
+        console.error("Failed to fetch actions:", error);
+        toast({
+          title: "Error fetching actions",
+          description: "Please refresh the page to try again.",
+          variant: "destructive",
+        });
+      }
     };
 
     loadActions();
-  }, [session, navigate]);
+  }, [session, navigate, refreshKey]); // Add refreshKey as a dependency
+  
+  // Add this effect to refresh when the component is focused (returning to page)
+  useEffect(() => {
+    const handleFocus = () => {
+      // Increment refreshKey to trigger a re-fetch
+      setRefreshKey(prev => prev + 1);
+    };
+
+    window.addEventListener('focus', handleFocus);
+    
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, []);
   
   const handleEditAction = (action: ActionItem) => {
     navigate(`/edit/${action.id}`);
