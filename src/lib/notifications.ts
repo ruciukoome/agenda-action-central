@@ -23,14 +23,14 @@ export async function sendActionNotification(action: ActionItem, type: "assigned
     const senderEmail = session.user.email;
     
     // Ensure we have a valid recipient email
-    if (!action.ownerEmail || typeof action.ownerEmail !== 'string') {
+    if (!action.ownerEmail || typeof action.ownerEmail !== 'string' || !action.ownerEmail.includes('@')) {
       console.error("Invalid recipient email:", action.ownerEmail);
       toast({
         title: "Invalid Email",
         description: "The action owner email is invalid.",
         variant: "destructive"
       });
-      return;
+      return { error: "Invalid recipient email address" };
     }
     
     // Prepare request information for logging
@@ -45,7 +45,8 @@ export async function sendActionNotification(action: ActionItem, type: "assigned
         ...mapActionItemToDatabaseAction(action),
         id: action.id,
         created_at: action.createdAt,
-        updated_at: action.updatedAt
+        updated_at: action.updatedAt,
+        owner_email: action.ownerEmail // Ensure this field is explicitly set
       },
       type,
       senderEmail
@@ -101,6 +102,6 @@ export async function sendActionNotification(action: ActionItem, type: "assigned
       variant: "destructive"
     });
     
-    throw error;
+    return { error: errorMessage };
   }
 }

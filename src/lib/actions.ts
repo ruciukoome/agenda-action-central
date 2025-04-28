@@ -35,8 +35,13 @@ export async function createAction(action: Omit<ActionItem, 'id' | 'createdAt' |
   }
 
   // Ensure we have a valid owner email
-  if (!action.ownerEmail) {
-    throw new Error('Owner email is required');
+  if (!action.ownerEmail || typeof action.ownerEmail !== 'string' || !action.ownerEmail.includes('@')) {
+    toast({
+      title: "Invalid Email",
+      description: "Please provide a valid email for the action owner.",
+      variant: "destructive"
+    });
+    throw new Error('Owner email is required and must be valid');
   }
 
   const { data, error } = await supabase
@@ -76,12 +81,20 @@ export async function createAction(action: Omit<ActionItem, 'id' | 'createdAt' |
   console.log("Sending notification for new action to:", createdAction.ownerEmail);
 
   try {
-    await sendActionNotification(createdAction, "assigned");
-    toast({
-      title: "Action Created",
-      description: `Action was created and notification was sent to ${createdAction.ownerEmail}.`,
-      variant: "default",
-    });
+    const notificationResult = await sendActionNotification(createdAction, "assigned");
+    if (notificationResult && notificationResult.error) {
+      toast({
+        title: "Action Created",
+        description: `Action was created but email notification failed: ${notificationResult.error}`,
+        variant: "default",
+      });
+    } else {
+      toast({
+        title: "Action Created",
+        description: `Action was created and notification was sent to ${createdAction.ownerEmail}.`,
+        variant: "default",
+      });
+    }
   } catch (emailError) {
     console.error('Error sending notification:', emailError);
     toast({
