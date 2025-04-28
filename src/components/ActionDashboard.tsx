@@ -6,13 +6,15 @@ import { ActionCard } from "@/components/ActionCard";
 import { ActionFilters, Filters } from "@/components/ActionFilters";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface ActionDashboardProps {
   actions: ActionItem[];
   onEditAction: (action: ActionItem) => void;
+  isLoading?: boolean;
 }
 
-export function ActionDashboard({ actions, onEditAction }: ActionDashboardProps) {
+export function ActionDashboard({ actions, onEditAction, isLoading = false }: ActionDashboardProps) {
   const navigate = useNavigate();
   const [filters, setFilters] = useState<Filters>({
     search: "",
@@ -71,6 +73,22 @@ export function ActionDashboard({ actions, onEditAction }: ActionDashboardProps)
       completed: "all",
     });
   };
+
+  // Render skeleton loaders during loading state
+  const renderSkeletons = () => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {[1, 2, 3, 4, 5, 6].map((i) => (
+        <div key={i} className="border rounded-lg p-4 space-y-3">
+          <Skeleton className="h-6 w-3/4" />
+          <Skeleton className="h-4 w-1/2" />
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-2/3" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
   
   return (
     <div className="space-y-6">
@@ -83,7 +101,9 @@ export function ActionDashboard({ actions, onEditAction }: ActionDashboardProps)
       
       <ActionFilters filters={filters} onFilterChange={setFilters} />
       
-      {filteredActions.length === 0 ? (
+      {isLoading ? (
+        renderSkeletons()
+      ) : filteredActions.length === 0 ? (
         <div className="text-center py-12">
           <h3 className="text-xl font-medium mb-2">No action items found</h3>
           <p className="text-muted-foreground mb-4">

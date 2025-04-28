@@ -8,6 +8,7 @@ import { getDueStatus } from "@/utils/emailUtils";
 import { fetchActions } from "@/lib/actions";
 import { Header } from "@/components/Header";
 import { supabase } from "@/integrations/supabase/client";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface MyActionsProps {
   userEmail: string;
@@ -18,16 +19,21 @@ export default function MyActions({ userEmail, onEditAction }: MyActionsProps) {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [actions, setActions] = useState<ActionItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
     const loadActions = async () => {
+      setIsLoading(true);
       try {
         const data = await fetchActions();
-        setActions(data.filter(action => 
+        const filtered = data.filter(action => 
           action.ownerEmail.toLowerCase() === userEmail.toLowerCase()
-        ));
+        );
+        setActions(filtered);
       } catch (error) {
         console.error('Error loading actions:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -42,22 +48,21 @@ export default function MyActions({ userEmail, onEditAction }: MyActionsProps) {
           schema: 'public',
           table: 'actions'
         },
-        () => {
+        (payload) => {
+          console.log('Realtime update received in MyActions:', payload);
           loadActions();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('MyActions subscription status:', status);
+      });
 
     return () => {
       supabase.removeChannel(channel);
     };
   }, [userEmail]);
 
-  const userActions = actions.filter(action => 
-    action.ownerEmail.toLowerCase() === userEmail.toLowerCase()
-  );
-  
-  const filteredActions = userActions.filter(action =>
+  const filteredActions = actions.filter(action =>
     action.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
   
@@ -68,6 +73,21 @@ export default function MyActions({ userEmail, onEditAction }: MyActionsProps) {
   );
   const upcomingActions = pendingActions.filter(action =>
     action.dueDate && getDueStatus(action.dueDate) === "upcoming"
+  );
+
+  const renderSkeletons = () => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="border rounded-lg p-4 space-y-3">
+          <Skeleton className="h-6 w-3/4" />
+          <Skeleton className="h-4 w-1/2" />
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-2/3" />
+          </div>
+        </div>
+      ))}
+    </div>
   );
   
   return (
@@ -106,7 +126,9 @@ export default function MyActions({ userEmail, onEditAction }: MyActionsProps) {
           </TabsList>
           
           <TabsContent value="all">
-            {filteredActions.length === 0 ? (
+            {isLoading ? (
+              renderSkeletons()
+            ) : filteredActions.length === 0 ? (
               <div className="text-center py-8">
                 <h3 className="text-xl font-medium">No action items found</h3>
                 <p className="text-muted-foreground mt-2">

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ActionDashboard } from "@/components/ActionDashboard";
@@ -14,6 +15,7 @@ export default function Index() {
   const { toast } = useToast();
   const { session } = useAuth();
   const [actions, setActions] = useState<ActionItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
     if (!session) {
@@ -22,6 +24,7 @@ export default function Index() {
     }
 
     const loadActions = async () => {
+      setIsLoading(true);
       try {
         const data = await fetchActions();
         setActions(data);
@@ -32,12 +35,14 @@ export default function Index() {
           description: "Please refresh the page to try again.",
           variant: "destructive",
         });
+      } finally {
+        setIsLoading(false);
       }
     };
 
     loadActions();
 
-    // Subscribe to realtime updates
+    // Subscribe to realtime updates for the actions table
     const channel = supabase
       .channel('actions_changes')
       .on(
@@ -47,11 +52,14 @@ export default function Index() {
           schema: 'public',
           table: 'actions'
         },
-        () => {
-          loadActions();
+        (payload) => {
+          console.log('Realtime update received:', payload);
+          loadActions(); // Reload all actions when any change occurs
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Subscription status:', status);
+      });
 
     return () => {
       supabase.removeChannel(channel);
@@ -71,7 +79,8 @@ export default function Index() {
           <div className="md:col-span-5">
             <ActionDashboard 
               actions={actions} 
-              onEditAction={handleEditAction} 
+              onEditAction={handleEditAction}
+              isLoading={isLoading}
             />
           </div>
           
