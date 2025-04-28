@@ -1,7 +1,7 @@
-
 import { ActionItem } from "@/types/action";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
+import { sendActionNotification } from "@/lib/notifications";
 
 export async function fetchActions() {
   const { data, error } = await supabase
@@ -55,7 +55,7 @@ export async function createAction(action: Omit<ActionItem, 'id' | 'createdAt' |
     throw error;
   }
 
-  return {
+  const createdAction = {
     ...data,
     id: data.id,
     meetingDate: data.meeting_date,
@@ -65,6 +65,20 @@ export async function createAction(action: Omit<ActionItem, 'id' | 'createdAt' |
     updatedAt: data.updated_at,
     dueDate: data.due_date
   } as ActionItem;
+
+  try {
+    await sendActionNotification(createdAction, "assigned");
+  } catch (emailError) {
+    console.error('Error sending notification:', emailError);
+    toast({
+      title: "Action created",
+      description: "Action was created but email notification failed to send.",
+      variant: "warning",
+    });
+    return createdAction;
+  }
+
+  return createdAction;
 }
 
 export async function updateAction(action: ActionItem) {
@@ -132,7 +146,6 @@ export function subscribeToActions(callback: (action: ActionItem) => void) {
       },
       (payload) => {
         console.log('Realtime update:', payload);
-        // Refresh the actions list when changes occur
         fetchActions().then(actions => {
           actions.forEach(callback);
         });
