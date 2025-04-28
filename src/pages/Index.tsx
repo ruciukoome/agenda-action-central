@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ActionDashboard } from "@/components/ActionDashboard";
@@ -8,13 +7,13 @@ import { EmailIntegrationCard } from "@/components/EmailIntegrationCard";
 import { fetchActions } from "@/lib/actions";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Index() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { session } = useAuth();
   const [actions, setActions] = useState<ActionItem[]>([]);
-  const [refreshKey, setRefreshKey] = useState(0); // Add a refresh key to force re-fetching
   
   useEffect(() => {
     if (!session) {
@@ -37,21 +36,27 @@ export default function Index() {
     };
 
     loadActions();
-  }, [session, navigate, refreshKey]); // Add refreshKey as a dependency
-  
-  // Add this effect to refresh when the component is focused (returning to page)
-  useEffect(() => {
-    const handleFocus = () => {
-      // Increment refreshKey to trigger a re-fetch
-      setRefreshKey(prev => prev + 1);
-    };
 
-    window.addEventListener('focus', handleFocus);
-    
+    // Subscribe to realtime updates
+    const channel = supabase
+      .channel('actions_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'actions'
+        },
+        () => {
+          loadActions();
+        }
+      )
+      .subscribe();
+
     return () => {
-      window.removeEventListener('focus', handleFocus);
+      supabase.removeChannel(channel);
     };
-  }, []);
+  }, [session, navigate, toast]);
   
   const handleEditAction = (action: ActionItem) => {
     navigate(`/edit/${action.id}`);

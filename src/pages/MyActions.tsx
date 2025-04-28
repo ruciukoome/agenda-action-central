@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getDueStatus } from "@/utils/emailUtils";
 import { fetchActions } from "@/lib/actions";
 import { Header } from "@/components/Header";
+import { supabase } from "@/lib/supabase";
 
 interface MyActionsProps {
   userEmail: string;
@@ -20,13 +21,38 @@ export default function MyActions({ userEmail, onEditAction }: MyActionsProps) {
   
   useEffect(() => {
     const loadActions = async () => {
-      const allActions = await fetchActions();
-      setActions(allActions);
+      try {
+        const data = await fetchActions();
+        setActions(data.filter(action => 
+          action.ownerEmail.toLowerCase() === userEmail.toLowerCase()
+        ));
+      } catch (error) {
+        console.error('Error loading actions:', error);
+      }
     };
-    
+
     loadActions();
-  }, []);
-  
+
+    const channel = supabase
+      .channel('actions_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'actions'
+        },
+        () => {
+          loadActions();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userEmail]);
+
   const userActions = actions.filter(action => 
     action.ownerEmail.toLowerCase() === userEmail.toLowerCase()
   );

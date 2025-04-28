@@ -1,55 +1,148 @@
 
 import { ActionItem } from "@/types/action";
-import { mockActions } from "@/data/mockActions";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 
-// Use a shared in-memory store to maintain actions state across components
-let actionStore = [...mockActions];
-
 export async function fetchActions() {
-  return actionStore;
+  const { data, error } = await supabase
+    .from('actions')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching actions:', error);
+    throw error;
+  }
+
+  return data.map(action => ({
+    ...action,
+    id: action.id,
+    meetingDate: action.meeting_date,
+    ownerEmail: action.owner_email,
+    progressStatus: action.progress_status,
+    createdAt: action.created_at,
+    updatedAt: action.updated_at,
+    dueDate: action.due_date
+  })) as ActionItem[];
 }
 
 export async function createAction(action: Omit<ActionItem, 'id' | 'createdAt' | 'updatedAt'>) {
-  const now = new Date().toISOString();
-  const newAction: ActionItem = {
-    id: Date.now().toString(),
-    createdAt: now,
-    updatedAt: now,
-    ...action
-  };
+  const { data: userData } = await supabase.auth.getUser();
   
-  // Add the new action to our store
-  actionStore = [newAction, ...actionStore];
-  
-  console.log("Created new action:", newAction);
-  return newAction;
+  if (!userData.user) {
+    throw new Error('User not authenticated');
+  }
+
+  const { data, error } = await supabase
+    .from('actions')
+    .insert([{
+      description: action.description,
+      department: action.department,
+      meeting_date: action.meetingDate,
+      priority: action.priority,
+      owner_email: action.ownerEmail,
+      completed: action.completed,
+      progress_status: action.progressStatus,
+      notes: action.notes,
+      due_date: action.dueDate,
+      user_id: userData.user.id
+    }])
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error creating action:', error);
+    throw error;
+  }
+
+  return {
+    ...data,
+    id: data.id,
+    meetingDate: data.meeting_date,
+    ownerEmail: data.owner_email,
+    progressStatus: data.progress_status,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at,
+    dueDate: data.due_date
+  } as ActionItem;
 }
 
 export async function updateAction(action: ActionItem) {
-  const updatedAction = {
-    ...action,
-    updatedAt: new Date().toISOString()
-  };
+  const { data: userData } = await supabase.auth.getUser();
   
-  // Update the action in our store
-  actionStore = actionStore.map(a => 
-    a.id === action.id ? updatedAction : a
-  );
-  
-  console.log("Updated action:", updatedAction);
-  return updatedAction;
+  if (!userData.user) {
+    throw new Error('User not authenticated');
+  }
+
+  const { data, error } = await supabase
+    .from('actions')
+    .update({
+      description: action.description,
+      department: action.department,
+      meeting_date: action.meetingDate,
+      priority: action.priority,
+      owner_email: action.ownerEmail,
+      completed: action.completed,
+      progress_status: action.progressStatus,
+      notes: action.notes,
+      due_date: action.dueDate
+    })
+    .eq('id', action.id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error updating action:', error);
+    throw error;
+  }
+
+  return {
+    ...data,
+    id: data.id,
+    meetingDate: data.meeting_date,
+    ownerEmail: data.owner_email,
+    progressStatus: data.progress_status,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at,
+    dueDate: data.due_date
+  } as ActionItem;
 }
 
 export async function deleteAction(id: string) {
-  // Remove the action from our store
-  actionStore = actionStore.filter(a => a.id !== id);
-  console.log("Deleted action:", id);
+  const { error } = await supabase
+    .from('actions')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error('Error deleting action:', error);
+    throw error;
+  }
 }
 
 export function subscribeToActions(callback: (action: ActionItem) => void) {
-  // Mock subscription just returns cleanup function
+  const channel = supabase
+    .channel('actions_changes')
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'actions'
+      },
+      (payload) => {
+        console.log('Realtime update:', payload);
+        // Refresh the actions list when changes occur
+        fetchActions().then(actions => {
+          actions.forEach(callback);
+        });
+      }
+    )
+    .subscribe();
+
   return {
-    unsubscribe: () => {}
+    unsubscribe: () => {
+      supabase.removeChannel(channel);
+    }
   };
 }

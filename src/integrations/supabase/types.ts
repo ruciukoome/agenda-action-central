@@ -9,6 +9,54 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      actions: {
+        Row: {
+          completed: boolean
+          created_at: string
+          department: Database["public"]["Enums"]["action_department"]
+          description: string
+          due_date: string | null
+          id: string
+          meeting_date: string
+          notes: string | null
+          owner_email: string
+          priority: Database["public"]["Enums"]["action_priority"]
+          progress_status: Database["public"]["Enums"]["action_progress"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean
+          created_at?: string
+          department: Database["public"]["Enums"]["action_department"]
+          description: string
+          due_date?: string | null
+          id?: string
+          meeting_date: string
+          notes?: string | null
+          owner_email: string
+          priority: Database["public"]["Enums"]["action_priority"]
+          progress_status?: Database["public"]["Enums"]["action_progress"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed?: boolean
+          created_at?: string
+          department?: Database["public"]["Enums"]["action_department"]
+          description?: string
+          due_date?: string | null
+          id?: string
+          meeting_date?: string
+          notes?: string | null
+          owner_email?: string
+          priority?: Database["public"]["Enums"]["action_priority"]
+          progress_status?: Database["public"]["Enums"]["action_progress"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -41,7 +89,19 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      action_department:
+        | "Engineering"
+        | "Marketing"
+        | "Sales"
+        | "Finance"
+        | "HR"
+        | "Operations"
+        | "Product"
+        | "Design"
+        | "Customer Success"
+        | "Other"
+      action_priority: "high" | "medium" | "low"
+      action_progress: "Not Started" | "25%" | "50%" | "75%" | "100%"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -156,6 +216,21 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      action_department: [
+        "Engineering",
+        "Marketing",
+        "Sales",
+        "Finance",
+        "HR",
+        "Operations",
+        "Product",
+        "Design",
+        "Customer Success",
+        "Other",
+      ],
+      action_priority: ["high", "medium", "low"],
+      action_progress: ["Not Started", "25%", "50%", "75%", "100%"],
+    },
   },
 } as const
