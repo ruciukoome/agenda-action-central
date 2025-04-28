@@ -73,7 +73,7 @@ export async function createAction(action: Omit<ActionItem, 'id' | 'createdAt' |
     toast({
       title: "Action created",
       description: "Action was created but email notification failed to send.",
-      variant: "warning",
+      variant: "default",
     });
     return createdAction;
   }
