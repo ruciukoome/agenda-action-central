@@ -1,3 +1,4 @@
+
 import { ActionItem } from "@/types/action";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
@@ -33,6 +34,11 @@ export async function createAction(action: Omit<ActionItem, 'id' | 'createdAt' |
     throw new Error('User not authenticated');
   }
 
+  // Ensure we have a valid owner email
+  if (!action.ownerEmail) {
+    throw new Error('Owner email is required');
+  }
+
   const { data, error } = await supabase
     .from('actions')
     .insert([{
@@ -66,8 +72,16 @@ export async function createAction(action: Omit<ActionItem, 'id' | 'createdAt' |
     dueDate: data.due_date
   } as ActionItem;
 
+  console.log("Action created successfully:", createdAction);
+  console.log("Sending notification for new action to:", createdAction.ownerEmail);
+
   try {
     await sendActionNotification(createdAction, "assigned");
+    toast({
+      title: "Action Created",
+      description: `Action was created and notification was sent to ${createdAction.ownerEmail}.`,
+      variant: "default",
+    });
   } catch (emailError) {
     console.error('Error sending notification:', emailError);
     toast({
@@ -75,7 +89,6 @@ export async function createAction(action: Omit<ActionItem, 'id' | 'createdAt' |
       description: "Action was created but email notification failed to send.",
       variant: "default",
     });
-    return createdAction;
   }
 
   return createdAction;

@@ -7,7 +7,7 @@ import { sendActionNotification } from '@/lib/notifications';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Send } from 'lucide-react'; // Replace ReloadIcon with a Lucide icon
+import { Send } from 'lucide-react';
 
 export function TestEmailNotification() {
   const { toast } = useToast();
@@ -21,6 +21,16 @@ export function TestEmailNotification() {
       setResult(null);
       setError(null);
       
+      // Get current user email from Supabase session
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.user?.email) {
+        throw new Error("No user email found. Make sure you're logged in.");
+      }
+      
+      const userEmail = session.user.email;
+      console.log("Sending test email to:", userEmail);
+      
       // Create a test action item with valid types
       const testAction: ActionItem = {
         id: 'test-' + Date.now(),
@@ -28,7 +38,7 @@ export function TestEmailNotification() {
         department: 'Engineering' as Department,
         meetingDate: new Date().toISOString(),
         priority: 'medium',
-        ownerEmail: '',
+        ownerEmail: userEmail, // Use the user's email
         completed: false,
         progressStatus: 'Not Started' as ProgressStatus,
         notes: 'This is a test notification from the Action Central system.',
@@ -37,15 +47,7 @@ export function TestEmailNotification() {
         dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 1 week from now
       };
       
-      // Get current user email from Supabase session
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session?.user?.email) {
-        throw new Error("No user email found. Make sure you're logged in.");
-      }
-      
-      testAction.ownerEmail = session.user.email;
-      console.log("Sending test email to:", testAction.ownerEmail);
+      console.log("Test action created with owner email:", testAction.ownerEmail);
       
       // Send test notification
       const response = await sendActionNotification(testAction, "assigned");
@@ -53,7 +55,7 @@ export function TestEmailNotification() {
       
       toast({
         title: "Test Email Sent",
-        description: `Notification sent to ${session.user.email}`,
+        description: `Notification sent to ${userEmail}`,
       });
     } catch (error) {
       console.error("Test email error:", error);
@@ -107,7 +109,7 @@ export function TestEmailNotification() {
         <Button onClick={handleTestEmail} disabled={isSending}>
           {isSending ? (
             <>
-              <Send className="mr-2 h-4 w-4 animate-spin" /> {/* Use Send icon */}
+              <Send className="mr-2 h-4 w-4 animate-spin" />
               Sending...
             </>
           ) : (

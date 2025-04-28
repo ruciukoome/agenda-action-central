@@ -22,6 +22,17 @@ export async function sendActionNotification(action: ActionItem, type: "assigned
     // Get the sender's email from the authenticated user
     const senderEmail = session.user.email;
     
+    // Ensure we have a valid recipient email
+    if (!action.ownerEmail || typeof action.ownerEmail !== 'string') {
+      console.error("Invalid recipient email:", action.ownerEmail);
+      toast({
+        title: "Invalid Email",
+        description: "The action owner email is invalid.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     // Prepare request information for logging
     const edgeFunctionUrl = "https://mdwrmfqjxakhpwmfyvft.functions.supabase.co/send-action-notification";
     console.info("[Email Service] Sending request from:", senderEmail);

@@ -72,6 +72,18 @@ serve(async (req) => {
     console.log(`Preparing to send ${type} notification for action:`, action.id);
     console.log("Using Resend API key:", resendApiKey ? "API key is set" : "API key is NOT set");
     
+    // Validate recipient email
+    if (!action.owner_email || typeof action.owner_email !== 'string') {
+      console.error("Invalid recipient email:", action.owner_email);
+      return new Response(
+        JSON.stringify({ error: "Invalid recipient email address" }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
+    }
+    
     let subject, content;
     
     if (type === "assigned") {
@@ -110,8 +122,8 @@ serve(async (req) => {
     
     try {
       const emailResponse = await resend.emails.send({
-        from: `Action Central <${senderEmail}>`,
-        to: [action.owner_email],
+        from: `Action Central <onboarding@resend.dev>`, // Using a verified domain instead of dynamic sender
+        to: action.owner_email,
         subject,
         html: content,
       });
