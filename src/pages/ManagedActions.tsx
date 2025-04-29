@@ -1,31 +1,21 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Header } from "@/components/Header";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Skeleton } from "@/components/ui/skeleton";
 import { ActionItem } from "@/types/action";
 import { fetchActions, deleteAction } from "@/lib/actions";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
-import { formatDate } from "@/utils/emailUtils";
-import { Trash2, FileText } from "lucide-react";
+import { ActionsTable } from "@/components/actions/ActionsTable";
+import { ActionsToolbar } from "@/components/actions/ActionsToolbar";
+import { useActionSelection } from "@/hooks/useActionSelection";
+import { useActionFiltering, ActionFilterTab } from "@/hooks/useActionFiltering";
 
 export default function ManagedActions() {
   const [actions, setActions] = useState<ActionItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedActions, setSelectedActions] = useState<string[]>([]);
-  const [activeTab, setActiveTab] = useState<"all" | "completed" | "pending">("all");
+  
+  const { activeTab, setActiveTab, filteredActions } = useActionFiltering(actions);
+  const { selectedActions, handleSelectAction, handleSelectAll, clearSelection } = useActionSelection(filteredActions);
 
   const loadActions = useCallback(async () => {
     setIsLoading(true);
@@ -68,21 +58,9 @@ export default function ManagedActions() {
     };
   }, [loadActions]);
 
-  const handleSelectAction = (actionId: string) => {
-    setSelectedActions((prev) =>
-      prev.includes(actionId)
-        ? prev.filter(id => id !== actionId)
-        : [...prev, actionId]
-    );
-  };
-
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      const filteredActionIds = getFilteredActions().map(action => action.id);
-      setSelectedActions(filteredActionIds);
-    } else {
-      setSelectedActions([]);
-    }
+  const handleTabChange = (tab: ActionFilterTab) => {
+    setActiveTab(tab);
+    clearSelection();
   };
 
   const handleDeleteSelected = async () => {
@@ -107,7 +85,7 @@ export default function ManagedActions() {
         description: `Successfully deleted ${deletedCount} action${deletedCount > 1 ? 's' : ''}.`,
       });
       
-      setSelectedActions([]);
+      clearSelection();
     } catch (error) {
       console.error("Failed to delete actions:", error);
       toast({
@@ -149,35 +127,6 @@ export default function ManagedActions() {
     });
   };
 
-  const getFilteredActions = () => {
-    switch (activeTab) {
-      case "completed":
-        return actions.filter(action => action.completed);
-      case "pending":
-        return actions.filter(action => !action.completed);
-      default:
-        return actions;
-    }
-  };
-
-  const filteredActions = getFilteredActions();
-  
-  const renderSkeletons = () => (
-    <>
-      {[1, 2, 3, 4, 5].map((i) => (
-        <TableRow key={i}>
-          <TableCell><Skeleton className="h-4 w-4" /></TableCell>
-          <TableCell><Skeleton className="h-4 w-full" /></TableCell>
-          <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-          <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-          <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-          <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-          <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-        </TableRow>
-      ))}
-    </>
-  );
-
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -186,112 +135,21 @@ export default function ManagedActions() {
         <h1 className="text-3xl font-bold tracking-tight mb-6">Manage Actions</h1>
         
         <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-            <Tabs value={activeTab} onValueChange={(value) => {
-              setActiveTab(value as "all" | "completed" | "pending");
-              setSelectedActions([]);
-            }} className="w-full sm:w-auto">
-              <TabsList>
-                <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value="pending">Pending</TabsTrigger>
-                <TabsTrigger value="completed">Completed</TabsTrigger>
-              </TabsList>
-            </Tabs>
-            
-            <div className="flex items-center space-x-2">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => handleExportSelected()}
-                disabled={selectedActions.length === 0}
-              >
-                <FileText className="mr-2 h-4 w-4" />
-                Export ({selectedActions.length})
-              </Button>
-              <Button 
-                variant="destructive" 
-                size="sm"
-                onClick={handleDeleteSelected}
-                disabled={selectedActions.length === 0}
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete ({selectedActions.length})
-              </Button>
-            </div>
-          </div>
+          <ActionsToolbar
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
+            selectedCount={selectedActions.length}
+            onExport={handleExportSelected}
+            onDelete={handleDeleteSelected}
+          />
           
-          <div className="border rounded-md">
-            <Table>
-              <TableCaption>
-                {filteredActions.length > 0 
-                  ? `Showing ${filteredActions.length} action${filteredActions.length > 1 ? 's' : ''}` 
-                  : 'No actions found'}
-              </TableCaption>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[50px]">
-                    <Checkbox 
-                      checked={
-                        filteredActions.length > 0 && 
-                        selectedActions.length === filteredActions.length
-                      } 
-                      onCheckedChange={handleSelectAll}
-                      aria-label="Select all"
-                    />
-                  </TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Department</TableHead>
-                  <TableHead>Meeting Date</TableHead>
-                  <TableHead>Priority</TableHead>
-                  <TableHead>Owner Email</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading ? (
-                  renderSkeletons()
-                ) : filteredActions.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-6">
-                      No actions found
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredActions.map((action) => (
-                    <TableRow key={action.id}>
-                      <TableCell>
-                        <Checkbox 
-                          checked={selectedActions.includes(action.id)} 
-                          onCheckedChange={() => handleSelectAction(action.id)}
-                          aria-label={`Select ${action.description}`}
-                        />
-                      </TableCell>
-                      <TableCell className="font-medium">{action.description}</TableCell>
-                      <TableCell>{action.department}</TableCell>
-                      <TableCell>{formatDate(action.meetingDate)}</TableCell>
-                      <TableCell>
-                        <div className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
-                          action.priority === "high" ? "bg-red-100 text-red-800" :
-                          action.priority === "medium" ? "bg-amber-100 text-amber-800" :
-                          "bg-green-100 text-green-800"
-                        }`}>
-                          {action.priority}
-                        </div>
-                      </TableCell>
-                      <TableCell>{action.ownerEmail}</TableCell>
-                      <TableCell>
-                        <div className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
-                          action.completed ? "bg-green-100 text-green-800" : "bg-blue-100 text-blue-800"
-                        }`}>
-                          {action.completed ? "Completed" : action.progressStatus}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
+          <ActionsTable
+            actions={filteredActions}
+            isLoading={isLoading}
+            selectedActions={selectedActions}
+            onSelectAction={handleSelectAction}
+            onSelectAll={handleSelectAll}
+          />
         </div>
       </div>
     </div>
