@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
-import { CheckCircle, Clock, Mail } from "lucide-react";
+import { CheckCircle, Clock, Mail, CalendarClock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export function EmailIntegrationCard() {
@@ -13,7 +13,8 @@ export function EmailIntegrationCard() {
     assignmentNotifications: true,
     dueDateReminders: true,
     overdueAlerts: true,
-    weeklyDigest: false
+    weeklyDigest: false,
+    automaticReminders: true
   });
 
   const toggleNotification = (setting: keyof typeof notificationSettings) => {
@@ -77,6 +78,18 @@ export function EmailIntegrationCard() {
                 <h3 className="text-sm font-medium">Completion Updates</h3>
                 <p className="text-sm text-muted-foreground">
                   Notify stakeholders when action items are completed
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-start space-x-4">
+              <div className="mt-0.5 bg-purple-100 p-2 rounded-full">
+                <CalendarClock className="h-5 w-5 text-purple-600" />
+              </div>
+              <div>
+                <h3 className="text-sm font-medium">Automatic Due Date Reminders</h3>
+                <p className="text-sm text-muted-foreground">
+                  Automatically send reminder emails one day before due dates
                 </p>
               </div>
             </div>
@@ -152,6 +165,24 @@ export function EmailIntegrationCard() {
                   <Switch 
                     checked={notificationSettings.weeklyDigest} 
                     onCheckedChange={() => toggleNotification('weeklyDigest')}
+                  />
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-medium">Automatic Due Date Reminders</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Send email one day before due date
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm">
+                    {notificationSettings.automaticReminders ? "Enabled" : "Disabled"}
+                  </span>
+                  <Switch 
+                    checked={notificationSettings.automaticReminders} 
+                    onCheckedChange={() => toggleNotification('automaticReminders')}
                   />
                 </div>
               </div>
