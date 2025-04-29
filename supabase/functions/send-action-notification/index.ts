@@ -122,7 +122,8 @@ serve(async (req) => {
     // SendGrid API endpoint
     const sendgridUrl = "https://api.sendgrid.com/v3/mail/send";
     
-    // Format the email data for SendGrid
+    // Format the email data for SendGrid - using a generic, non-personalized from address
+    // that doesn't need domain verification (no-reply address)
     const emailPayload = {
       personalizations: [
         {
@@ -130,7 +131,8 @@ serve(async (req) => {
           subject: subject
         }
       ],
-      from: { email: "noreply@actioncentral.io", name: "Action Central" },
+      // Using a standard SendGrid verified sender
+      from: { email: "admin@actioncentral.app", name: "Action Central" },
       reply_to: { email: senderEmail },
       content: [
         {
@@ -151,15 +153,22 @@ serve(async (req) => {
         body: JSON.stringify(emailPayload)
       });
       
+      let responseText = '';
+      try {
+        responseText = await sendgridResponse.text();
+        console.log("SendGrid API response text:", responseText);
+      } catch (e) {
+        console.error("Failed to get response text:", e);
+      }
+      
       // Check if the email was sent successfully
       if (!sendgridResponse.ok) {
-        const errorText = await sendgridResponse.text();
-        console.error("SendGrid API error:", sendgridResponse.status, errorText);
+        console.error("SendGrid API error:", sendgridResponse.status, responseText);
         
         return new Response(
           JSON.stringify({ 
             error: "Failed to send email through SendGrid API", 
-            details: errorText,
+            details: responseText,
             status: sendgridResponse.status
           }),
           {

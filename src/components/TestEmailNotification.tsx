@@ -103,14 +103,14 @@ export function TestEmailNotification() {
         {error && (
           <Alert variant="destructive" className="mb-4">
             <AlertTitle>Error sending email</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
+            <AlertDescription className="whitespace-pre-wrap break-all">{error}</AlertDescription>
           </Alert>
         )}
         
         {result && (
-          <div className="bg-muted p-3 rounded-md mt-4">
+          <div className="bg-muted p-3 rounded-md mt-4 overflow-auto max-h-64">
             <h4 className="font-medium mb-2">Result:</h4>
-            <pre className="text-xs overflow-auto">{JSON.stringify(result, null, 2)}</pre>
+            <pre className="text-xs overflow-auto whitespace-pre-wrap break-all">{JSON.stringify(result, null, 2)}</pre>
           </div>
         )}
       </CardContent>
