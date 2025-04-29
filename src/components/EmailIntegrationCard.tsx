@@ -1,10 +1,34 @@
 
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
 import { CheckCircle, Clock, Mail } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export function EmailIntegrationCard() {
+  const { toast } = useToast();
+  const [notificationSettings, setNotificationSettings] = useState({
+    assignmentNotifications: true,
+    dueDateReminders: true,
+    overdueAlerts: true,
+    weeklyDigest: false
+  });
+
+  const toggleNotification = (setting: keyof typeof notificationSettings) => {
+    setNotificationSettings(prev => {
+      const newSettings = { ...prev, [setting]: !prev[setting] };
+      
+      toast({
+        title: `${setting.charAt(0).toUpperCase() + setting.slice(1).replace(/([A-Z])/g, ' $1')}`,
+        description: `${newSettings[setting] ? 'Enabled' : 'Disabled'} successfully`,
+      });
+      
+      return newSettings;
+    });
+  };
+
   return (
     <Card className="w-full">
       <CardHeader>
@@ -67,10 +91,14 @@ export function EmailIntegrationCard() {
                     Email sent when action is assigned
                   </p>
                 </div>
-                <div className="flex h-5 items-center">
-                  <Button size="sm" variant="outline" className="h-7 px-2">
-                    Enabled
-                  </Button>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm">
+                    {notificationSettings.assignmentNotifications ? "Enabled" : "Disabled"}
+                  </span>
+                  <Switch 
+                    checked={notificationSettings.assignmentNotifications} 
+                    onCheckedChange={() => toggleNotification('assignmentNotifications')}
+                  />
                 </div>
               </div>
               
@@ -81,10 +109,14 @@ export function EmailIntegrationCard() {
                     Remind 3 days before due date
                   </p>
                 </div>
-                <div className="flex h-5 items-center">
-                  <Button size="sm" variant="outline" className="h-7 px-2">
-                    Enabled
-                  </Button>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm">
+                    {notificationSettings.dueDateReminders ? "Enabled" : "Disabled"}
+                  </span>
+                  <Switch 
+                    checked={notificationSettings.dueDateReminders} 
+                    onCheckedChange={() => toggleNotification('dueDateReminders')}
+                  />
                 </div>
               </div>
               
@@ -95,10 +127,14 @@ export function EmailIntegrationCard() {
                     Sent when action becomes overdue
                   </p>
                 </div>
-                <div className="flex h-5 items-center">
-                  <Button size="sm" variant="outline" className="h-7 px-2">
-                    Enabled
-                  </Button>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm">
+                    {notificationSettings.overdueAlerts ? "Enabled" : "Disabled"}
+                  </span>
+                  <Switch 
+                    checked={notificationSettings.overdueAlerts} 
+                    onCheckedChange={() => toggleNotification('overdueAlerts')}
+                  />
                 </div>
               </div>
               
@@ -109,10 +145,14 @@ export function EmailIntegrationCard() {
                     Summary of pending actions
                   </p>
                 </div>
-                <div className="flex h-5 items-center">
-                  <Button size="sm" variant="outline" className="h-7 px-2">
-                    Disabled
-                  </Button>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm">
+                    {notificationSettings.weeklyDigest ? "Enabled" : "Disabled"}
+                  </span>
+                  <Switch 
+                    checked={notificationSettings.weeklyDigest} 
+                    onCheckedChange={() => toggleNotification('weeklyDigest')}
+                  />
                 </div>
               </div>
             </div>
