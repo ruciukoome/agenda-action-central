@@ -7,11 +7,11 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/lib/auth";
 import { AuthGuard } from "@/components/AuthGuard";
 import { AuthUserWrapper } from "@/components/AuthUserWrapper";
-import { useState } from "react";
 import Index from "./pages/Index";
 import AddAction from "./pages/AddAction";
 import EditAction from "./pages/EditAction";
 import MyActions from "./pages/MyActions";
+import ManagedActions from "./pages/ManagedActions";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import { TestEmailNotification } from "@/components/TestEmailNotification";
@@ -57,6 +57,14 @@ const App = () => {
                         />
                       )}
                     </AuthUserWrapper>
+                  </AuthGuard>
+                } 
+              />
+              <Route 
+                path="/manage-actions" 
+                element={
+                  <AuthGuard>
+                    <ManagedActions />
                   </AuthGuard>
                 } 
               />
