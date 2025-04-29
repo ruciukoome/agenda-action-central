@@ -122,8 +122,7 @@ serve(async (req) => {
     // SendGrid API endpoint
     const sendgridUrl = "https://api.sendgrid.com/v3/mail/send";
     
-    // Format the email data for SendGrid - using a generic, non-personalized from address
-    // that doesn't need domain verification (no-reply address)
+    // Updated to use the specified sender email
     const emailPayload = {
       personalizations: [
         {
@@ -131,8 +130,8 @@ serve(async (req) => {
           subject: subject
         }
       ],
-      // Using a standard SendGrid verified sender
-      from: { email: "admin@actioncentral.app", name: "Action Central" },
+      // Using the user's email as requested
+      from: { email: "ruciukoome@gmail.com", name: "Action Central" },
       reply_to: { email: senderEmail },
       content: [
         {
