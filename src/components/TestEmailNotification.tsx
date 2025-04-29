@@ -53,10 +53,19 @@ export function TestEmailNotification() {
       const response = await sendActionNotification(testAction, "assigned");
       setResult(response);
       
-      toast({
-        title: "Test Email Sent",
-        description: `Notification sent to ${userEmail}`,
-      });
+      if (response?.error) {
+        setError(response.error);
+        toast({
+          title: "Test Failed",
+          description: response.error,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Test Email Sent",
+          description: `Notification sent to ${userEmail}`,
+        });
+      }
     } catch (error) {
       console.error("Test email error:", error);
       

@@ -1,13 +1,9 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { Resend } from "npm:resend@2.0.0";
 
 // Get the API key from environment variables
-const resendApiKey = Deno.env.get("RESEND_API_KEY") || "re_Km6YJ2wp_9Du59wWePYFNxuY9uKogQNw4";
-console.log("Edge function starting. API key present:", !!resendApiKey);
-
-// Initialize Resend with the API key
-const resend = new Resend(resendApiKey);
+const sendGridApiKey = Deno.env.get("SENDGRID_API_KEY");
+console.log("Edge function starting. SendGrid API key present:", !!sendGridApiKey);
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -70,7 +66,7 @@ serve(async (req) => {
     }
     
     console.log(`Preparing to send ${type} notification for action:`, action.id);
-    console.log("Using Resend API key:", resendApiKey ? "API key is set" : "API key is NOT set");
+    console.log("Using SendGrid API key:", sendGridApiKey ? "API key is set" : "API key is NOT set");
     
     // Get recipient email from the action
     const recipientEmail = action.owner_email || action.ownerEmail;
@@ -123,24 +119,71 @@ serve(async (req) => {
 
     console.log("Sending email from:", senderEmail, "to:", recipientEmail);
     
+    // SendGrid API endpoint
+    const sendgridUrl = "https://api.sendgrid.com/v3/mail/send";
+    
+    // Format the email data for SendGrid
+    const emailPayload = {
+      personalizations: [
+        {
+          to: [{ email: recipientEmail }],
+          subject: subject
+        }
+      ],
+      from: { email: "noreply@actioncentral.io", name: "Action Central" },
+      reply_to: { email: senderEmail },
+      content: [
+        {
+          type: "text/html",
+          value: content
+        }
+      ]
+    };
+
     try {
-      const emailResponse = await resend.emails.send({
-        from: `Action Central <onboarding@resend.dev>`, // Using a verified domain
-        to: recipientEmail,
-        subject,
-        html: content,
+      // Send the email using SendGrid's API
+      const sendgridResponse = await fetch(sendgridUrl, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${sendGridApiKey}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(emailPayload)
       });
       
-      console.log("Email sent successfully:", emailResponse);
-      return new Response(JSON.stringify(emailResponse), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      // Check if the email was sent successfully
+      if (!sendgridResponse.ok) {
+        const errorText = await sendgridResponse.text();
+        console.error("SendGrid API error:", sendgridResponse.status, errorText);
+        
+        return new Response(
+          JSON.stringify({ 
+            error: "Failed to send email through SendGrid API", 
+            details: errorText,
+            status: sendgridResponse.status
+          }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+      
+      console.log("Email sent successfully, SendGrid status:", sendgridResponse.status);
+      
+      // SendGrid returns 202 Accepted for successful email requests
+      return new Response(
+        JSON.stringify({ success: true, message: "Email sent successfully" }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
     } catch (emailError) {
-      console.error("Error from Resend API:", emailError);
+      console.error("Error from SendGrid API:", emailError);
       return new Response(
         JSON.stringify({ 
-          error: "Failed to send email through Resend API", 
+          error: "Failed to send email through SendGrid API", 
           details: emailError.message || String(emailError) 
         }),
         {

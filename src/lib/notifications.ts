@@ -16,7 +16,7 @@ export async function sendActionNotification(action: ActionItem, type: "assigned
         description: "You must be logged in to send notifications.",
         variant: "destructive"
       });
-      return;
+      return { error: "Authentication required" };
     }
     
     // Get the sender's email from the authenticated user
