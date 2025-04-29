@@ -19,7 +19,7 @@ import { fetchActions, deleteAction } from "@/lib/actions";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 import { formatDate } from "@/utils/emailUtils";
-import { Trash2, FileExport } from "lucide-react";
+import { Trash2, FileText } from "lucide-react";
 
 export default function ManagedActions() {
   const [actions, setActions] = useState<ActionItem[]>([]);
@@ -205,7 +205,7 @@ export default function ManagedActions() {
                 onClick={() => handleExportSelected()}
                 disabled={selectedActions.length === 0}
               >
-                <FileExport className="mr-2 h-4 w-4" />
+                <FileText className="mr-2 h-4 w-4" />
                 Export ({selectedActions.length})
               </Button>
               <Button 
