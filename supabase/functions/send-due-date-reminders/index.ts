@@ -1,4 +1,21 @@
 
+/**
+ * EDGE FUNCTION: DUE DATE REMINDERS
+ * -------------------------------
+ * This edge function sends reminder emails for actions due tomorrow
+ * Run on a schedule via pg_cron (see migrations/20250429000001_setup_cron.sql)
+ * 
+ * Functionality:
+ * - Queries the database for actions due tomorrow
+ * - Generates and sends reminder emails via SendGrid API
+ * - Logs results for debugging purposes
+ * 
+ * Environment variables:
+ * - SUPABASE_URL: URL of the Supabase project
+ * - SUPABASE_SERVICE_ROLE_KEY: Service role key for admin access
+ * - SENDGRID_API_KEY: API key for SendGrid email service
+ */
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 

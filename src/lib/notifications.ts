@@ -1,4 +1,13 @@
 
+/**
+ * NOTIFICATION SERVICE
+ * ------------------
+ * This file handles sending email notifications for actions:
+ * - Connects to the send-action-notification edge function
+ * - Formats and sends notification data
+ * - Displays toast messages for notification status
+ */
+
 import { supabase } from "@/integrations/supabase/client";
 import { ActionItem } from "@/types/action";
 import { mapActionItemToDatabaseAction } from "@/lib/mappers";

@@ -1,4 +1,15 @@
 
+/**
+ * ACTIONS MANAGEMENT PAGE
+ * ---------------------
+ * Provides interface for viewing, filtering, and managing actions
+ * 
+ * Backend connections:
+ * - Fetches actions from the database via fetchActions()
+ * - Handles deleting actions via deleteAction()
+ * - Sets up real-time subscription to action changes
+ */
+
 import { useState, useEffect, useCallback } from "react";
 import { Header } from "@/components/Header";
 import { ActionItem } from "@/types/action";

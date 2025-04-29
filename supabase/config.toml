@@ -1,4 +1,12 @@
 
+# DATABASE CONFIGURATION
+# --------------------
+# Supabase project configuration:
+# - Project ID: mdwrmfqjxakhpwmfyvft
+# - Connection details for the project
+# - Service settings like ports, storage limits, auth settings
+# - Edge function configuration
+
 # mdwrmfqjxakhpwmfyvft is the default Supabase project ID
 project_id = "mdwrmfqjxakhpwmfyvft"
 

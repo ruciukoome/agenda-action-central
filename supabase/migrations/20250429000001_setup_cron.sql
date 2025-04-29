@@ -1,4 +1,18 @@
 
+/**
+ * DATABASE SCHEDULED JOB
+ * --------------------
+ * This migration sets up a scheduled job using PostgreSQL's pg_cron extension
+ * 
+ * Purpose:
+ * - Creates a daily job that runs at midnight to check for actions due tomorrow
+ * - Calls the send-due-date-reminders edge function
+ * 
+ * Requirements:
+ * - pg_cron extension: For scheduling jobs
+ * - pg_net extension: For making HTTP requests from the database
+ */
+
 -- Enable pg_cron extension (a prerequisite for scheduling edge functions)
 create extension if not exists pg_cron with schema extensions;
 create extension if not exists pg_net with schema extensions;

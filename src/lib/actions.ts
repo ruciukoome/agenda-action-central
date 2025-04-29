@@ -1,9 +1,24 @@
-
 import { ActionItem } from "@/types/action";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 import { sendActionNotification } from "@/lib/notifications";
 
+/**
+ * BACKEND ACTIONS
+ * --------------
+ * This file contains the main database operations for action items:
+ * - fetchActions: Retrieves all actions from the database
+ * - createAction: Creates a new action and sends notification
+ * - updateAction: Updates an existing action
+ * - deleteAction: Removes an action from the database
+ * - subscribeToActions: Sets up real-time subscription to action changes
+ */
+
+/**
+ * Fetches all actions from the database
+ * Table: actions
+ * Returns mapped action items with proper TypeScript types
+ */
 export async function fetchActions() {
   const { data, error } = await supabase
     .from('actions')
@@ -27,6 +42,11 @@ export async function fetchActions() {
   })) as ActionItem[];
 }
 
+/**
+ * Creates a new action in the database
+ * Table: actions
+ * Also triggers email notification to the action owner
+ */
 export async function createAction(action: Omit<ActionItem, 'id' | 'createdAt' | 'updatedAt'>) {
   const { data: userData } = await supabase.auth.getUser();
   
@@ -107,6 +127,10 @@ export async function createAction(action: Omit<ActionItem, 'id' | 'createdAt' |
   return createdAction;
 }
 
+/**
+ * Updates an existing action in the database
+ * Table: actions
+ */
 export async function updateAction(action: ActionItem) {
   const { data: userData } = await supabase.auth.getUser();
   
@@ -148,6 +172,10 @@ export async function updateAction(action: ActionItem) {
   } as ActionItem;
 }
 
+/**
+ * Deletes an action from the database
+ * Table: actions
+ */
 export async function deleteAction(id: string) {
   const { error } = await supabase
     .from('actions')
@@ -160,6 +188,10 @@ export async function deleteAction(id: string) {
   }
 }
 
+/**
+ * Sets up real-time subscription to action changes in the database
+ * Uses Supabase's real-time capabilities
+ */
 export function subscribeToActions(callback: (action: ActionItem) => void) {
   const channel = supabase
     .channel('actions_changes')

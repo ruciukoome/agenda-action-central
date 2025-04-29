@@ -1,4 +1,14 @@
 
+/**
+ * TEST EMAIL NOTIFICATION COMPONENT
+ * -------------------------------
+ * Allows testing of the email notification system
+ * 
+ * Backend connections:
+ * - Calls sendActionNotification() to trigger test emails
+ * - Uses Supabase authentication to get current user
+ */
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';

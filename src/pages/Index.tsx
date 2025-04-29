@@ -1,4 +1,15 @@
 
+/**
+ * MAIN APPLICATION PAGE
+ * -------------------
+ * Displays the action dashboard and handles data loading
+ * 
+ * Backend connections:
+ * - Fetches actions from the database via fetchActions()
+ * - Sets up real-time subscription to action updates
+ * - Redirects to auth page if user is not authenticated
+ */
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ActionDashboard } from "@/components/ActionDashboard";

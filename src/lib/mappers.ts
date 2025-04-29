@@ -1,5 +1,10 @@
+/**
+ * DATA MAPPERS
+ * -----------
+ * This file contains utility functions to map between frontend and database models
+ * Helps translate between the ActionItem type used in the UI and the database schema
+ */
 
-// This file is kept for future database integration but functions are simplified
 import { ActionItem } from "@/types/action";
 
 export function mapDatabaseActionToActionItem(dbAction: any): ActionItem {

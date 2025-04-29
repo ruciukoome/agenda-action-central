@@ -1,4 +1,19 @@
 
+/**
+ * EDGE FUNCTION: ACTION NOTIFICATIONS
+ * ---------------------------------
+ * This edge function sends email notifications when actions are assigned or updated
+ * 
+ * Functionality:
+ * - Processes notification requests from the frontend
+ * - Connects to SendGrid API to deliver emails
+ * - Handles both "assigned" and "updated" notification types
+ * - Returns success/error responses to the caller
+ * 
+ * Environment variables:
+ * - SENDGRID_API_KEY: API key for SendGrid email service
+ */
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 // Get the API key from environment variables

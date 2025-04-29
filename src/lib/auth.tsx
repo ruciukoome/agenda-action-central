@@ -1,4 +1,15 @@
 
+/**
+ * AUTHENTICATION SERVICE
+ * ---------------------
+ * This file manages authentication state and operations:
+ * - User session management
+ * - Sign in, sign up, and sign out operations
+ * - Connects to Supabase Auth services
+ * 
+ * Uses the auth.users table in Supabase (managed by Supabase Auth)
+ */
+
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
