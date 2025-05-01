@@ -20,6 +20,8 @@ import { fetchActions } from "@/lib/actions";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { ChartPieIcon } from "lucide-react";
 
 export default function Index() {
   const navigate = useNavigate();
@@ -81,11 +83,27 @@ export default function Index() {
     navigate(`/edit/${action.id}`);
   };
   
+  const navigateToDashboard = () => {
+    navigate('/dashboard');
+  };
+  
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
       
       <main className="flex-1 container py-10">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-3xl font-bold tracking-tight">Action Items</h2>
+          <Button 
+            onClick={navigateToDashboard} 
+            variant="outline" 
+            className="flex items-center gap-2"
+          >
+            <ChartPieIcon className="h-4 w-4" />
+            View Dashboard
+          </Button>
+        </div>
+        
         <div className="grid gap-6 md:grid-cols-7">
           <div className="md:col-span-5">
             <ActionDashboard 
