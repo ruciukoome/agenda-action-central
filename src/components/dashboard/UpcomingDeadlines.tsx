@@ -119,7 +119,10 @@ export function UpcomingDeadlines({ actions, isLoading }: UpcomingDeadlinesProps
                       {action.dueDate ? format(parseISO(action.dueDate), 'MMM d, yyyy') : 'No date'}
                     </TableCell>
                     <TableCell>
-                      <ActionStatusBadge status={action.progressStatus} />
+                      <ActionStatusBadge 
+                        type="progress" 
+                        value={action.progressStatus} 
+                      />
                     </TableCell>
                   </TableRow>
                 ))
