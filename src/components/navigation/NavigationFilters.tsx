@@ -53,9 +53,9 @@ export function NavigationFilters() {
               ))}
             </ul>
           </li>
-          <li className="col-span-1">
+          <li className="col-span-2">
             <h2 className="mb-2 mt-1 text-lg font-semibold">Department</h2>
-            <ul className="space-y-1">
+            <ul className="space-y-1 grid grid-cols-2 gap-x-2">
               {departmentOptions.map((option) => (
                 <li key={option.value}>
                   <NavigationMenuLink asChild>
@@ -64,9 +64,6 @@ export function NavigationFilters() {
                       className="block select-none rounded-md p-3 leading-none outline-none focus:shadow-md hover:bg-accent hover:text-accent-foreground"
                     >
                       <div className="text-sm font-medium">{option.label}</div>
-                      <p className="text-sm leading-snug text-muted-foreground">
-                        View actions related to the {option.label.toLowerCase()} department.
-                      </p>
                     </a>
                   </NavigationMenuLink>
                 </li>

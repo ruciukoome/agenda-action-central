@@ -90,16 +90,24 @@ export type Database = {
     }
     Enums: {
       action_department:
-        | "Engineering"
-        | "Marketing"
-        | "Sales"
+        | "NTSA/KRA"
+        | "Biashara"
+        | "Agribusiness"
+        | "Business Development & Strategy"
         | "Finance"
-        | "HR"
+        | "ICT"
+        | "Credit"
+        | "Collections & Settlements"
         | "Operations"
-        | "Product"
-        | "Design"
-        | "Customer Success"
-        | "Other"
+        | "Sales Support & Data"
+        | "Call Centre"
+        | "Delinquency"
+        | "Legal"
+        | "RISK & COMPLIANCE"
+        | "HR & Admin"
+        | "Customer Experience & Marketing"
+        | "Asset Finance"
+        | "Checkoff & Personal Loans"
       action_priority: "high" | "medium" | "low"
       action_progress: "Not Started" | "25%" | "50%" | "75%" | "100%"
     }
@@ -218,16 +226,24 @@ export const Constants = {
   public: {
     Enums: {
       action_department: [
-        "Engineering",
-        "Marketing",
-        "Sales",
+        "NTSA/KRA",
+        "Biashara",
+        "Agribusiness",
+        "Business Development & Strategy",
         "Finance",
-        "HR",
+        "ICT",
+        "Credit",
+        "Collections & Settlements",
         "Operations",
-        "Product",
-        "Design",
-        "Customer Success",
-        "Other",
+        "Sales Support & Data",
+        "Call Centre",
+        "Delinquency",
+        "Legal",
+        "RISK & COMPLIANCE",
+        "HR & Admin",
+        "Customer Experience & Marketing",
+        "Asset Finance",
+        "Checkoff & Personal Loans",
       ],
       action_priority: ["high", "medium", "low"],
       action_progress: ["Not Started", "25%", "50%", "75%", "100%"],

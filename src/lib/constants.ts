@@ -14,14 +14,22 @@ export const progressStatusOptions = [
 ];
 
 export const departmentOptions = [
-  { value: "Engineering", label: "Engineering" },
-  { value: "Marketing", label: "Marketing" },
-  { value: "Sales", label: "Sales" },
+  { value: "NTSA/KRA", label: "NTSA/KRA" },
+  { value: "Biashara", label: "Biashara" },
+  { value: "Agribusiness", label: "Agribusiness" },
+  { value: "Business Development & Strategy", label: "Business Development & Strategy" },
   { value: "Finance", label: "Finance" },
-  { value: "HR", label: "HR" },
+  { value: "ICT", label: "ICT" },
+  { value: "Credit", label: "Credit" },
+  { value: "Collections & Settlements", label: "Collections & Settlements" },
   { value: "Operations", label: "Operations" },
-  { value: "Product", label: "Product" },
-  { value: "Design", label: "Design" },
-  { value: "Customer Success", label: "Customer Success" },
-  { value: "Other", label: "Other" },
+  { value: "Sales Support & Data", label: "Sales Support & Data" },
+  { value: "Call Centre", label: "Call Centre" },
+  { value: "Delinquency", label: "Delinquency" },
+  { value: "Legal", label: "Legal" },
+  { value: "RISK & COMPLIANCE", label: "RISK & COMPLIANCE" },
+  { value: "HR & Admin", label: "HR & Admin" },
+  { value: "Customer Experience & Marketing", label: "Customer Experience & Marketing" },
+  { value: "Asset Finance", label: "Asset Finance" },
+  { value: "Checkoff & Personal Loans", label: "Checkoff & Personal Loans" }
 ];
