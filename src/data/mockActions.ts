@@ -5,7 +5,7 @@ export const mockActions: ActionItem[] = [
   {
     id: "1",
     description: "Update security protocols for cloud infrastructure",
-    department: "Engineering",
+    department: "ICT",
     meetingDate: "2025-04-15T10:00:00Z",
     priority: "high",
     ownerEmail: "james.wilson@example.com",
@@ -19,7 +19,7 @@ export const mockActions: ActionItem[] = [
   {
     id: "2",
     description: "Prepare Q2 marketing campaign proposal",
-    department: "Marketing",
+    department: "Customer Experience & Marketing",
     meetingDate: "2025-04-10T14:00:00Z",
     priority: "medium",
     ownerEmail: "sarah.johnson@example.com",
@@ -47,7 +47,7 @@ export const mockActions: ActionItem[] = [
   {
     id: "4",
     description: "Update employee onboarding materials",
-    department: "HR",
+    department: "HR & Admin",
     meetingDate: "2025-04-12T13:00:00Z",
     priority: "low",
     ownerEmail: "jennifer.davis@example.com",
@@ -61,7 +61,7 @@ export const mockActions: ActionItem[] = [
   {
     id: "5",
     description: "Develop prototype for new mobile app feature",
-    department: "Product",
+    department: "Business Development & Strategy",
     meetingDate: "2025-04-18T11:00:00Z",
     priority: "high",
     ownerEmail: "david.miller@example.com",
@@ -89,7 +89,7 @@ export const mockActions: ActionItem[] = [
   {
     id: "7",
     description: "Redesign customer feedback form",
-    department: "Design",
+    department: "Customer Experience & Marketing",
     meetingDate: "2025-04-16T15:00:00Z",
     priority: "low",
     ownerEmail: "amanda.white@example.com",
@@ -103,16 +103,24 @@ export const mockActions: ActionItem[] = [
 ];
 
 export const getDepartments = (): Department[] => [
-  "Engineering", 
-  "Marketing", 
-  "Sales", 
+  "NTSA/KRA", 
+  "Biashara", 
+  "Agribusiness", 
+  "Business Development & Strategy", 
   "Finance", 
-  "HR", 
+  "ICT", 
+  "Credit", 
+  "Collections & Settlements",
   "Operations",
-  "Product",
-  "Design",
-  "Customer Success",
-  "Other"
+  "Sales Support & Data",
+  "Call Centre",
+  "Delinquency",
+  "Legal",
+  "RISK & COMPLIANCE",
+  "HR & Admin",
+  "Customer Experience & Marketing",
+  "Asset Finance",
+  "Checkoff & Personal Loans"
 ];
 
 export const getPriorities = (): Priority[] => ["high", "medium", "low"];
