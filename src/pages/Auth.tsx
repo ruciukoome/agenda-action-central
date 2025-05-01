@@ -12,6 +12,7 @@ export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { signIn, signUp, user, isLoading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -27,21 +28,31 @@ export default function Auth() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage(null);
     
     try {
+      console.log(`Attempting to ${isLogin ? 'sign in' : 'sign up'} with email: ${email}`);
+      
       if (isLogin) {
         await signIn(email, password);
+        console.log('Sign in successful');
       } else {
         await signUp(email, password);
+        console.log('Sign up successful');
         toast({
           title: "Check your email",
           description: "We've sent you a confirmation link to complete your signup.",
         });
       }
     } catch (error) {
+      console.error('Auth error:', error);
+      
+      const errorMsg = (error as Error).message;
+      setErrorMessage(errorMsg);
+      
       toast({
-        title: "Error",
-        description: (error as Error).message,
+        title: isLogin ? "Sign in failed" : "Sign up failed",
+        description: errorMsg,
         variant: "destructive",
       });
     }
@@ -60,6 +71,11 @@ export default function Auth() {
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
+            {errorMessage && (
+              <div className="p-3 text-sm text-white bg-destructive rounded-md">
+                {errorMessage}
+              </div>
+            )}
             <div className="space-y-2">
               <label className="text-sm font-medium" htmlFor="email">
                 Email

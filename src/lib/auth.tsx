@@ -58,16 +58,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     console.log('Attempting sign in for:', email);
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      
       if (error) {
         console.error('Sign in error:', error.message);
         setIsLoading(false);
         throw error;
       }
+      
+      console.log('Sign in successful:', data?.user?.email);
       navigate('/');
     } catch (error) {
+      console.error('Sign in exception:', error);
       setIsLoading(false);
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -75,15 +81,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     console.log('Attempting sign up for:', email);
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signUp({ email, password });
+      const { data, error } = await supabase.auth.signUp({ email, password });
+      
       if (error) {
         console.error('Sign up error:', error.message);
         setIsLoading(false);
         throw error;
       }
+      
+      console.log('Sign up result:', data);
+      // Don't navigate after signup as they might need to confirm email
     } catch (error) {
+      console.error('Sign up exception:', error);
       setIsLoading(false);
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -99,8 +112,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       navigate('/auth');
     } catch (error) {
+      console.error('Sign out exception:', error);
       setIsLoading(false);
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
