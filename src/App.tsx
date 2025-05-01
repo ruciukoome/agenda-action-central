@@ -12,6 +12,7 @@ import AddAction from "./pages/AddAction";
 import EditAction from "./pages/EditAction";
 import MyActions from "./pages/MyActions";
 import ManagedActions from "./pages/ManagedActions";
+import Dashboard from "./pages/Dashboard";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import { TestEmailNotification } from "@/components/TestEmailNotification";
@@ -29,6 +30,14 @@ const App = () => {
             <Routes>
               <Route path="/auth" element={<Auth />} />
               <Route path="/" element={<AuthGuard><Index /></AuthGuard>} />
+              <Route 
+                path="/dashboard" 
+                element={
+                  <AuthGuard>
+                    <Dashboard />
+                  </AuthGuard>
+                } 
+              />
               <Route 
                 path="/add" 
                 element={

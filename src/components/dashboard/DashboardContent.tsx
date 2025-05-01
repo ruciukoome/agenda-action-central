@@ -1,0 +1,48 @@
+
+import { useEffect, useState } from "react";
+import { NotesStatistics } from "./NotesStatistics";
+import { ActionCharts } from "./ActionCharts";
+import { UpcomingDeadlines } from "./UpcomingDeadlines";
+import { ActionItem } from "@/types/action";
+import { fetchActions } from "@/lib/actions";
+
+export function DashboardContent() {
+  const [actions, setActions] = useState<ActionItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadActions = async () => {
+      setIsLoading(true);
+      try {
+        const data = await fetchActions();
+        setActions(data);
+      } catch (error) {
+        console.error("Failed to fetch actions:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadActions();
+  }, []);
+
+  return (
+    <div className="space-y-8">
+      <h1 className="text-3xl font-bold tracking-tight mb-6">Dashboard</h1>
+
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="md:col-span-2 lg:col-span-1">
+          <NotesStatistics actions={actions} isLoading={isLoading} />
+        </div>
+
+        <div className="md:col-span-2">
+          <UpcomingDeadlines actions={actions} isLoading={isLoading} />
+        </div>
+      </div>
+
+      <div>
+        <ActionCharts actions={actions} isLoading={isLoading} />
+      </div>
+    </div>
+  );
+}
