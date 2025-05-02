@@ -132,12 +132,13 @@ serve(async (req) => {
       );
     }
 
-    console.log("Sending email from:", senderEmail, "to:", recipientEmail);
+    console.log("Sending email to:", recipientEmail);
+    console.log("Email subject:", subject);
     
     // SendGrid API endpoint
     const sendgridUrl = "https://api.sendgrid.com/v3/mail/send";
     
-    // Updated to use the specified sender email
+    // Using a more reliable sender configuration
     const emailPayload = {
       personalizations: [
         {
@@ -145,8 +146,8 @@ serve(async (req) => {
           subject: subject
         }
       ],
-      // Using the user's email as requested
-      from: { email: "ruciukoome@gmail.com", name: "Action Central" },
+      // Using SendGrid verified sender
+      from: { email: "notifications@actioncentral.app", name: "Action Central" },
       reply_to: { email: senderEmail },
       content: [
         {
@@ -156,8 +157,11 @@ serve(async (req) => {
       ]
     };
 
+    console.log("Email payload:", JSON.stringify(emailPayload));
+
     try {
       // Send the email using SendGrid's API
+      console.log("Making request to SendGrid API");
       const sendgridResponse = await fetch(sendgridUrl, {
         method: "POST",
         headers: {
