@@ -58,6 +58,16 @@ export default function ManagedActions() {
       return false;
     }
     
+    // Completion filter - Fix implementation
+    if (filters.completed !== "all") {
+      if (filters.completed === "yes" && !action.completed) {
+        return false;
+      }
+      if (filters.completed === "no" && action.completed) {
+        return false;
+      }
+    }
+    
     return true;
   });
 

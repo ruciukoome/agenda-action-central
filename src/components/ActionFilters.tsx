@@ -138,7 +138,7 @@ export function ActionFilters({ filters, onFilterChange }: ActionFiltersProps) {
               <SelectTrigger id="completed">
                 <SelectValue placeholder="Select completion status" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-white">
                 <SelectItem value="all">All Items</SelectItem>
                 <SelectItem value="yes">Completed</SelectItem>
                 <SelectItem value="no">Pending</SelectItem>
