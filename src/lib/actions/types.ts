@@ -1,5 +1,6 @@
 
 import { ActionItem } from "@/types/action";
+import { Database } from "@/integrations/supabase/types";
 
 /**
  * Database action representation
@@ -8,12 +9,12 @@ import { ActionItem } from "@/types/action";
 export interface DbAction {
   id: string;
   description: string;
-  department: string;
+  department: Database["public"]["Enums"]["action_department"];
   meeting_date: string;
-  priority: string;
+  priority: Database["public"]["Enums"]["action_priority"];
   owner_email: string;
   completed: boolean;
-  progress_status: string;
+  progress_status: Database["public"]["Enums"]["action_progress"];
   notes: string;
   created_at: string;
   updated_at: string;
@@ -28,12 +29,12 @@ export function mapDbActionToActionItem(action: DbAction): ActionItem {
   return {
     id: action.id,
     description: action.description,
-    department: action.department as any,
+    department: action.department,
     meetingDate: action.meeting_date,
-    priority: action.priority as any,
+    priority: action.priority,
     ownerEmail: action.owner_email,
     completed: action.completed,
-    progressStatus: action.progress_status as any,
+    progressStatus: action.progress_status,
     notes: action.notes || "",
     createdAt: action.created_at,
     updatedAt: action.updated_at,
@@ -44,7 +45,7 @@ export function mapDbActionToActionItem(action: DbAction): ActionItem {
 /**
  * Maps frontend ActionItem to database format
  */
-export function mapActionItemToDbAction(action: ActionItem, userId?: string): Partial<DbAction> {
+export function mapActionItemToDbAction(action: ActionItem, userId?: string): Omit<DbAction, "id" | "created_at" | "updated_at"> {
   return {
     description: action.description,
     department: action.department,

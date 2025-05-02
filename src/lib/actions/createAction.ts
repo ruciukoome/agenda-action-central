@@ -31,7 +31,7 @@ export async function createAction(action: Omit<ActionItem, 'id' | 'createdAt' |
 
   const { data, error } = await supabase
     .from('actions')
-    .insert([dbAction])
+    .insert(dbAction)  // Changed from [dbAction] to dbAction
     .select()
     .single();
 
