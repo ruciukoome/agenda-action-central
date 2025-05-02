@@ -10,7 +10,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { ActionItem } from "@/types/action";
-import { mapActionItemToDatabaseAction } from "@/lib/mappers";
 import { toast } from "@/components/ui/use-toast";
 
 export async function sendActionNotification(action: ActionItem, type: "assigned" | "updated") {
@@ -51,7 +50,7 @@ export async function sendActionNotification(action: ActionItem, type: "assigned
     // Prepare the payload that will be sent to the edge function
     const payload = {
       action: {
-        ...mapActionItemToDatabaseAction(action),
+        ...action,
         id: action.id,
         created_at: action.createdAt,
         updated_at: action.updatedAt,
