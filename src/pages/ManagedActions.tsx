@@ -20,13 +20,46 @@ import { ActionsTable } from "@/components/actions/ActionsTable";
 import { ActionsToolbar } from "@/components/actions/ActionsToolbar";
 import { useActionSelection } from "@/hooks/useActionSelection";
 import { useActionFiltering, ActionFilterTab } from "@/hooks/useActionFiltering";
+import { ActionFilters, Filters } from "@/components/ActionFilters";
 
 export default function ManagedActions() {
   const [actions, setActions] = useState<ActionItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [filters, setFilters] = useState<Filters>({
+    search: "",
+    priority: "all",
+    department: "all",
+    progress: "all",
+    completed: "all",
+  });
   
   const { activeTab, setActiveTab, filteredActions } = useActionFiltering(actions);
   const { selectedActions, handleSelectAction, handleSelectAll, clearSelection } = useActionSelection(filteredActions);
+
+  // Filter actions based on the detailed filters
+  const finalFilteredActions = filteredActions.filter((action) => {
+    // Search filter
+    if (filters.search && !action.description.toLowerCase().includes(filters.search.toLowerCase())) {
+      return false;
+    }
+    
+    // Priority filter
+    if (filters.priority !== "all" && action.priority !== filters.priority) {
+      return false;
+    }
+    
+    // Department filter
+    if (filters.department !== "all" && action.department !== filters.department) {
+      return false;
+    }
+    
+    // Progress filter
+    if (filters.progress !== "all" && action.progressStatus !== filters.progress) {
+      return false;
+    }
+    
+    return true;
+  });
 
   const loadActions = useCallback(async () => {
     setIsLoading(true);
@@ -107,7 +140,7 @@ export default function ManagedActions() {
     }
   };
 
-  const handleExportSelected = () => {
+  const handleExportSelected = (format: "csv" | "excel") => {
     if (selectedActions.length === 0) return;
     
     // Filter the selected actions from the full list
@@ -115,6 +148,14 @@ export default function ManagedActions() {
       selectedActions.includes(action.id)
     );
     
+    if (format === "csv") {
+      exportToCSV(actionsToExport);
+    } else {
+      exportToExcel(actionsToExport);
+    }
+  };
+
+  const exportToCSV = (actionsToExport: ActionItem[]) => {
     // Convert actions to CSV format
     const headers = "ID,Description,Department,Meeting Date,Priority,Owner Email,Completed,Progress Status,Notes,Created At,Due Date\n";
     const csvContent = actionsToExport.reduce((csv, action) => {
@@ -134,7 +175,33 @@ export default function ManagedActions() {
     
     toast({
       title: "Actions exported",
-      description: `Successfully exported ${actionsToExport.length} action${actionsToExport.length > 1 ? 's' : ''}.`,
+      description: `Successfully exported ${actionsToExport.length} action${actionsToExport.length > 1 ? 's' : ''} as CSV.`,
+    });
+  };
+
+  const exportToExcel = (actionsToExport: ActionItem[]) => {
+    // Convert actions to a format suitable for Excel
+    // For simplicity we're using CSV with .xlsx extension
+    // In a production app, you might want to use a library like xlsx for proper Excel files
+    const headers = "ID,Description,Department,Meeting Date,Priority,Owner Email,Completed,Progress Status,Notes,Created At,Due Date\n";
+    const csvContent = actionsToExport.reduce((csv, action) => {
+      return csv + `"${action.id}","${action.description.replace(/"/g, '""')}","${action.department}","${action.meetingDate}","${action.priority}","${action.ownerEmail}","${action.completed}","${action.progressStatus}","${action.notes?.replace(/"/g, '""') || ''}","${action.createdAt}","${action.dueDate || ''}"\n`;
+    }, headers);
+    
+    // Create and download the Excel file (really a CSV with .xlsx extension)
+    const blob = new Blob([csvContent], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `actions_export_${new Date().toISOString().slice(0,10)}.xlsx`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast({
+      title: "Actions exported",
+      description: `Successfully exported ${actionsToExport.length} action${actionsToExport.length > 1 ? 's' : ''} as Excel.`,
     });
   };
 
@@ -154,8 +221,10 @@ export default function ManagedActions() {
             onDelete={handleDeleteSelected}
           />
           
+          <ActionFilters filters={filters} onFilterChange={setFilters} />
+          
           <ActionsTable
-            actions={filteredActions}
+            actions={finalFilteredActions}
             isLoading={isLoading}
             selectedActions={selectedActions}
             onSelectAction={handleSelectAction}

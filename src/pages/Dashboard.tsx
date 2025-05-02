@@ -16,12 +16,12 @@ export default function Dashboard() {
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
           <Button 
-            onClick={() => navigate('/')} 
+            onClick={() => navigate('/manage-actions')} 
             variant="outline" 
             className="flex items-center gap-2"
           >
             <LayoutDashboard className="h-4 w-4" />
-            View Actions
+            Manage Actions
           </Button>
         </div>
         <DashboardContent />

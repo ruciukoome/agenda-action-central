@@ -1,13 +1,19 @@
 
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Trash2, FileText } from "lucide-react";
+import { Trash2, FileText, FileExcel, FileCsv } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface ActionsToolbarProps {
   activeTab: "all" | "completed" | "pending";
   onTabChange: (value: "all" | "completed" | "pending") => void;
   selectedCount: number;
-  onExport: () => void;
+  onExport: (format: "csv" | "excel") => void;
   onDelete: () => void;
 }
 
@@ -31,15 +37,29 @@ export function ActionsToolbar({
       </Tabs>
       
       <div className="flex items-center space-x-2">
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={onExport}
-          disabled={selectedCount === 0}
-        >
-          <FileText className="mr-2 h-4 w-4" />
-          Export ({selectedCount})
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button 
+              variant="outline" 
+              size="sm"
+              disabled={selectedCount === 0}
+            >
+              <FileText className="mr-2 h-4 w-4" />
+              Export ({selectedCount})
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem onClick={() => onExport("csv")}>
+              <FileCsv className="mr-2 h-4 w-4" />
+              CSV Format
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onExport("excel")}>
+              <FileExcel className="mr-2 h-4 w-4" />
+              Excel Format
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        
         <Button 
           variant="destructive" 
           size="sm"
