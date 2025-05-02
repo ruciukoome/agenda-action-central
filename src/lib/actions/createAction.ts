@@ -27,11 +27,12 @@ export async function createAction(action: Omit<ActionItem, 'id' | 'createdAt' |
     throw new Error('Owner email is required and must be valid');
   }
 
+  // We now ensure the userId is always defined
   const dbAction = mapActionItemToDbAction(action as ActionItem, userData.user.id);
 
   const { data, error } = await supabase
     .from('actions')
-    .insert(dbAction)  // Changed from [dbAction] to dbAction
+    .insert(dbAction)
     .select()
     .single();
 

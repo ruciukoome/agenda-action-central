@@ -14,11 +14,12 @@ export async function updateAction(action: ActionItem): Promise<ActionItem> {
     throw new Error('User not authenticated');
   }
 
-  const dbAction = mapActionItemToDbAction(action);
+  // We need to exclude user_id from the update to prevent overwriting it
+  const { user_id, ...dbActionWithoutUserId } = mapActionItemToDbAction(action, userData.user.id);
 
   const { data, error } = await supabase
     .from('actions')
-    .update(dbAction)
+    .update(dbActionWithoutUserId)
     .eq('id', action.id)
     .select()
     .single();

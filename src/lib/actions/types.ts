@@ -56,6 +56,6 @@ export function mapActionItemToDbAction(action: ActionItem, userId?: string): Om
     progress_status: action.progressStatus,
     notes: action.notes,
     due_date: action.dueDate,
-    ...(userId ? { user_id: userId } : {})
+    user_id: userId || '' // Ensuring user_id is always provided, using empty string as fallback
   };
 }
