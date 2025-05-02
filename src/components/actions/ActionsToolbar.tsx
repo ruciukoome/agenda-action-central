@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Trash2, FileText, FileExcel, FileCsv } from "lucide-react";
+import { Trash2, FileText, FileSpreadsheet, File } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -50,11 +50,11 @@ export function ActionsToolbar({
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             <DropdownMenuItem onClick={() => onExport("csv")}>
-              <FileCsv className="mr-2 h-4 w-4" />
+              <File className="mr-2 h-4 w-4" />
               CSV Format
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onExport("excel")}>
-              <FileExcel className="mr-2 h-4 w-4" />
+              <FileSpreadsheet className="mr-2 h-4 w-4" />
               Excel Format
             </DropdownMenuItem>
           </DropdownMenuContent>
