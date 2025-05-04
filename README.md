@@ -1,73 +1,142 @@
-# Welcome to your Lovable project
 
-## Project info
+# Action Central
 
-**URL**: https://lovable.dev/projects/ef25ae9f-2e88-4001-bda3-6f8571924790
+Action Central is a comprehensive action item tracking and management application designed to help teams track, manage, and follow up on action items from meetings and discussions.
 
-## How can I edit this code?
+## Project Overview
 
-There are several ways of editing your application.
+Action Central allows users to:
+- Create, update, and delete action items
+- Assign priorities and deadlines to actions
+- Track progress of actions through status updates
+- Filter and search actions by various criteria
+- View analytics and dashboards for action insights
+- Receive email notifications for action updates
 
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/ef25ae9f-2e88-4001-bda3-6f8571924790) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
+## Technology Stack
 
 This project is built with:
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+- **Frontend**:
+  - React 18 with TypeScript
+  - Vite for fast development and building
+  - Tailwind CSS for styling
+  - shadcn/ui for UI components
+  - React Router for navigation
+  - Tanstack Query for data fetching and state management
+  - Recharts for data visualization
 
-## How can I deploy this project?
+- **Backend** (Current: Supabase):
+  - Supabase for authentication, database, and storage
+  - Supabase Edge Functions for serverless operations
+  - PostgreSQL database with Row Level Security
 
-Simply open [Lovable](https://lovable.dev/projects/ef25ae9f-2e88-4001-bda3-6f8571924790) and click on Share -> Publish.
+## Development Setup
 
-## Can I connect a custom domain to my Lovable project?
+```sh
+# Step 1: Clone the repository
+git clone <YOUR_GIT_URL>
 
-Yes, you can!
+# Step 2: Navigate to the project directory
+cd action-central
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+# Step 3: Install dependencies
+npm i
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+# Step 4: Start the development server
+npm run dev
+```
+
+## MySQL Migration Guide
+
+Action Central was designed to support multiple database backends. The application currently uses Supabase (PostgreSQL), but includes an alternate MySQL implementation.
+
+### Prerequisites for MySQL Migration
+
+1. MySQL server (5.7+ or 8.0+ recommended)
+2. The following NPM packages:
+   - mysql2
+   - uuid
+   - bcryptjs
+
+### Migration Steps
+
+1. **Install Required Dependencies**:
+   ```sh
+   npm install mysql2 uuid bcryptjs
+   ```
+
+2. **Set Up MySQL Database**:
+   - Create a new MySQL database
+   - Import the schema from `src/integrations/mysql/schema.sql`
+
+3. **Configure Environment Variables**:
+   ```
+   MYSQL_HOST=your_mysql_host
+   MYSQL_USER=your_mysql_username
+   MYSQL_PASSWORD=your_mysql_password
+   MYSQL_DATABASE=action_central
+   ```
+
+4. **Update Imports in Your Components**:
+   ```typescript
+   // From
+   import { fetchActions } from '@/lib/actions';
+   
+   // To
+   import { fetchActions } from '@/lib/mysql-actions';
+   ```
+
+5. **Replace Authentication Provider**:
+   ```typescript
+   // In App.tsx or layout component
+   import { MySqlAuthProvider } from '@/lib/mysql-auth/auth-context';
+   
+   // Replace
+   <AuthProvider>
+     {/* app content */}
+   </AuthProvider>
+   
+   // With
+   <MySqlAuthProvider>
+     {/* app content */}
+   </MySqlAuthProvider>
+   ```
+
+6. **Update Auth Hooks**:
+   ```typescript
+   // From
+   import { useAuth } from '@/lib/auth';
+   
+   // To
+   import { useMySqlAuth } from '@/lib/mysql-auth/auth-context';
+   ```
+
+### Key Differences in MySQL Implementation
+
+- **Authentication**: Custom JWT-based authentication instead of Supabase Auth
+- **Security**: Application-level security instead of Row Level Security (RLS)
+- **Data Operations**: Direct SQL queries instead of Supabase client
+- **Real-time**: No built-in real-time capabilities (would need separate implementation)
+
+### Advanced MySQL Configuration
+
+For production use, consider:
+- Setting up connection pooling
+- Configuring proper indexes for performance
+- Setting up regular database backups
+- Implementing a caching layer
+
+## Deployment
+
+To deploy your Action Central app:
+1. Click on the Share -> Publish button in Lovable
+2. For custom domains, navigate to Project > Settings > Domains
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
