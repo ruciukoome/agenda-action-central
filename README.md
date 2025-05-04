@@ -127,6 +127,32 @@ For production use, consider:
 - Setting up regular database backups
 - Implementing a caching layer
 
+### Debugging MySQL Connection Issues
+
+To troubleshoot MySQL connection issues, use the enhanced logging and diagnostics:
+
+1. **Run Connection Test**:
+   ```typescript
+   import { testConnection } from '@/integrations/mysql/client';
+   
+   // In a component or utility function
+   const runDiagnostics = async () => {
+     const result = await testConnection();
+     console.log('MySQL diagnostics:', result);
+   };
+   ```
+
+2. **Check Logs for Query Performance**:
+   The enhanced client automatically logs query execution times and errors.
+   
+3. **Common MySQL Connection Issues**:
+   - Incorrect credentials
+   - Network/firewall restrictions
+   - MySQL server configuration 
+   - Authentication plugin compatibility
+
+For persistent issues, review the MySQL server logs alongside application logs.
+
 ## Deployment
 
 To deploy your Action Central app:
