@@ -145,8 +145,8 @@ serve(async (req) => {
           subject: subject
         }
       ],
-      // Using the user's email as requested
-      from: { email: "ruciukoome@gmail.com", name: "Action Central" },
+      // Using the new email address as requested
+      from: { email: "joseph.odhiambo@platinumcredit.co.ke", name: "Action Central" },
       reply_to: { email: senderEmail },
       content: [
         {
@@ -164,7 +164,22 @@ serve(async (req) => {
           "Authorization": `Bearer ${sendGridApiKey}`,
           "Content-Type": "application/json"
         },
-        body: JSON.stringify(emailPayload)
+        body: JSON.stringify({
+          personalizations: [
+            {
+              to: [{ email: recipientEmail }],
+              subject: subject
+            }
+          ],
+          // Updated email address here too
+          from: { email: "joseph.odhiambo@platinumcredit.co.ke", name: "Action Central" },
+          content: [
+            {
+              type: "text/html",
+              value: content
+            }
+          ]
+        })
       });
       
       let responseText = '';
