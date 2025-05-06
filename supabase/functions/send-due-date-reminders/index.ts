@@ -166,6 +166,8 @@ function generateDueDateReminderEmail(action: any): string {
           .priority-high { color: #e53e3e; font-weight: bold; }
           .priority-medium { color: #dd6b20; font-weight: bold; }
           .priority-low { color: #38a169; font-weight: bold; }
+          .button { background-color: #0070f3; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-block; margin-top: 15px; }
+          .unsubscribe { color: #999; font-size: 11px; }
         </style>
       </head>
       <body>
@@ -185,9 +187,13 @@ function generateDueDateReminderEmail(action: any): string {
             ${action.notes ? `<p><strong>Notes:</strong> ${action.notes}</p>` : ''}
             
             <p>Please log in to the Action Central system to update your progress or mark this item as complete.</p>
+            <a href="https://actioncentral.platinumcredit.co.ke" class="button">Access Action Central</a>
           </div>
           <div class="footer">
             <p>This is an automated message from the Action Central system. Please do not reply directly to this email.</p>
+            <p>Platinum Credit Limited</p>
+            <p>Send from a verified domain: <strong>platinumcredit.co.ke</strong></p>
+            <p class="unsubscribe">To manage your notification preferences, please log in to your Action Central account settings.</p>
           </div>
         </div>
       </body>
@@ -207,16 +213,36 @@ async function sendEmailWithSendGrid(to: string, subject: string, htmlContent: s
       personalizations: [
         {
           to: [{ email: to }],
-          subject: subject
+          subject: subject,
+          // Adding custom headers to improve deliverability
+          headers: {
+            "List-Unsubscribe": "<https://actioncentral.platinumcredit.co.ke/unsubscribe>",
+            "Precedence": "Bulk",
+            "X-Auto-Response-Suppress": "OOF, AutoReply"
+          }
         }
       ],
-      from: { email: "joseph.odhiambo@platinumcredit.co.ke", name: "Action Central" },
+      from: { 
+        email: "joseph.odhiambo@platinumcredit.co.ke", 
+        name: "Action Central" 
+      },
+      reply_to: {
+        email: "no-reply@platinumcredit.co.ke",
+        name: "Action Central"
+      },
       content: [
         {
           type: "text/html",
           value: htmlContent
         }
-      ]
+      ],
+      // Adding SendGrid tracking settings
+      tracking_settings: {
+        click_tracking: { enable: true },
+        open_tracking: { enable: true }
+      },
+      // Adding a category to help with tracking/analytics
+      categories: ["action_reminder"]
     })
   });
 

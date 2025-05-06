@@ -102,25 +102,10 @@ serve(async (req) => {
     
     if (type === "assigned") {
       subject = `New Action Item Assigned: ${action.description}`;
-      content = `
-        <h2>You've been assigned a new action item</h2>
-        <p><strong>Description:</strong> ${action.description}</p>
-        <p><strong>Department:</strong> ${action.department}</p>
-        <p><strong>Priority:</strong> ${action.priority}</p>
-        <p><strong>Due Date:</strong> ${action.due_date ? new Date(action.due_date).toLocaleDateString() : 'Not set'}</p>
-        <p><strong>Notes:</strong> ${action.notes || 'None'}</p>
-        <p>Please log in to the Action Central system to update your progress.</p>
-      `;
+      content = generateAssignedEmailContent(action);
     } else if (type === "updated") {
       subject = `Action Item Updated: ${action.description}`;
-      content = `
-        <h2>An action item has been updated</h2>
-        <p><strong>Description:</strong> ${action.description}</p>
-        <p><strong>Progress:</strong> ${action.progress_status}</p>
-        <p><strong>Status:</strong> ${action.completed ? 'Completed' : 'In Progress'}</p>
-        <p><strong>Notes:</strong> ${action.notes || 'None'}</p>
-        <p>Please log in to the Action Central system to view the latest updates.</p>
-      `;
+      content = generateUpdatedEmailContent(action);
     } else {
       console.error(`Invalid notification type: ${type}`);
       return new Response(
@@ -137,25 +122,6 @@ serve(async (req) => {
     // SendGrid API endpoint
     const sendgridUrl = "https://api.sendgrid.com/v3/mail/send";
     
-    // Updated to use the specified sender email
-    const emailPayload = {
-      personalizations: [
-        {
-          to: [{ email: recipientEmail }],
-          subject: subject
-        }
-      ],
-      // Using the new email address as requested
-      from: { email: "joseph.odhiambo@platinumcredit.co.ke", name: "Action Central" },
-      reply_to: { email: senderEmail },
-      content: [
-        {
-          type: "text/html",
-          value: content
-        }
-      ]
-    };
-
     try {
       // Send the email using SendGrid's API
       const sendgridResponse = await fetch(sendgridUrl, {
@@ -168,17 +134,36 @@ serve(async (req) => {
           personalizations: [
             {
               to: [{ email: recipientEmail }],
-              subject: subject
+              subject: subject,
+              // Adding custom headers to improve deliverability
+              headers: {
+                "List-Unsubscribe": "<https://actioncentral.platinumcredit.co.ke/unsubscribe>",
+                "Precedence": "Bulk",
+                "X-Auto-Response-Suppress": "OOF, AutoReply"
+              }
             }
           ],
-          // Updated email address here too
-          from: { email: "joseph.odhiambo@platinumcredit.co.ke", name: "Action Central" },
+          from: { 
+            email: "joseph.odhiambo@platinumcredit.co.ke", 
+            name: "Action Central" 
+          },
+          reply_to: {
+            email: "no-reply@platinumcredit.co.ke",
+            name: "Action Central"
+          },
           content: [
             {
               type: "text/html",
               value: content
             }
-          ]
+          ],
+          // Adding SendGrid tracking settings
+          tracking_settings: {
+            click_tracking: { enable: true },
+            open_tracking: { enable: true }
+          },
+          // Adding a category to help with tracking/analytics
+          categories: [type === "assigned" ? "action_assigned" : "action_updated"]
         })
       });
       
@@ -244,3 +229,102 @@ serve(async (req) => {
     );
   }
 });
+
+// Function to generate HTML email content for assigned actions
+function generateAssignedEmailContent(action: any): string {
+  const dueDate = action.due_date ? new Date(action.due_date).toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  }) : 'Not set';
+
+  return `
+    <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background-color: #f8f9fa; padding: 15px; border-bottom: 3px solid #0070f3; }
+          .content { padding: 20px 0; }
+          .footer { font-size: 12px; color: #666; border-top: 1px solid #eee; padding-top: 15px; }
+          .priority-high { color: #e53e3e; font-weight: bold; }
+          .priority-medium { color: #dd6b20; font-weight: bold; }
+          .priority-low { color: #38a169; font-weight: bold; }
+          .button { background-color: #0070f3; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-block; margin-top: 15px; }
+          .unsubscribe { color: #999; font-size: 11px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h2>New Action Item Assigned</h2>
+          </div>
+          <div class="content">
+            <p>Hello,</p>
+            <p>You've been assigned a new action item in Action Central.</p>
+            
+            <h3>${action.description}</h3>
+            <p><strong>Department:</strong> ${action.department}</p>
+            <p><strong>Priority:</strong> <span class="priority-${action.priority}">${action.priority}</span></p>
+            <p><strong>Due Date:</strong> ${dueDate}</p>
+            <p><strong>Notes:</strong> ${action.notes || 'None'}</p>
+            
+            <p>Please log in to the Action Central system to update your progress.</p>
+            <a href="https://actioncentral.platinumcredit.co.ke" class="button">Access Action Central</a>
+          </div>
+          <div class="footer">
+            <p>This is an automated message from the Action Central system. Please do not reply directly to this email.</p>
+            <p>Platinum Credit Limited</p>
+            <p>Send from a verified domain: <strong>platinumcredit.co.ke</strong></p>
+            <p class="unsubscribe">To manage your notification preferences, please log in to your Action Central account settings.</p>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+}
+
+// Function to generate HTML email content for updated actions
+function generateUpdatedEmailContent(action: any): string {
+  return `
+    <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background-color: #f8f9fa; padding: 15px; border-bottom: 3px solid #0070f3; }
+          .content { padding: 20px 0; }
+          .footer { font-size: 12px; color: #666; border-top: 1px solid #eee; padding-top: 15px; }
+          .button { background-color: #0070f3; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-block; margin-top: 15px; }
+          .unsubscribe { color: #999; font-size: 11px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h2>Action Item Updated</h2>
+          </div>
+          <div class="content">
+            <p>Hello,</p>
+            <p>An action item assigned to you has been updated in Action Central.</p>
+            
+            <h3>${action.description}</h3>
+            <p><strong>Progress:</strong> ${action.progress_status}</p>
+            <p><strong>Status:</strong> ${action.completed ? 'Completed' : 'In Progress'}</p>
+            <p><strong>Notes:</strong> ${action.notes || 'None'}</p>
+            
+            <p>Please log in to the Action Central system to view the latest updates.</p>
+            <a href="https://actioncentral.platinumcredit.co.ke" class="button">Access Action Central</a>
+          </div>
+          <div class="footer">
+            <p>This is an automated message from the Action Central system. Please do not reply directly to this email.</p>
+            <p>Platinum Credit Limited</p>
+            <p>Send from a verified domain: <strong>platinumcredit.co.ke</strong></p>
+            <p class="unsubscribe">To manage your notification preferences, please log in to your Action Central account settings.</p>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+}
