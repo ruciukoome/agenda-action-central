@@ -210,7 +210,7 @@ async function sendEmailWithSendGrid(to: string, subject: string, htmlContent: s
           subject: subject
         }
       ],
-      from: { email: "ruciukoome@gmail.com", name: "Action Central" },
+      from: { email: "joseph.odhiambo@platinumcredit.co.ke", name: "Action Central" },
       content: [
         {
           type: "text/html",
