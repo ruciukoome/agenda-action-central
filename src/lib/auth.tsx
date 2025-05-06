@@ -14,6 +14,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 
 interface AuthContextType {
   user: User | null;
@@ -31,6 +32,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -63,6 +65,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error) {
         console.error('Sign in error:', error.message);
         setIsLoading(false);
+        
+        // Show toast notification for email provider disabled error
+        if (error.message.includes('Email logins are disabled')) {
+          toast({
+            title: "Email Authentication Disabled",
+            description: "Email login is disabled in Supabase settings. Please enable it in your Supabase dashboard.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Sign In Failed",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
+        
         throw error;
       }
       
@@ -86,10 +104,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error) {
         console.error('Sign up error:', error.message);
         setIsLoading(false);
+        
+        // Show toast notification for email provider disabled error
+        if (error.message.includes('Email signups are disabled')) {
+          toast({
+            title: "Email Signups Disabled",
+            description: "Email signups are disabled in Supabase settings. Please enable them in your Supabase dashboard.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Sign Up Failed",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
+        
         throw error;
       }
       
       console.log('Sign up result:', data);
+      
+      // Show success message with clear next steps
+      toast({
+        title: "Sign Up Successful",
+        description: data.user?.identities?.length === 0 
+          ? "Your account has been created. Please check your email to confirm your registration."
+          : "Your account has been created successfully.",
+      });
+      
       // Don't navigate after signup as they might need to confirm email
     } catch (error) {
       console.error('Sign up exception:', error);
@@ -108,6 +151,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error) {
         console.error('Sign out error:', error.message);
         setIsLoading(false);
+        
+        toast({
+          title: "Sign Out Failed",
+          description: error.message,
+          variant: "destructive",
+        });
+        
         throw error;
       }
       navigate('/auth');

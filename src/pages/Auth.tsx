@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertTriangle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -39,10 +40,6 @@ export default function Auth() {
       } else {
         await signUp(email, password);
         console.log('Sign up successful');
-        toast({
-          title: "Check your email",
-          description: "We've sent you a confirmation link to complete your signup.",
-        });
       }
     } catch (error) {
       console.error('Auth error:', error);
@@ -50,13 +47,14 @@ export default function Auth() {
       const errorMsg = (error as Error).message;
       setErrorMessage(errorMsg);
       
-      toast({
-        title: isLogin ? "Sign in failed" : "Sign up failed",
-        description: errorMsg,
-        variant: "destructive",
-      });
+      // Toast notification handled in auth.tsx
     }
   };
+
+  // Check for known email provider errors
+  const isEmailProviderDisabled = 
+    errorMessage?.includes("Email logins are disabled") || 
+    errorMessage?.includes("Email signups are disabled");
 
   return (
     <div className="container max-w-md py-10">
@@ -76,6 +74,17 @@ export default function Auth() {
                 {errorMessage}
               </div>
             )}
+            
+            {isEmailProviderDisabled && (
+              <Alert variant="warning" className="bg-yellow-50 border-yellow-200">
+                <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                <AlertDescription className="text-yellow-700">
+                  Email authentication is currently disabled in Supabase settings. 
+                  Please enable it in your Supabase dashboard under Authentication → Providers → Email.
+                </AlertDescription>
+              </Alert>
+            )}
+            
             <div className="space-y-2">
               <label className="text-sm font-medium" htmlFor="email">
                 Email
@@ -106,7 +115,7 @@ export default function Auth() {
             </div>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button type="submit" className="w-full" disabled={isLoading || isEmailProviderDisabled}>
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
