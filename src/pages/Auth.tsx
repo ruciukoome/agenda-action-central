@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Loader2, AlertTriangle } from 'lucide-react';
+import { Loader2, AlertTriangle, UserPlus, LogIn } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function Auth() {
@@ -18,6 +18,14 @@ export default function Auth() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // Check if URL has a signup parameter
+  useEffect(() => {
+    const queryParams = new URLSearchParams(location.search);
+    if (queryParams.get('mode') === 'signup') {
+      setIsLogin(false);
+    }
+  }, [location]);
   
   // Redirect if user is already logged in
   useEffect(() => {
@@ -76,7 +84,7 @@ export default function Auth() {
             )}
             
             {isEmailProviderDisabled && (
-              <Alert variant="warning" className="bg-yellow-50 border-yellow-200">
+              <Alert variant="default" className="bg-yellow-50 border-yellow-200">
                 <AlertTriangle className="h-4 w-4 text-yellow-600" />
                 <AlertDescription className="text-yellow-700">
                   Email authentication is currently disabled in Supabase settings. 
@@ -122,20 +130,36 @@ export default function Auth() {
                   {isLogin ? 'Signing in...' : 'Signing up...'}
                 </>
               ) : (
-                isLogin ? 'Sign In' : 'Sign Up'
+                <>
+                  {isLogin ? <LogIn className="mr-2 h-4 w-4" /> : <UserPlus className="mr-2 h-4 w-4" />}
+                  {isLogin ? 'Sign In' : 'Sign Up'}
+                </>
               )}
             </Button>
-            <Button
-              type="button"
-              variant="link"
-              className="w-full"
-              onClick={() => setIsLogin(!isLogin)}
-              disabled={isLoading}
-            >
+            
+            {/* Hidden span with a keyboard accessible way to switch modes */}
+            <span className="sr-only">
+              <Button
+                type="button"
+                variant="link"
+                className="w-full"
+                onClick={() => setIsLogin(!isLogin)}
+                disabled={isLoading}
+                tabIndex={0}
+                aria-label={isLogin ? "Switch to sign up" : "Switch to sign in"}
+              >
+                {isLogin 
+                  ? "Don't have an account? Sign up" 
+                  : "Already have an account? Sign in"}
+              </Button>
+            </span>
+            
+            {/* Dev note - accessible through URL parameter ?mode=signup */}
+            <div className="text-xs text-center text-muted-foreground mt-4">
               {isLogin 
-                ? "Don't have an account? Sign up" 
-                : "Already have an account? Sign in"}
-            </Button>
+                ? "Press Alt+S to access signup" 
+                : "Press Alt+L to access login"}
+            </div>
           </CardFooter>
         </form>
       </Card>
