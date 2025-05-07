@@ -1,5 +1,5 @@
 
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
 import './App.css';
 import { Toaster } from 'sonner';
 import Index from './pages/Index';
@@ -22,7 +22,7 @@ function App() {
   };
   
   return (
-    <Router>
+    <>
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/auth" element={<Auth />} />
@@ -35,7 +35,7 @@ function App() {
         <Route path="*" element={<NotFound />} />
       </Routes>
       <Toaster />
-    </Router>
+    </>
   );
 }
 
