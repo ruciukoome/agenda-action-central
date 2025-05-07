@@ -29,6 +29,7 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/managed-actions" element={<ManagedActions />} />
         <Route path="/add-action" element={<AddAction />} />
+        <Route path="/add" element={<AddAction />} /> {/* Add this route to match "/add" */}
         <Route path="/edit-action/:id" element={<EditAction />} />
         <Route path="/my-actions" element={<MyActions userEmail={mockUserEmail} onEditAction={handleEditAction} />} />
         <Route path="/database-setup" element={<DatabaseSetup />} />

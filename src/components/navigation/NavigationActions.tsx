@@ -64,7 +64,7 @@ export function NavigationActions() {
           </li>
           <li>
             <NavigationMenuLink asChild>
-              <Link to="/add" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none focus:shadow-md hover:bg-accent hover:text-accent-foreground">
+              <Link to="/add-action" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none focus:shadow-md hover:bg-accent hover:text-accent-foreground">
                 <div className="text-sm font-medium">Add Action</div>
                 <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
                   Create a new action item.
@@ -74,7 +74,7 @@ export function NavigationActions() {
           </li>
           <li>
             <NavigationMenuLink asChild>
-              <Link to="/manage-actions" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none focus:shadow-md hover:bg-accent hover:text-accent-foreground">
+              <Link to="/managed-actions" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none focus:shadow-md hover:bg-accent hover:text-accent-foreground">
                 <div className="text-sm font-medium">Manage Actions</div>
                 <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
                   Delete or export selected actions in tabular format.

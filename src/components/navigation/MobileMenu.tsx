@@ -34,6 +34,11 @@ export function MobileMenu({ isOpen, onClose, onSignOut }: MobileMenuProps) {
             </Link>
           </li>
           <li>
+            <Link to="/add-action" className="block px-4 py-2 rounded hover:bg-accent hover:text-accent-foreground" onClick={onClose}>
+              Add Action
+            </Link>
+          </li>
+          <li>
             <Link to="/managed-actions" className="block px-4 py-2 rounded hover:bg-accent hover:text-accent-foreground" onClick={onClose}>
               Actions
             </Link>

@@ -5,7 +5,7 @@ import { executeQuery } from "@/integrations/postgres/client";
 import { DbAction } from "@/integrations/postgres/types";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Loader2, Database } from "lucide-react";
 
 /**
  * DATA MIGRATION UTILITY
@@ -67,7 +67,17 @@ async function insertActionsIntoPostgres(actions: DbAction[]): Promise<number> {
         ) VALUES (
           $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
         )
-        ON CONFLICT (id) DO NOTHING
+        ON CONFLICT (id) DO UPDATE SET
+          description = $2,
+          department = $3,
+          meeting_date = $4,
+          priority = $5,
+          owner_email = $6,
+          completed = $7,
+          progress_status = $8,
+          notes = $9,
+          updated_at = $11,
+          due_date = $12
       `;
       
       const params = [
@@ -87,9 +97,8 @@ async function insertActionsIntoPostgres(actions: DbAction[]): Promise<number> {
       ];
       
       const result = await executeQuery(query, params);
-      if ((result as any).rowCount > 0) {
-        insertedCount++;
-      }
+      insertedCount++;
+      console.log(`Migrated action ${action.id} successfully`);
     } catch (err) {
       console.error(`Failed to insert action ${action.id}:`, err);
       // Continue with the next action instead of failing the entire migration
@@ -143,7 +152,9 @@ export function MigrationButton() {
           <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Migrating Data...
         </>
       ) : (
-        "Migrate Supabase Data to PostgreSQL"
+        <>
+          <Database className="mr-2 h-4 w-4" /> Migrate Supabase Data to PostgreSQL
+        </>
       )}
     </Button>
   );
