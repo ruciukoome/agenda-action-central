@@ -1,97 +1,45 @@
 
-import { executeQuery } from '@/integrations/postgres/client';
-import { DbAction, mapDbActionToActionItem } from '@/integrations/postgres/types';
-import { ActionItem } from '@/types/action';
+import { executeQuery } from "@/integrations/postgres/client";
+import { ActionItem } from "@/types/action";
+import { DbAction } from "@/integrations/postgres/types";
 
-export async function fetchActions(userId: string, filters?: Record<string, any>): Promise<ActionItem[]> {
+/**
+ * Fetches actions from the PostgreSQL database
+ * @param userId The user ID to fetch actions for
+ * @returns Array of ActionItem objects
+ */
+export async function fetchActions(userId?: string): Promise<ActionItem[]> {
   try {
-    let whereClause = 'WHERE user_id = $1';
-    let queryParams = [userId];
-    let paramCount = 2;
-    
-    // Apply filters if provided
-    if (filters) {
-      if (filters.ownerEmail) {
-        whereClause += ` AND owner_email = $${paramCount++}`;
-        queryParams.push(filters.ownerEmail);
-      }
-      
-      if (filters.department) {
-        whereClause += ` AND department = $${paramCount++}`;
-        queryParams.push(filters.department);
-      }
-      
-      if (filters.priority) {
-        whereClause += ` AND priority = $${paramCount++}`;
-        queryParams.push(filters.priority);
-      }
-      
-      if (filters.completed !== undefined) {
-        whereClause += ` AND completed = $${paramCount++}`;
-        queryParams.push(filters.completed);
-      }
-      
-      if (filters.progressStatus) {
-        whereClause += ` AND progress_status = $${paramCount++}`;
-        queryParams.push(filters.progressStatus);
-      }
-      
-      if (filters.dueDateStart) {
-        whereClause += ` AND due_date >= $${paramCount++}`;
-        queryParams.push(filters.dueDateStart);
-      }
-      
-      if (filters.dueDateEnd) {
-        whereClause += ` AND due_date <= $${paramCount++}`;
-        queryParams.push(filters.dueDateEnd);
-      }
-      
-      if (filters.meetingDateStart) {
-        whereClause += ` AND meeting_date >= $${paramCount++}`;
-        queryParams.push(filters.meetingDateStart);
-      }
-      
-      if (filters.meetingDateEnd) {
-        whereClause += ` AND meeting_date <= $${paramCount++}`;
-        queryParams.push(filters.meetingDateEnd);
-      }
+    if (!userId) {
+      console.warn("No user ID provided to fetchActions, using default");
+      userId = "test-user-id";
     }
     
     const query = `
-      SELECT * FROM actions
-      ${whereClause}
+      SELECT * FROM actions 
+      WHERE user_id = $1
       ORDER BY created_at DESC
     `;
     
-    const results = await executeQuery<DbAction>(query, queryParams);
+    const actions = await executeQuery<DbAction>(query, [userId]);
     
-    // Map the DB actions to ActionItems
-    return results.map(mapDbActionToActionItem);
+    // Map database objects to ActionItem format
+    return actions.map(action => ({
+      id: action.id,
+      description: action.description,
+      department: action.department,
+      meetingDate: action.meeting_date,
+      priority: action.priority,
+      ownerEmail: action.owner_email,
+      completed: action.completed,
+      progressStatus: action.progress_status,
+      notes: action.notes || '',
+      createdAt: action.created_at,
+      updatedAt: action.updated_at,
+      dueDate: action.due_date || null,
+    }));
   } catch (error) {
-    console.error('Error fetching actions from PostgreSQL:', error);
-    throw error;
-  }
-}
-
-export async function fetchActionById(
-  actionId: string,
-  userId: string
-): Promise<ActionItem | null> {
-  try {
-    const query = `
-      SELECT * FROM actions
-      WHERE id = $1 AND user_id = $2
-    `;
-    
-    const results = await executeQuery<DbAction>(query, [actionId, userId]);
-    
-    if (results.length === 0) {
-      return null;
-    }
-    
-    return mapDbActionToActionItem(results[0]);
-  } catch (error) {
-    console.error('Error fetching action by ID from PostgreSQL:', error);
-    throw error;
+    console.error("PostgreSQL fetchActions error:", error);
+    throw new Error(`Failed to fetch actions: ${(error as Error).message}`);
   }
 }

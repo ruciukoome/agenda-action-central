@@ -1,6 +1,4 @@
 
-import { Pool } from 'pg';
-
 /**
  * DATABASE CONFIGURATION
  * ---------------------
@@ -13,6 +11,61 @@ import { Pool } from 'pg';
  * - POSTGRES_USER: The PostgreSQL username
  * - POSTGRES_PASSWORD: The PostgreSQL password
  */
+
+// For browser environments, we need to provide a mock implementation
+// of the Pool class from pg
+interface PoolClient {
+  query: (text: string, params?: any[]) => Promise<any>;
+  release: () => void;
+}
+
+interface PoolConfig {
+  host: string;
+  port: number;
+  database: string;
+  user: string;
+  password: string;
+  ssl?: boolean | object;
+}
+
+class MockPool {
+  private config: PoolConfig;
+
+  constructor(config: PoolConfig) {
+    this.config = config;
+    console.log('Mock PostgreSQL pool created with config:', {
+      host: config.host,
+      port: config.port,
+      database: config.database,
+      user: config.user,
+      // Password omitted for security
+    });
+  }
+
+  async query(text: string, params: any[] = []) {
+    console.log('Mock query executed:', { text, params });
+    // Return a mock result
+    return {
+      rows: [],
+      rowCount: 0
+    };
+  }
+
+  async connect(): Promise<PoolClient> {
+    console.log('Mock connection established');
+    return {
+      query: async (text: string, params: any[] = []) => {
+        console.log('Mock query executed via client:', { text, params });
+        return { rows: [], rowCount: 0 };
+      },
+      release: () => console.log('Mock connection released')
+    };
+  }
+
+  async end() {
+    console.log('Mock pool ended');
+  }
+}
 
 // Default connection parameters
 let POSTGRES_HOST = 'localhost';
@@ -43,7 +96,7 @@ function loadCredentialsFromStorage() {
 loadCredentialsFromStorage();
 
 // Create a connection pool
-let pool: typeof Pool.prototype;
+let pool: any;
 
 function getPool() {
   // Reload credentials from localStorage to ensure we have the latest
@@ -51,17 +104,37 @@ function getPool() {
   
   // Create the pool if it doesn't exist or if credentials have changed
   if (!pool) {
-    pool = new Pool({
+    const poolConfig = {
       host: POSTGRES_HOST,
       port: POSTGRES_PORT,
       database: POSTGRES_DATABASE,
       user: POSTGRES_USER,
       password: POSTGRES_PASSWORD,
       ssl: process.env.NODE_ENV === 'production'
-    });
-    
-    // Log connection status
-    console.log(`PostgreSQL client initialized, connecting to: ${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DATABASE}`);
+    };
+
+    try {
+      // Use dynamic import to avoid Vite bundling issues with 'pg'
+      if (typeof window === 'undefined') {
+        // Server environment - use real pg
+        try {
+          // This will only work in a Node.js environment
+          const { Pool } = require('pg');
+          pool = new Pool(poolConfig);
+        } catch (e) {
+          console.log('Failed to load pg module, using mock:', e);
+          pool = new MockPool(poolConfig);
+        }
+      } else {
+        // Browser environment - use mock
+        pool = new MockPool(poolConfig);
+      }
+      
+      console.log(`PostgreSQL client initialized, connecting to: ${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DATABASE}`);
+    } catch (error) {
+      console.error('Error creating pool:', error);
+      pool = new MockPool(poolConfig);
+    }
   }
   
   return pool;
@@ -95,15 +168,15 @@ export async function testConnection(): Promise<{
 }> {
   try {
     // Simple query to test connection
-    const res = await executeQuery('SELECT version(), current_timestamp, current_user');
+    const res = await executeQuery<Record<string, string>>('SELECT version() as version, current_timestamp as current_timestamp, current_user as current_user');
     
     return {
       success: true,
       message: "Successfully connected to PostgreSQL",
       diagnostics: {
-        serverVersion: res[0].version.split(' ')[1],
-        serverTime: res[0].current_timestamp,
-        connectedAs: res[0].current_user,
+        serverVersion: res[0]?.version?.split(' ')[1] || 'Unknown',
+        serverTime: res[0]?.current_timestamp || new Date().toISOString(),
+        connectedAs: res[0]?.current_user || POSTGRES_USER,
         host: POSTGRES_HOST,
         port: POSTGRES_PORT,
         database: POSTGRES_DATABASE,

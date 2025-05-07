@@ -14,7 +14,9 @@ export function DashboardContent() {
     const loadActions = async () => {
       setIsLoading(true);
       try {
-        const data = await fetchActions();
+        // Pass a user ID for PostgreSQL - in a real app, get this from auth context
+        const userId = localStorage.getItem("USER_ID") || "test-user-id";
+        const data = await fetchActions(userId);
         setActions(data);
       } catch (error) {
         console.error("Failed to fetch actions:", error);
