@@ -1,4 +1,3 @@
-
 import { Pool } from 'pg';
 
 /**
@@ -43,7 +42,8 @@ function loadCredentialsFromStorage() {
 loadCredentialsFromStorage();
 
 // Create a connection pool
-let pool: Pool | null = null;
+// Fix: Using the correct type annotation for Pool
+let pool: typeof Pool.prototype | null = null;
 
 function getPool() {
   // Reload credentials from localStorage to ensure we have the latest
