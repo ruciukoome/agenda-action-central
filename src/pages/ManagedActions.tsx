@@ -15,6 +15,7 @@ import { fetchActions } from "@/lib/postgres-actions";
 import { toast } from "@/components/ui/use-toast";
 import { ManagedActionsContent } from "@/components/actions/ManagedActionsContent";
 import { useAuth } from "@/lib/auth";
+import { DatabaseEnvironmentWarning } from "@/components/DatabaseEnvironmentWarning";
 
 export default function ManagedActions() {
   const [actions, setActions] = useState([]);
@@ -62,6 +63,10 @@ export default function ManagedActions() {
       
       <div className="container py-10">
         <h1 className="text-3xl font-bold tracking-tight mb-6">Manage Actions</h1>
+        
+        {/* Show warning when in browser environment */}
+        {typeof window !== 'undefined' && <DatabaseEnvironmentWarning />}
+        
         <ManagedActionsContent actions={actions} isLoading={isLoading} />
       </div>
     </div>

@@ -43,7 +43,7 @@ function loadCredentialsFromStorage() {
 loadCredentialsFromStorage();
 
 // Create a connection pool
-let pool: Pool | null = null;
+let pool: InstanceType<typeof Pool> | null = null;
 
 function getPool() {
   // Reload credentials from localStorage to ensure we have the latest
@@ -71,6 +71,13 @@ function getPool() {
  * Execute a SQL query with optional parameters
  */
 export async function executeQuery<T>(text: string, params: any[] = []): Promise<T[]> {
+  // For browser compatibility, we'll create a mock function
+  // This will be replaced by a real implementation in a server environment
+  if (typeof window !== 'undefined') {
+    console.warn('PostgreSQL queries cannot be executed in the browser environment');
+    return [] as T[];
+  }
+  
   const start = Date.now();
   try {
     const currentPool = getPool();
@@ -99,6 +106,19 @@ export async function testConnection(): Promise<{
   message: string;
   diagnostics: Record<string, any>;
 }> {
+  // For browser compatibility, we'll create a mock function
+  if (typeof window !== 'undefined') {
+    console.warn('PostgreSQL connection test cannot be executed in the browser environment');
+    return {
+      success: false,
+      message: "Cannot connect to PostgreSQL from browser",
+      diagnostics: {
+        error: "PostgreSQL requires a Node.js environment",
+        environment: "browser"
+      }
+    };
+  }
+  
   try {
     // Simple query to test connection
     const res = await executeQuery<ConnectionResult>('SELECT version(), current_timestamp, current_user');

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,6 +17,7 @@ import {
   DialogTitle
 } from "@/components/ui/dialog";
 import { useNavigate } from "react-router-dom";
+import { DatabaseEnvironmentWarning } from "@/components/DatabaseEnvironmentWarning";
 
 export default function DatabaseSetup() {
   const { toast } = useToast();
@@ -77,6 +77,11 @@ export default function DatabaseSetup() {
       
       <div className="container py-10">
         <h1 className="text-3xl font-bold tracking-tight mb-6">Database Setup</h1>
+        
+        {/* Add detailed warning at the top of the page */}
+        {typeof window !== 'undefined' && (
+          <DatabaseEnvironmentWarning showFullMessage={true} />
+        )}
         
         <div className="grid gap-6">
           <Card>

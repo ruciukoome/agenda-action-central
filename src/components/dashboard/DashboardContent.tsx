@@ -6,6 +6,7 @@ import { UpcomingDeadlines } from "./UpcomingDeadlines";
 import { ActionItem } from "@/types/action";
 import { fetchActions } from "@/lib/postgres-actions";
 import { useAuth } from "@/lib/auth";
+import { DatabaseEnvironmentWarning } from "@/components/DatabaseEnvironmentWarning";
 
 export function DashboardContent() {
   const [actions, setActions] = useState<ActionItem[]>([]);
@@ -43,6 +44,9 @@ export function DashboardContent() {
 
   return (
     <div className="space-y-8">
+      {/* Show warning when in browser environment */}
+      {typeof window !== 'undefined' && <DatabaseEnvironmentWarning />}
+      
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <div className="md:col-span-2 lg:col-span-1">
           <NotesStatistics actions={actions} isLoading={isLoading} />
