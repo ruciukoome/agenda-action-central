@@ -43,7 +43,7 @@ function loadCredentialsFromStorage() {
 loadCredentialsFromStorage();
 
 // Create a connection pool
-let pool: Pool;
+let pool: Pool | null = null;
 
 function getPool() {
   // Reload credentials from localStorage to ensure we have the latest
@@ -84,6 +84,12 @@ export async function executeQuery<T>(text: string, params: any[] = []): Promise
   }
 }
 
+interface ConnectionResult {
+  version?: string;
+  current_timestamp?: Date;
+  current_user?: string;
+}
+
 /**
  * Test the database connection
  * Returns basic diagnostics information
@@ -95,15 +101,15 @@ export async function testConnection(): Promise<{
 }> {
   try {
     // Simple query to test connection
-    const res = await executeQuery('SELECT version(), current_timestamp, current_user');
+    const res = await executeQuery<ConnectionResult>('SELECT version(), current_timestamp, current_user');
     
     return {
       success: true,
       message: "Successfully connected to PostgreSQL",
       diagnostics: {
-        serverVersion: res[0].version.split(' ')[1],
-        serverTime: res[0].current_timestamp,
-        connectedAs: res[0].current_user,
+        serverVersion: res[0]?.version?.split(' ')[1] || 'unknown',
+        serverTime: res[0]?.current_timestamp || new Date(),
+        connectedAs: res[0]?.current_user || 'unknown',
         host: POSTGRES_HOST,
         port: POSTGRES_PORT,
         database: POSTGRES_DATABASE,

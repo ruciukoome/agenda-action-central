@@ -14,15 +14,17 @@ import { Header } from "@/components/Header";
 import { fetchActions } from "@/lib/postgres-actions";
 import { toast } from "@/components/ui/use-toast";
 import { ManagedActionsContent } from "@/components/actions/ManagedActionsContent";
+import { useAuth } from "@/lib/auth";
 
 export default function ManagedActions() {
   const [actions, setActions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { session } = useAuth();
 
   const loadActions = useCallback(async () => {
     setIsLoading(true);
     try {
-      const data = await fetchActions();
+      const data = await fetchActions(session?.user?.id);
       setActions(data);
     } catch (error) {
       console.error("Failed to fetch actions:", error);
@@ -34,21 +36,25 @@ export default function ManagedActions() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [session]);
 
   useEffect(() => {
-    loadActions();
+    if (session?.user) {
+      loadActions();
+    }
     
     // Set up polling for data refresh every 30 seconds
     // This replaces Supabase's realtime functionality
     const intervalId = setInterval(() => {
-      loadActions();
+      if (session?.user) {
+        loadActions();
+      }
     }, 30000);
 
     return () => {
       clearInterval(intervalId);
     };
-  }, [loadActions]);
+  }, [loadActions, session]);
 
   return (
     <div className="min-h-screen flex flex-col">

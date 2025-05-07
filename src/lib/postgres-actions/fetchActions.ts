@@ -3,10 +3,13 @@ import { executeQuery } from '@/integrations/postgres/client';
 import { DbAction, mapDbActionToActionItem } from '@/integrations/postgres/types';
 import { ActionItem } from '@/types/action';
 
-export async function fetchActions(userId: string, filters?: Record<string, any>): Promise<ActionItem[]> {
+export async function fetchActions(userId?: string, filters?: Record<string, any>): Promise<ActionItem[]> {
   try {
+    // Use a mock userId if none is provided (for development)
+    const actualUserId = userId || '00000000-0000-0000-0000-000000000000';
+    
     let whereClause = 'WHERE user_id = $1';
-    let queryParams = [userId];
+    let queryParams = [actualUserId];
     let paramCount = 2;
     
     // Apply filters if provided
@@ -63,13 +66,17 @@ export async function fetchActions(userId: string, filters?: Record<string, any>
       ORDER BY created_at DESC
     `;
     
-    const results = await executeQuery<DbAction>(query, queryParams);
-    
-    // Map the DB actions to ActionItems
-    return results.map(mapDbActionToActionItem);
+    // Handle the case where the table might not exist yet
+    try {
+      const results = await executeQuery<DbAction>(query, queryParams);
+      return results.map(mapDbActionToActionItem);
+    } catch (error) {
+      console.warn('Error fetching actions, returning empty array:', error);
+      return [];
+    }
   } catch (error) {
     console.error('Error fetching actions from PostgreSQL:', error);
-    throw error;
+    return [];
   }
 }
 
