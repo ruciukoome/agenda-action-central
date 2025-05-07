@@ -85,7 +85,7 @@ function loadCredentialsFromStorage() {
   }
 
   // Use environment variables as fallback only if we're in a Node.js environment
-  if (typeof process !== 'undefined' && process.env) {
+  if (typeof window === 'undefined' && typeof process !== 'undefined' && typeof process.env !== 'undefined') {
     if (process.env.POSTGRES_HOST) POSTGRES_HOST = process.env.POSTGRES_HOST;
     if (process.env.POSTGRES_PORT) POSTGRES_PORT = parseInt(process.env.POSTGRES_PORT);
     if (process.env.POSTGRES_DATABASE) POSTGRES_DATABASE = process.env.POSTGRES_DATABASE;
@@ -112,7 +112,8 @@ function getPool() {
       database: POSTGRES_DATABASE,
       user: POSTGRES_USER,
       password: POSTGRES_PASSWORD,
-      ssl: typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'production'
+      ssl: typeof window === 'undefined' && typeof process !== 'undefined' && 
+           typeof process.env !== 'undefined' && process.env.NODE_ENV === 'production'
     };
 
     try {

@@ -1,12 +1,12 @@
 
 import { useState } from "react";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Header } from "@/components/Header";
-import { Loader2, Database, ArrowRight } from "lucide-react";
+import { Loader2, Database, CheckCircle } from "lucide-react";
 import { MigrationButton } from "@/utils/migrateData";
 import { SchemaSetupButton } from "@/utils/runDatabaseSchema";
 import { PostgresConnectionTest } from "@/components/PostgresConnectionTest";
@@ -20,7 +20,6 @@ import {
 import { useNavigate } from "react-router-dom";
 
 export default function DatabaseSetup() {
-  const { toast } = useToast();
   const navigate = useNavigate();
   const [host, setHost] = useState(localStorage.getItem("POSTGRES_HOST") || "localhost");
   const [port, setPort] = useState(localStorage.getItem("POSTGRES_PORT") || "5432");
@@ -53,18 +52,15 @@ export default function DatabaseSetup() {
       // This is just for demonstration purposes
       localStorage.setItem("POSTGRES_PASSWORD", password);
       
-      toast({
-        title: "Connection settings saved",
+      toast.success("Connection settings saved", {
         description: "Database connection settings have been saved successfully.",
       });
       
       // Show connection test dialog
       setShowConnectionDialog(true);
     } catch (error) {
-      toast({
-        title: "Failed to save settings",
+      toast.error("Failed to save settings", {
         description: `An error occurred: ${(error as Error).message}`,
-        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
@@ -201,9 +197,18 @@ export default function DatabaseSetup() {
           </DialogHeader>
           <div className="py-4">
             <ul className="list-disc list-inside space-y-2 ml-2">
-              <li>Test your connection</li>
-              <li>Set up the database schema</li>
-              <li>Migrate your existing data</li>
+              <li className="flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-green-500" />
+                Test your connection
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-green-500" />
+                Set up the database schema
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-green-500" />
+                Migrate your existing data
+              </li>
             </ul>
             <div className="mt-4">
               <p className="text-sm text-muted-foreground">

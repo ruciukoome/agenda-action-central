@@ -16,8 +16,10 @@ export function PostgresConnectionTest() {
     setError(null);
     try {
       const diagnostics = await testConnection();
+      console.log("Connection test result:", diagnostics);
       setResult(diagnostics);
     } catch (err) {
+      console.error("Connection test error:", err);
       setError((err as Error).message);
       setResult(null);
     } finally {
@@ -57,7 +59,7 @@ export function PostgresConnectionTest() {
               </AlertTitle>
               <AlertDescription>
                 {result.success 
-                  ? `Successfully connected to PostgreSQL server v${result.diagnostics.serverVersion}`
+                  ? `Successfully connected to PostgreSQL server v${result.diagnostics.serverVersion || 'Unknown'}`
                   : 'Failed to connect to PostgreSQL server. See details below.'}
               </AlertDescription>
             </Alert>

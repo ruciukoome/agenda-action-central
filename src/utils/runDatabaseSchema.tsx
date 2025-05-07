@@ -1,8 +1,9 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { executeQuery } from '@/integrations/postgres/client';
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 
 /**
  * Executes the schema.sql file to set up the PostgreSQL database structure
@@ -66,6 +67,8 @@ export async function runDatabaseSchema(): Promise<{ success: boolean, message: 
       .filter(statement => statement.length > 0)
       .map(statement => `${statement};`);
     
+    console.log('Executing schema setup with statements:', statements);
+    
     // Execute each statement separately
     for (const statement of statements) {
       await executeQuery(statement);
@@ -88,28 +91,28 @@ export async function runDatabaseSchema(): Promise<{ success: boolean, message: 
  * Component for the schema setup button
  */
 export function SchemaSetupButton() {
+  const [isLoading, setIsLoading] = useState(false);
+  
   const handleSchemaSetup = async () => {
+    setIsLoading(true);
     try {
       const result = await runDatabaseSchema();
       
       if (result.success) {
-        toast({
-          title: "Schema Setup Successful",
+        toast.success("Schema Setup Successful", {
           description: result.message,
         });
       } else {
-        toast({
-          title: "Schema Setup Failed",
+        toast.error("Schema Setup Failed", {
           description: result.message,
-          variant: "destructive",
         });
       }
     } catch (error) {
-      toast({
-        title: "Schema Setup Failed",
+      toast.error("Schema Setup Failed", {
         description: `An unexpected error occurred during schema setup: ${(error as Error).message}`,
-        variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
   
@@ -118,8 +121,15 @@ export function SchemaSetupButton() {
       className="w-full"
       variant="default"
       onClick={handleSchemaSetup}
+      disabled={isLoading}
     >
-      Set Up Database Schema
+      {isLoading ? (
+        <>
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Setting Up Schema...
+        </>
+      ) : (
+        "Set Up Database Schema"
+      )}
     </Button>
   );
 }

@@ -1,10 +1,11 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { executeQuery } from "@/integrations/postgres/client";
 import { DbAction } from "@/integrations/postgres/types";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 
 /**
  * DATA MIGRATION UTILITY
@@ -14,6 +15,8 @@ import { Button } from "@/components/ui/button";
  */
 export async function migrateActionsToPostgres(): Promise<{ success: boolean, message: string }> {
   try {
+    console.log('Starting migration from Supabase to PostgreSQL');
+    
     // 1. Fetch all actions from Supabase
     const { data: actions, error } = await supabase
       .from('actions')
@@ -26,6 +29,8 @@ export async function migrateActionsToPostgres(): Promise<{ success: boolean, me
     if (!actions || actions.length === 0) {
       return { success: true, message: "No actions found to migrate" };
     }
+    
+    console.log(`Found ${actions.length} actions to migrate`);
     
     // 2. Insert actions into PostgreSQL database
     const insertedCount = await insertActionsIntoPostgres(actions as DbAction[]);
@@ -48,6 +53,7 @@ async function insertActionsIntoPostgres(actions: DbAction[]): Promise<number> {
   
   for (const action of actions) {
     try {
+      console.log(`Migrating action: ${action.id}`);
       // Prepare the query for each action
       const query = `
         INSERT INTO actions (
@@ -89,38 +95,45 @@ async function insertActionsIntoPostgres(actions: DbAction[]): Promise<number> {
 }
 
 export function MigrationButton() {
+  const [isLoading, setIsLoading] = useState(false);
+  
   const handleMigration = async () => {
+    setIsLoading(true);
     try {
       const result = await migrateActionsToPostgres();
       
       if (result.success) {
-        toast({
-          title: "Migration Successful",
+        toast.success("Migration Successful", {
           description: result.message,
         });
       } else {
-        toast({
-          title: "Migration Failed",
+        toast.error("Migration Failed", {
           description: result.message,
-          variant: "destructive",
         });
       }
     } catch (error) {
-      toast({
-        title: "Migration Failed",
+      toast.error("Migration Failed", {
         description: `An unexpected error occurred during migration: ${(error as Error).message}`,
-        variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
   
   return (
     <Button
-      className="bg-blue-500 hover:bg-blue-600"
+      className="w-full bg-blue-500 hover:bg-blue-600"
       variant="default"
       onClick={handleMigration}
+      disabled={isLoading}
     >
-      Migrate Supabase Data to PostgreSQL
+      {isLoading ? (
+        <>
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Migrating Data...
+        </>
+      ) : (
+        "Migrate Supabase Data to PostgreSQL"
+      )}
     </Button>
   );
 }
