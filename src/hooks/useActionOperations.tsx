@@ -21,7 +21,9 @@ export function useActionOperations(actions: ActionItem[], onActionDeleted: () =
       let deletedCount = 0;
       
       for (const id of selectedActions) {
-        await deleteAction(id);
+        // Pass a user ID for PostgreSQL - in a real app, get this from auth context
+        const userId = localStorage.getItem("USER_ID") || "test-user-id";
+        await deleteAction(id, userId);
         deletedCount++;
       }
       
