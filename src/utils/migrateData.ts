@@ -1,16 +1,17 @@
 
+import React from 'react';
+import { supabase } from "@/integrations/supabase/client";
+import { executeQuery } from "@/integrations/postgres/client";
+import { DbAction } from "@/integrations/postgres/types";
+import { toast } from "@/components/ui/use-toast";
+import { Button } from "@/components/ui/button";
+
 /**
  * DATA MIGRATION UTILITY
  * ---------------------
  * This utility helps migrate data from Supabase to a PostgreSQL database.
  * Run this script once to perform the initial data transfer.
  */
-
-import { supabase } from "@/integrations/supabase/client";
-import { executeQuery } from "@/integrations/postgres/client";
-import { DbAction } from "@/integrations/postgres/types";
-import { toast } from "@/components/ui/use-toast";
-
 export async function migrateActionsToPostgres(): Promise<{ success: boolean, message: string }> {
   try {
     // 1. Fetch all actions from Supabase
@@ -114,11 +115,12 @@ export function MigrationButton() {
   };
   
   return (
-    <button
-      className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+    <Button
+      className="bg-blue-500 hover:bg-blue-600"
+      variant="default"
       onClick={handleMigration}
     >
       Migrate Supabase Data to PostgreSQL
-    </button>
+    </Button>
   );
 }

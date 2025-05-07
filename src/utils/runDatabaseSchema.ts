@@ -1,6 +1,8 @@
 
+import React from 'react';
 import { executeQuery } from '@/integrations/postgres/client';
 import { toast } from "@/components/ui/use-toast";
+import { Button } from "@/components/ui/button";
 
 /**
  * Executes the schema.sql file to set up the PostgreSQL database structure
@@ -112,11 +114,12 @@ export function SchemaSetupButton() {
   };
   
   return (
-    <button
-      className="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+    <Button
+      className="w-full"
+      variant="default"
       onClick={handleSchemaSetup}
     >
       Set Up Database Schema
-    </button>
+    </Button>
   );
 }
