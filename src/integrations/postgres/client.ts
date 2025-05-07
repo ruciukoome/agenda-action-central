@@ -2,7 +2,7 @@
 /**
  * DATABASE CONFIGURATION
  * ---------------------
- * This file configures the connection to the PostgreSQL database.
+ * This file configures the connection to the PostgreSQL database via the backend API.
  * 
  * Connection is established using environment variables or localStorage values:
  * - POSTGRES_HOST: The PostgreSQL host URL
@@ -12,90 +12,11 @@
  * - POSTGRES_PASSWORD: The PostgreSQL password
  */
 
-// For browser environments, we need to provide a mock implementation
-// of the Pool class from pg
-interface PoolClient {
-  query: (text: string, params?: any[]) => Promise<any>;
-  release: () => void;
-}
+import axios from 'axios';
+import { testConnection as apiTestConnection, initializeDatabase } from './api';
 
-interface PoolConfig {
-  host: string;
-  port: number;
-  database: string;
-  user: string;
-  password: string;
-  ssl?: boolean | object;
-}
-
-class MockPool {
-  private config: PoolConfig;
-
-  constructor(config: PoolConfig) {
-    this.config = config;
-    console.log('PostgreSQL pool created with config:', {
-      host: config.host,
-      port: config.port,
-      database: config.database,
-      user: config.user,
-      // Password omitted for security
-    });
-  }
-
-  async query(text: string, params: any[] = []) {
-    console.log('Query executed:', { text, params });
-    
-    // We're in the browser, so we can't actually connect to a PostgreSQL database
-    // Instead, we make a fetch request to a server-side API that can handle the connection
-    try {
-      // In a real app, you would have an API endpoint to handle database queries
-      // For now, we'll simulate a response
-      return simulateDbResponse(text, params, this.config);
-    } catch (error) {
-      console.error('Error executing query:', error);
-      throw error;
-    }
-  }
-
-  async connect(): Promise<PoolClient> {
-    console.log('Connection established');
-    return {
-      query: async (text: string, params: any[] = []) => {
-        console.log('Query executed via client:', { text, params });
-        return simulateDbResponse(text, params, this.config);
-      },
-      release: () => console.log('Connection released')
-    };
-  }
-
-  async end() {
-    console.log('Pool ended');
-  }
-}
-
-// Helper function to simulate database responses
-async function simulateDbResponse(text: string, params: any[], config: PoolConfig) {
-  // For the version query in testConnection
-  if (text.includes('version()')) {
-    return {
-      rows: [{
-        version: `PostgreSQL 14.5 on ${config.host}`,
-        current_timestamp: new Date().toISOString(),
-        current_user: config.user
-      }],
-      rowCount: 1
-    };
-  }
-  
-  // For actions table queries
-  if (text.includes('FROM actions')) {
-    // If using Supabase integration, we could try to fetch actions from there
-    return { rows: [], rowCount: 0 };
-  }
-  
-  // Default empty response
-  return { rows: [], rowCount: 0 };
-}
+// Base URL for API requests
+const API_URL = 'http://localhost:5000/api';
 
 // Default connection parameters - these will be overridden by localStorage
 let POSTGRES_HOST = 'localhost';
@@ -104,8 +25,16 @@ let POSTGRES_DATABASE = 'postgres';
 let POSTGRES_USER = 'postgres';
 let POSTGRES_PASSWORD = '';
 
+// Create axios instance for API calls
+const api = axios.create({
+  baseURL: API_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
 // Try to get credentials from localStorage
-function loadCredentialsFromStorage() {
+export function loadCredentialsFromStorage() {
   if (typeof window !== 'undefined' && window.localStorage) {
     POSTGRES_HOST = localStorage.getItem('POSTGRES_HOST') || POSTGRES_HOST;
     POSTGRES_PORT = parseInt(localStorage.getItem('POSTGRES_PORT') || `${POSTGRES_PORT}`);
@@ -126,45 +55,30 @@ function loadCredentialsFromStorage() {
 // Load credentials immediately
 loadCredentialsFromStorage();
 
-// Create a connection pool
-let pool: any;
-
-function getPool() {
-  // Reload credentials from localStorage to ensure we have the latest
-  loadCredentialsFromStorage();
-  
-  // Create the pool if it doesn't exist or if credentials have changed
-  if (!pool) {
-    const poolConfig = {
-      host: POSTGRES_HOST,
-      port: POSTGRES_PORT,
-      database: POSTGRES_DATABASE,
-      user: POSTGRES_USER,
-      password: POSTGRES_PASSWORD,
-      ssl: false // Set to appropriate object for production
-    };
-
-    // For browser environment, use the mock pool
-    pool = new MockPool(poolConfig);
-    console.log(`PostgreSQL client initialized, connecting to: ${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DATABASE}`);
-  }
-  
-  return pool;
-}
-
 /**
- * Execute a SQL query with optional parameters
+ * Execute a SQL query with optional parameters via the backend API
  */
 export async function executeQuery<T>(text: string, params: any[] = []): Promise<T[]> {
-  const start = Date.now();
   try {
-    const currentPool = getPool();
-    const res = await currentPool.query(text, params);
-    const duration = Date.now() - start;
-    console.log('Executed query', { text, duration, rows: res.rowCount });
-    return res.rows as T[];
+    // Reload credentials to ensure we have the latest
+    loadCredentialsFromStorage();
+    
+    // For security, we don't want to expose the raw SQL query to the frontend
+    // Instead, we use the API endpoints that encapsulate the queries
+    
+    // This is a simplified approach for demo purposes
+    // In a production app, you would have specific API endpoints for each operation
+    
+    if (text.toLowerCase().includes('select * from actions')) {
+      const userId = params[0] || 'test-user-id';
+      const response = await api.get('/actions', { params: { userId } });
+      return response.data as T[];
+    }
+    
+    console.warn('Unhandled query type:', text);
+    return [] as T[];
   } catch (error) {
-    console.error('Error executing query', { text, error });
+    console.error('Error executing query via API:', error);
     throw error;
   }
 }
@@ -182,47 +96,62 @@ export async function testConnection(): Promise<{
   loadCredentialsFromStorage();
   
   try {
-    // Simple query to test connection
-    const res = await executeQuery<Record<string, any>>('SELECT version() as version, current_timestamp as current_timestamp, current_user as current_user');
+    // Use the API to test the connection
+    const result = await apiTestConnection({
+      host: POSTGRES_HOST,
+      port: POSTGRES_PORT,
+      database: POSTGRES_DATABASE,
+      user: POSTGRES_USER,
+      password: POSTGRES_PASSWORD
+    });
     
-    return {
-      success: true,
-      message: "Successfully connected to PostgreSQL",
-      diagnostics: {
-        serverVersion: res[0]?.version?.split(' ')[1] || 'Unknown',
-        serverTime: res[0]?.current_timestamp || new Date().toISOString(),
-        connectedAs: res[0]?.current_user || POSTGRES_USER,
-        host: POSTGRES_HOST,
-        port: POSTGRES_PORT,
-        database: POSTGRES_DATABASE,
-        user: POSTGRES_USER,
-        // Never include password in diagnostics
-      }
-    };
+    return result;
   } catch (error) {
+    console.error('Connection test error:', error);
     return {
       success: false,
-      message: `Failed to connect: ${(error as Error).message}`,
+      message: error instanceof Error ? error.message : 'Unknown error',
       diagnostics: {
-        errorMessage: (error as Error).message,
-        errorName: (error as Error).name,
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+        errorName: error instanceof Error ? error.name : 'Error',
         host: POSTGRES_HOST,
         port: POSTGRES_PORT,
         database: POSTGRES_DATABASE,
-        user: POSTGRES_USER,
-        // Never include password in diagnostics
+        user: POSTGRES_USER
       }
     };
   }
 }
 
 /**
+ * Initialize the database connection with current credentials
+ */
+export async function initializeConnection(): Promise<boolean> {
+  try {
+    // Reload credentials
+    loadCredentialsFromStorage();
+    
+    // Initialize the database connection via API
+    await initializeDatabase({
+      host: POSTGRES_HOST,
+      port: POSTGRES_PORT,
+      database: POSTGRES_DATABASE,
+      user: POSTGRES_USER,
+      password: POSTGRES_PASSWORD
+    });
+    
+    return true;
+  } catch (error) {
+    console.error('Error initializing database connection:', error);
+    return false;
+  }
+}
+
+/**
  * Close the database connection pool
- * Call this when shutting down the application to release connections
+ * In this API-based implementation, this is a no-op
  */
 export async function closePool(): Promise<void> {
-  if (pool) {
-    await pool.end();
-    console.log('Database connection pool closed');
-  }
+  // No actual pool to close in the frontend
+  console.log('closePool called - no action needed in API-based implementation');
 }

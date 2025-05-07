@@ -1,11 +1,12 @@
 
-import { executeQuery } from "@/integrations/postgres/client";
+import axios from 'axios';
 import { ActionItem } from "@/types/action";
 import { DbAction } from "@/integrations/postgres/types";
 import { toast } from "sonner";
+import { loadCredentialsFromStorage } from '@/integrations/postgres/client';
 
 /**
- * Fetches actions from the PostgreSQL database
+ * Fetches actions from the PostgreSQL database via the API
  * @param userId The user ID to fetch actions for
  * @returns Array of ActionItem objects
  */
@@ -18,20 +19,20 @@ export async function fetchActions(userId?: string): Promise<ActionItem[]> {
     
     console.log("Fetching actions for user:", userId);
     
-    // Attempt to connect to PostgreSQL and fetch actions
+    // Load credentials to use in API request
+    loadCredentialsFromStorage();
+    
+    // Attempt to connect to PostgreSQL API and fetch actions
     try {
-      const query = `
-        SELECT * FROM actions 
-        WHERE user_id = $1
-        ORDER BY created_at DESC
-      `;
+      const response = await axios.get(`http://localhost:5000/api/actions`, {
+        params: { userId }
+      });
       
-      // Execute the query
-      const actions = await executeQuery<DbAction>(query, [userId]);
-      console.log(`Found ${actions.length} actions in PostgreSQL`);
+      const actions = response.data;
+      console.log(`Found ${actions.length} actions via PostgreSQL API`);
       
       // Map database objects to ActionItem format
-      return actions.map(action => ({
+      return actions.map((action: DbAction) => ({
         id: action.id,
         description: action.description,
         department: action.department,
@@ -46,9 +47,9 @@ export async function fetchActions(userId?: string): Promise<ActionItem[]> {
         dueDate: action.due_date || null,
       }));
     } catch (error) {
-      console.error("PostgreSQL fetchActions error:", error);
+      console.error("PostgreSQL API fetchActions error:", error);
       
-      // If we failed to fetch from PostgreSQL, try to fetch from Supabase as fallback
+      // If we failed to fetch from PostgreSQL API, try to fetch from Supabase as fallback
       console.log("Falling back to Supabase for fetching actions");
       
       // Import the Supabase fetchActions function
@@ -70,8 +71,8 @@ export async function fetchActions(userId?: string): Promise<ActionItem[]> {
   } catch (error) {
     console.error("Error fetching actions:", error);
     toast.error("Failed to fetch actions", {
-      description: (error as Error).message
+      description: error instanceof Error ? error.message : 'Unknown error'
     });
-    throw new Error(`Failed to fetch actions: ${(error as Error).message}`);
+    throw new Error(`Failed to fetch actions: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }

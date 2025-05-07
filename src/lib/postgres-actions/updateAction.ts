@@ -1,7 +1,8 @@
 
-import { executeQuery } from '@/integrations/postgres/client';
+import axios from 'axios';
 import { DbAction, mapDbActionToActionItem } from '@/integrations/postgres/types';
 import { ActionItem } from '@/types/action';
+import { toast } from 'sonner';
 
 export async function updateAction(
   actionId: string,
@@ -9,82 +10,37 @@ export async function updateAction(
   userId: string
 ): Promise<ActionItem> {
   try {
-    // Build the SET clause dynamically based on what fields are provided
-    const updateFields: string[] = [];
-    const values: any[] = [];
-    let paramCounter = 1;
+    // Send request to the backend API
+    const response = await axios.put(`http://localhost:5000/api/actions/${actionId}`, {
+      action: { id: actionId, ...actionData },
+      userId
+    });
     
-    if (actionData.description !== undefined) {
-      updateFields.push(`description = $${paramCounter++}`);
-      values.push(actionData.description);
-    }
+    // Map the database response to an ActionItem
+    const dbAction = response.data as DbAction;
+    const updatedAction = mapDbActionToActionItem(dbAction);
     
-    if (actionData.department !== undefined) {
-      updateFields.push(`department = $${paramCounter++}`);
-      values.push(actionData.department);
-    }
+    console.log('Action updated successfully in PostgreSQL:', updatedAction);
     
-    if (actionData.meetingDate !== undefined) {
-      updateFields.push(`meeting_date = $${paramCounter++}`);
-      values.push(actionData.meetingDate);
-    }
+    // Show success toast
+    toast.success("Action Updated", {
+      description: `Successfully updated action: ${updatedAction.description.substring(0, 30)}...`
+    });
     
-    if (actionData.priority !== undefined) {
-      updateFields.push(`priority = $${paramCounter++}`);
-      values.push(actionData.priority);
-    }
-    
-    if (actionData.ownerEmail !== undefined) {
-      updateFields.push(`owner_email = $${paramCounter++}`);
-      values.push(actionData.ownerEmail);
-    }
-    
-    if (actionData.completed !== undefined) {
-      updateFields.push(`completed = $${paramCounter++}`);
-      values.push(actionData.completed);
-    }
-    
-    if (actionData.progressStatus !== undefined) {
-      updateFields.push(`progress_status = $${paramCounter++}`);
-      values.push(actionData.progressStatus);
-    }
-    
-    if (actionData.notes !== undefined) {
-      updateFields.push(`notes = $${paramCounter++}`);
-      values.push(actionData.notes);
-    }
-    
-    if (actionData.dueDate !== undefined) {
-      updateFields.push(`due_date = $${paramCounter++}`);
-      values.push(actionData.dueDate);
-    }
-    
-    // Always update the updated_at timestamp
-    updateFields.push(`updated_at = $${paramCounter++}`);
-    values.push(new Date().toISOString());
-    
-    // Add the action ID and user ID to the values array
-    values.push(actionId);
-    values.push(userId);
-    
-    // Build and execute the query
-    const query = `
-      UPDATE actions 
-      SET ${updateFields.join(', ')} 
-      WHERE id = $${paramCounter++} AND user_id = $${paramCounter++}
-      RETURNING *
-    `;
-    
-    const result = await executeQuery<DbAction>(query, values);
-    
-    if (result.length === 0) {
-      throw new Error('Action not found or you do not have permission to update it');
-    }
-    
-    // Map the DB action to an ActionItem and return it
-    return mapDbActionToActionItem(result[0]);
+    return updatedAction;
   } catch (error) {
     console.error('Error updating action in PostgreSQL:', error);
+    
+    let errorMessage = 'Unknown error';
+    if (axios.isAxiosError(error)) {
+      errorMessage = error.response?.data?.message || error.message;
+    } else if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    
+    toast.error("Failed to update action", {
+      description: errorMessage
+    });
     throw error;
   }
 }
