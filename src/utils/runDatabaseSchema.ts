@@ -1,4 +1,4 @@
-import React from "react";
+
 import { executeQuery } from '@/integrations/postgres/client';
 import { toast } from "@/components/ui/use-toast";
 

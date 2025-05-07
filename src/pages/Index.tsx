@@ -1,4 +1,3 @@
-
 /**
  * MAIN APPLICATION PAGE
  * -------------------
@@ -38,7 +37,7 @@ export default function Index() {
     const loadActions = async () => {
       setIsLoading(true);
       try {
-        const data = await fetchActions(session.user.id);
+        const data = await fetchActions();
         setActions(data);
       } catch (error) {
         console.error("Failed to fetch actions:", error);

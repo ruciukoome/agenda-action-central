@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ActionItem } from "@/types/action";
@@ -6,17 +5,18 @@ import { ActionCard } from "@/components/ActionCard";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getDueStatus } from "@/utils/emailUtils";
-import { fetchActions } from "@/lib/postgres-actions";
+import { fetchActions } from "@/lib/actions";
 import { Header } from "@/components/Header";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAuth } from "@/lib/auth";
 
-export default function MyActions() {
+interface MyActionsProps {
+  userEmail: string;
+  onEditAction: (action: ActionItem) => void;
+}
+
+export default function MyActions({ userEmail, onEditAction }: MyActionsProps) {
   const navigate = useNavigate();
-  const { session } = useAuth();
-  const userEmail = session?.user?.email || '';
-  
   const [searchQuery, setSearchQuery] = useState("");
   const [actions, setActions] = useState<ActionItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -25,7 +25,7 @@ export default function MyActions() {
     const loadActions = async () => {
       setIsLoading(true);
       try {
-        const data = await fetchActions(session?.user?.id);
+        const data = await fetchActions();
         const filtered = data.filter(action => 
           action.ownerEmail.toLowerCase() === userEmail.toLowerCase()
         );
@@ -37,25 +37,30 @@ export default function MyActions() {
       }
     };
 
-    if (session?.user) {
-      loadActions();
-    }
+    loadActions();
 
-    // Set up polling for data refresh every 30 seconds
-    const intervalId = setInterval(() => {
-      if (session?.user) {
-        loadActions();
-      }
-    }, 30000);
+    const channel = supabase
+      .channel('actions_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'actions'
+        },
+        (payload) => {
+          console.log('Realtime update received in MyActions:', payload);
+          loadActions();
+        }
+      )
+      .subscribe((status) => {
+        console.log('MyActions subscription status:', status);
+      });
 
     return () => {
-      clearInterval(intervalId);
+      supabase.removeChannel(channel);
     };
-  }, [userEmail, session]);
-
-  const handleEditAction = (action: ActionItem) => {
-    navigate(`/edit-action/${action.id}`);
-  };
+  }, [userEmail]);
 
   const filteredActions = actions.filter(action =>
     action.description.toLowerCase().includes(searchQuery.toLowerCase())
@@ -133,7 +138,7 @@ export default function MyActions() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredActions.map((action) => (
-                  <ActionCard key={action.id} action={action} onEdit={handleEditAction} />
+                  <ActionCard key={action.id} action={action} onEdit={onEditAction} />
                 ))}
               </div>
             )}
@@ -150,7 +155,7 @@ export default function MyActions() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {pendingActions.map((action) => (
-                  <ActionCard key={action.id} action={action} onEdit={handleEditAction} />
+                  <ActionCard key={action.id} action={action} onEdit={onEditAction} />
                 ))}
               </div>
             )}
@@ -167,7 +172,7 @@ export default function MyActions() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {overdueActions.map((action) => (
-                  <ActionCard key={action.id} action={action} onEdit={handleEditAction} />
+                  <ActionCard key={action.id} action={action} onEdit={onEditAction} />
                 ))}
               </div>
             )}
@@ -184,7 +189,7 @@ export default function MyActions() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {upcomingActions.map((action) => (
-                  <ActionCard key={action.id} action={action} onEdit={handleEditAction} />
+                  <ActionCard key={action.id} action={action} onEdit={onEditAction} />
                 ))}
               </div>
             )}
@@ -201,7 +206,7 @@ export default function MyActions() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {completedActions.map((action) => (
-                  <ActionCard key={action.id} action={action} onEdit={handleEditAction} />
+                  <ActionCard key={action.id} action={action} onEdit={onEditAction} />
                 ))}
               </div>
             )}

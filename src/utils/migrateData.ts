@@ -1,3 +1,4 @@
+
 /**
  * DATA MIGRATION UTILITY
  * ---------------------
@@ -5,7 +6,6 @@
  * Run this script once to perform the initial data transfer.
  */
 
-import React from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { executeQuery } from "@/integrations/postgres/client";
 import { DbAction } from "@/integrations/postgres/types";

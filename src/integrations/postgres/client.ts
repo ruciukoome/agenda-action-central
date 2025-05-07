@@ -1,3 +1,4 @@
+
 import { Pool } from 'pg';
 
 /**
@@ -42,8 +43,7 @@ function loadCredentialsFromStorage() {
 loadCredentialsFromStorage();
 
 // Create a connection pool
-// Fix: Using the correct type annotation for Pool
-let pool: typeof Pool.prototype | null = null;
+let pool: Pool;
 
 function getPool() {
   // Reload credentials from localStorage to ensure we have the latest
@@ -71,13 +71,6 @@ function getPool() {
  * Execute a SQL query with optional parameters
  */
 export async function executeQuery<T>(text: string, params: any[] = []): Promise<T[]> {
-  // For browser compatibility, we'll create a mock function
-  // This will be replaced by a real implementation in a server environment
-  if (typeof window !== 'undefined') {
-    console.warn('PostgreSQL queries cannot be executed in the browser environment');
-    return [] as T[];
-  }
-  
   const start = Date.now();
   try {
     const currentPool = getPool();
@@ -91,12 +84,6 @@ export async function executeQuery<T>(text: string, params: any[] = []): Promise
   }
 }
 
-interface ConnectionResult {
-  version?: string;
-  current_timestamp?: Date;
-  current_user?: string;
-}
-
 /**
  * Test the database connection
  * Returns basic diagnostics information
@@ -106,30 +93,17 @@ export async function testConnection(): Promise<{
   message: string;
   diagnostics: Record<string, any>;
 }> {
-  // For browser compatibility, we'll create a mock function
-  if (typeof window !== 'undefined') {
-    console.warn('PostgreSQL connection test cannot be executed in the browser environment');
-    return {
-      success: false,
-      message: "Cannot connect to PostgreSQL from browser",
-      diagnostics: {
-        error: "PostgreSQL requires a Node.js environment",
-        environment: "browser"
-      }
-    };
-  }
-  
   try {
     // Simple query to test connection
-    const res = await executeQuery<ConnectionResult>('SELECT version(), current_timestamp, current_user');
+    const res = await executeQuery('SELECT version(), current_timestamp, current_user');
     
     return {
       success: true,
       message: "Successfully connected to PostgreSQL",
       diagnostics: {
-        serverVersion: res[0]?.version?.split(' ')[1] || 'unknown',
-        serverTime: res[0]?.current_timestamp || new Date(),
-        connectedAs: res[0]?.current_user || 'unknown',
+        serverVersion: res[0].version.split(' ')[1],
+        serverTime: res[0].current_timestamp,
+        connectedAs: res[0].current_user,
         host: POSTGRES_HOST,
         port: POSTGRES_PORT,
         database: POSTGRES_DATABASE,
