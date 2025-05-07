@@ -13,7 +13,7 @@ import { Loader2 } from "lucide-react";
  * This utility helps migrate data from Supabase to a PostgreSQL database.
  * Run this script once to perform the initial data transfer.
  */
-export async function migrateActionsToPostgres(): Promise<{ success: boolean, message: string }> {
+export async function migrateActionsToPostgres(): Promise<{ success: boolean, message: string, count?: number }> {
   try {
     console.log('Starting migration from Supabase to PostgreSQL');
     
@@ -27,7 +27,11 @@ export async function migrateActionsToPostgres(): Promise<{ success: boolean, me
     }
     
     if (!actions || actions.length === 0) {
-      return { success: true, message: "No actions found to migrate" };
+      return { 
+        success: true, 
+        message: "No actions found to migrate", 
+        count: 0 
+      };
     }
     
     console.log(`Found ${actions.length} actions to migrate`);
@@ -37,7 +41,8 @@ export async function migrateActionsToPostgres(): Promise<{ success: boolean, me
     
     return {
       success: true,
-      message: `Successfully migrated ${insertedCount} of ${actions.length} actions to PostgreSQL`
+      message: `Successfully migrated ${insertedCount} of ${actions.length} actions to PostgreSQL`,
+      count: insertedCount
     };
   } catch (error) {
     console.error("Migration failed:", error);
@@ -103,9 +108,15 @@ export function MigrationButton() {
       const result = await migrateActionsToPostgres();
       
       if (result.success) {
-        toast.success("Migration Successful", {
-          description: result.message,
-        });
+        if (result.count === 0) {
+          toast.info("Migration Information", {
+            description: "No actions found to migrate from Supabase. You may need to create actions in Supabase first or check your Supabase credentials.",
+          });
+        } else {
+          toast.success("Migration Successful", {
+            description: result.message,
+          });
+        }
       } else {
         toast.error("Migration Failed", {
           description: result.message,

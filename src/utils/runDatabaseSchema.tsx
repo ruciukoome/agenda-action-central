@@ -14,32 +14,42 @@ export async function runDatabaseSchema(): Promise<{ success: boolean, message: 
     // Note: This won't work in a browser environment
     // This is for demonstration purposes - in a real app, you'd need a backend service
     const schemaContent = `
-    -- Create enum types
-    CREATE TYPE action_department AS ENUM (
-      'NTSA/KRA',
-      'Biashara',
-      'Agribusiness',
-      'Business Development & Strategy',
-      'Finance',
-      'ICT',
-      'Credit',
-      'Collections & Settlements',
-      'Operations',
-      'Sales Support & Data',
-      'Call Centre',
-      'Delinquency',
-      'Legal',
-      'RISK & COMPLIANCE',
-      'HR & Admin',
-      'Customer Experience & Marketing',
-      'Asset Finance',
-      'Checkoff & Personal Loans'
-    );
+    -- Create enum types if they don't exist
+    DO $$
+    BEGIN
+      IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'action_department') THEN
+        CREATE TYPE action_department AS ENUM (
+          'NTSA/KRA',
+          'Biashara',
+          'Agribusiness',
+          'Business Development & Strategy',
+          'Finance',
+          'ICT',
+          'Credit',
+          'Collections & Settlements',
+          'Operations',
+          'Sales Support & Data',
+          'Call Centre',
+          'Delinquency',
+          'Legal',
+          'RISK & COMPLIANCE',
+          'HR & Admin',
+          'Customer Experience & Marketing',
+          'Asset Finance',
+          'Checkoff & Personal Loans'
+        );
+      END IF;
+      
+      IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'action_priority') THEN
+        CREATE TYPE action_priority AS ENUM ('high', 'medium', 'low');
+      END IF;
+      
+      IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'action_progress') THEN
+        CREATE TYPE action_progress AS ENUM ('Not Started', '25%', '50%', '75%', '100%');
+      END IF;
+    END$$;
     
-    CREATE TYPE action_priority AS ENUM ('high', 'medium', 'low');
-    CREATE TYPE action_progress AS ENUM ('Not Started', '25%', '50%', '75%', '100%');
-    
-    -- Create actions table
+    -- Create actions table if it doesn't exist
     CREATE TABLE IF NOT EXISTS actions (
       id UUID PRIMARY KEY,
       description TEXT NOT NULL,
@@ -56,8 +66,8 @@ export async function runDatabaseSchema(): Promise<{ success: boolean, message: 
       user_id UUID NOT NULL
     );
     
-    -- Create index for faster user-based queries
-    CREATE INDEX idx_actions_user_id ON actions(user_id);
+    -- Create index for faster user-based queries if it doesn't exist
+    CREATE INDEX IF NOT EXISTS idx_actions_user_id ON actions(user_id);
     `;
     
     // Split the schema into individual statements

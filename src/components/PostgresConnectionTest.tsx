@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, CheckCircle, Database, RefreshCw } from 'lucide-react';
 import { testConnection } from '@/integrations/postgres/client';
+import { toast } from 'sonner';
 
 export function PostgresConnectionTest() {
   const [isLoading, setIsLoading] = useState(false);
@@ -18,10 +19,19 @@ export function PostgresConnectionTest() {
       const diagnostics = await testConnection();
       console.log("Connection test result:", diagnostics);
       setResult(diagnostics);
+      
+      if (diagnostics.success) {
+        toast.success("Connection successful", {
+          description: `Connected to PostgreSQL ${diagnostics.diagnostics.serverVersion || 'Unknown'}`
+        });
+      }
     } catch (err) {
       console.error("Connection test error:", err);
       setError((err as Error).message);
       setResult(null);
+      toast.error("Connection failed", {
+        description: (err as Error).message
+      });
     } finally {
       setIsLoading(false);
     }
