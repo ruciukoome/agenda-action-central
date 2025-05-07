@@ -35,6 +35,27 @@ export default function Auth() {
     }
   }, [user, navigate, location]);
 
+  // Add keyboard shortcut handler
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Alt+S for signup
+      if (e.altKey && e.key === 's') {
+        e.preventDefault();
+        setIsLogin(false);
+      }
+      // Alt+L for login
+      if (e.altKey && e.key === 'l') {
+        e.preventDefault();
+        setIsLogin(true);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
@@ -137,28 +158,22 @@ export default function Auth() {
               )}
             </Button>
             
-            {/* Hidden span with a keyboard accessible way to switch modes */}
-            <span className="sr-only">
-              <Button
-                type="button"
-                variant="link"
-                className="w-full"
-                onClick={() => setIsLogin(!isLogin)}
-                disabled={isLoading}
-                tabIndex={0}
-                aria-label={isLogin ? "Switch to sign up" : "Switch to sign in"}
-              >
-                {isLogin 
-                  ? "Don't have an account? Sign up" 
-                  : "Already have an account? Sign in"}
-              </Button>
-            </span>
-            
-            {/* Dev note - accessible through URL parameter ?mode=signup */}
-            <div className="text-xs text-center text-muted-foreground mt-4">
+            {/* Add a visible switch mode button */}
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={() => setIsLogin(!isLogin)}
+              disabled={isLoading}
+            >
               {isLogin 
-                ? "Press Alt+S to access signup" 
-                : "Press Alt+L to access login"}
+                ? "Don't have an account? Sign up" 
+                : "Already have an account? Sign in"}
+            </Button>
+            
+            {/* Info about keyboard shortcuts */}
+            <div className="text-xs text-center text-muted-foreground mt-4">
+              Press <span className="font-medium">Alt+S</span> to switch to signup or <span className="font-medium">Alt+L</span> to switch to login
             </div>
           </CardFooter>
         </form>
