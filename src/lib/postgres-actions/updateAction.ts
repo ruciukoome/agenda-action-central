@@ -2,64 +2,89 @@
 import { executeQuery } from '@/integrations/postgres/client';
 import { DbAction, mapDbActionToActionItem } from '@/integrations/postgres/types';
 import { ActionItem } from '@/types/action';
-import { supabase } from '@/integrations/supabase/client';
 
-/**
- * Updates an existing action in the PostgreSQL database
- * Table: actions
- */
-export async function updateAction(action: ActionItem): Promise<ActionItem> {
-  // Get the authenticated user from Supabase
-  const { data: userData } = await supabase.auth.getUser();
-  
-  if (!userData.user) {
-    throw new Error('User not authenticated');
-  }
-
-  const now = new Date().toISOString();
-  
-  const query = `
-    UPDATE actions 
-    SET 
-      description = $1,
-      department = $2,
-      meeting_date = $3,
-      priority = $4,
-      owner_email = $5,
-      completed = $6,
-      progress_status = $7,
-      notes = $8,
-      updated_at = $9,
-      due_date = $10
-    WHERE id = $11 AND user_id = $12
-    RETURNING *
-  `;
-  
-  const params = [
-    action.description,
-    action.department,
-    action.meetingDate,
-    action.priority,
-    action.ownerEmail,
-    action.completed,
-    action.progressStatus,
-    action.notes,
-    now,
-    action.dueDate || null,
-    action.id,
-    userData.user.id
-  ];
-  
+export async function updateAction(
+  actionId: string,
+  actionData: Partial<ActionItem>,
+  userId: string
+): Promise<ActionItem> {
   try {
-    const results = await executeQuery<DbAction>(query, params);
+    // Build the SET clause dynamically based on what fields are provided
+    const updateFields: string[] = [];
+    const values: any[] = [];
+    let paramCounter = 1;
     
-    if (results.length === 0) {
+    if (actionData.description !== undefined) {
+      updateFields.push(`description = $${paramCounter++}`);
+      values.push(actionData.description);
+    }
+    
+    if (actionData.department !== undefined) {
+      updateFields.push(`department = $${paramCounter++}`);
+      values.push(actionData.department);
+    }
+    
+    if (actionData.meetingDate !== undefined) {
+      updateFields.push(`meeting_date = $${paramCounter++}`);
+      values.push(actionData.meetingDate);
+    }
+    
+    if (actionData.priority !== undefined) {
+      updateFields.push(`priority = $${paramCounter++}`);
+      values.push(actionData.priority);
+    }
+    
+    if (actionData.ownerEmail !== undefined) {
+      updateFields.push(`owner_email = $${paramCounter++}`);
+      values.push(actionData.ownerEmail);
+    }
+    
+    if (actionData.completed !== undefined) {
+      updateFields.push(`completed = $${paramCounter++}`);
+      values.push(actionData.completed);
+    }
+    
+    if (actionData.progressStatus !== undefined) {
+      updateFields.push(`progress_status = $${paramCounter++}`);
+      values.push(actionData.progressStatus);
+    }
+    
+    if (actionData.notes !== undefined) {
+      updateFields.push(`notes = $${paramCounter++}`);
+      values.push(actionData.notes);
+    }
+    
+    if (actionData.dueDate !== undefined) {
+      updateFields.push(`due_date = $${paramCounter++}`);
+      values.push(actionData.dueDate);
+    }
+    
+    // Always update the updated_at timestamp
+    updateFields.push(`updated_at = $${paramCounter++}`);
+    values.push(new Date().toISOString());
+    
+    // Add the action ID and user ID to the values array
+    values.push(actionId);
+    values.push(userId);
+    
+    // Build and execute the query
+    const query = `
+      UPDATE actions 
+      SET ${updateFields.join(', ')} 
+      WHERE id = $${paramCounter++} AND user_id = $${paramCounter++}
+      RETURNING *
+    `;
+    
+    const result = await executeQuery<DbAction>(query, values);
+    
+    if (result.length === 0) {
       throw new Error('Action not found or you do not have permission to update it');
     }
     
-    return mapDbActionToActionItem(results[0]);
+    // Map the DB action to an ActionItem and return it
+    return mapDbActionToActionItem(result[0]);
   } catch (error) {
-    console.error('Error updating action:', error);
+    console.error('Error updating action in PostgreSQL:', error);
     throw error;
   }
 }

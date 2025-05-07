@@ -6,18 +6,29 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Header } from "@/components/Header";
-import { Loader2 } from "lucide-react";
+import { Loader2, Database, ArrowRight } from "lucide-react";
 import { MigrationButton } from "@/utils/migrateData";
 import { SchemaSetupButton } from "@/utils/runDatabaseSchema";
+import { PostgresConnectionTest } from "@/components/PostgresConnectionTest";
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog";
+import { useNavigate } from "react-router-dom";
 
 export default function DatabaseSetup() {
   const { toast } = useToast();
-  const [host, setHost] = useState("");
-  const [port, setPort] = useState("5432");
-  const [database, setDatabase] = useState("");
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const navigate = useNavigate();
+  const [host, setHost] = useState(localStorage.getItem("POSTGRES_HOST") || "localhost");
+  const [port, setPort] = useState(localStorage.getItem("POSTGRES_PORT") || "5432");
+  const [database, setDatabase] = useState(localStorage.getItem("POSTGRES_DATABASE") || "postgres");
+  const [username, setUsername] = useState(localStorage.getItem("POSTGRES_USER") || "postgres");
+  const [password, setPassword] = useState(localStorage.getItem("POSTGRES_PASSWORD") || "");
   const [isLoading, setIsLoading] = useState(false);
+  const [showConnectionDialog, setShowConnectionDialog] = useState(false);
   
   const handleSaveConfig = async () => {
     setIsLoading(true);
@@ -33,7 +44,7 @@ export default function DatabaseSetup() {
         // Password not logged for security reasons
       });
       
-      // Normally we would save this to secure storage or environment variables
+      // Store in localStorage
       localStorage.setItem("POSTGRES_HOST", host);
       localStorage.setItem("POSTGRES_PORT", port);
       localStorage.setItem("POSTGRES_DATABASE", database);
@@ -46,6 +57,9 @@ export default function DatabaseSetup() {
         title: "Connection settings saved",
         description: "Database connection settings have been saved successfully.",
       });
+      
+      // Show connection test dialog
+      setShowConnectionDialog(true);
     } catch (error) {
       toast({
         title: "Failed to save settings",
@@ -141,6 +155,18 @@ export default function DatabaseSetup() {
           
           <Card>
             <CardHeader>
+              <CardTitle>Connection Test</CardTitle>
+              <CardDescription>
+                Test your PostgreSQL connection with the saved settings.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <PostgresConnectionTest />
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
               <CardTitle>Database Setup</CardTitle>
               <CardDescription>
                 Set up your PostgreSQL database schema and migrate your data.
@@ -164,6 +190,36 @@ export default function DatabaseSetup() {
           </Card>
         </div>
       </div>
+      
+      <Dialog open={showConnectionDialog} onOpenChange={setShowConnectionDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Connection Settings Saved</DialogTitle>
+            <DialogDescription>
+              Your PostgreSQL connection settings have been saved. You can now:
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <ul className="list-disc list-inside space-y-2 ml-2">
+              <li>Test your connection</li>
+              <li>Set up the database schema</li>
+              <li>Migrate your existing data</li>
+            </ul>
+            <div className="mt-4">
+              <p className="text-sm text-muted-foreground">
+                The credentials shown in your screenshot indicate you're using a local PostgreSQL server.
+                You can use these settings if you have PostgreSQL installed locally.
+              </p>
+            </div>
+          </div>
+          <Button
+            className="w-full"
+            onClick={() => setShowConnectionDialog(false)}
+          >
+            OK, I Understand
+          </Button>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

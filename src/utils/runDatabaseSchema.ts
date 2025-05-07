@@ -1,8 +1,6 @@
 
 import { executeQuery } from '@/integrations/postgres/client';
 import { toast } from "@/components/ui/use-toast";
-import { readFileSync } from 'fs';
-import path from 'path';
 
 /**
  * Executes the schema.sql file to set up the PostgreSQL database structure
