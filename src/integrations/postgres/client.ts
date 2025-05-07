@@ -84,12 +84,14 @@ function loadCredentialsFromStorage() {
     POSTGRES_PASSWORD = localStorage.getItem('POSTGRES_PASSWORD') || POSTGRES_PASSWORD;
   }
 
-  // Use environment variables as fallback
-  if (process.env.POSTGRES_HOST) POSTGRES_HOST = process.env.POSTGRES_HOST;
-  if (process.env.POSTGRES_PORT) POSTGRES_PORT = parseInt(process.env.POSTGRES_PORT);
-  if (process.env.POSTGRES_DATABASE) POSTGRES_DATABASE = process.env.POSTGRES_DATABASE;
-  if (process.env.POSTGRES_USER) POSTGRES_USER = process.env.POSTGRES_USER;
-  if (process.env.POSTGRES_PASSWORD) POSTGRES_PASSWORD = process.env.POSTGRES_PASSWORD;
+  // Use environment variables as fallback only if we're in a Node.js environment
+  if (typeof process !== 'undefined' && process.env) {
+    if (process.env.POSTGRES_HOST) POSTGRES_HOST = process.env.POSTGRES_HOST;
+    if (process.env.POSTGRES_PORT) POSTGRES_PORT = parseInt(process.env.POSTGRES_PORT);
+    if (process.env.POSTGRES_DATABASE) POSTGRES_DATABASE = process.env.POSTGRES_DATABASE;
+    if (process.env.POSTGRES_USER) POSTGRES_USER = process.env.POSTGRES_USER;
+    if (process.env.POSTGRES_PASSWORD) POSTGRES_PASSWORD = process.env.POSTGRES_PASSWORD;
+  }
 }
 
 // Load credentials immediately
@@ -110,7 +112,7 @@ function getPool() {
       database: POSTGRES_DATABASE,
       user: POSTGRES_USER,
       password: POSTGRES_PASSWORD,
-      ssl: process.env.NODE_ENV === 'production'
+      ssl: typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'production'
     };
 
     try {
@@ -168,7 +170,7 @@ export async function testConnection(): Promise<{
 }> {
   try {
     // Simple query to test connection
-    const res = await executeQuery<Record<string, string>>('SELECT version() as version, current_timestamp as current_timestamp, current_user as current_user');
+    const res = await executeQuery<Record<string, any>>('SELECT version() as version, current_timestamp as current_timestamp, current_user as current_user');
     
     return {
       success: true,
