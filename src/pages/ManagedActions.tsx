@@ -5,15 +5,13 @@
  * Provides interface for viewing, filtering, and managing actions
  * 
  * Backend connections:
- * - Fetches actions from the database via fetchActions()
+ * - Fetches actions from the PostgreSQL database via fetchActions()
  * - Handles deleting actions via deleteAction()
- * - Sets up real-time subscription to action changes
  */
 
 import { useState, useEffect, useCallback } from "react";
 import { Header } from "@/components/Header";
-import { fetchActions } from "@/lib/actions";
-import { supabase } from "@/integrations/supabase/client";
+import { fetchActions } from "@/lib/postgres-actions";
 import { toast } from "@/components/ui/use-toast";
 import { ManagedActionsContent } from "@/components/actions/ManagedActionsContent";
 
@@ -40,25 +38,15 @@ export default function ManagedActions() {
 
   useEffect(() => {
     loadActions();
-
-    // Set up realtime subscription
-    const channel = supabase
-      .channel('actions_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'actions'
-        },
-        () => {
-          loadActions();
-        }
-      )
-      .subscribe();
+    
+    // Set up polling for data refresh every 30 seconds
+    // This replaces Supabase's realtime functionality
+    const intervalId = setInterval(() => {
+      loadActions();
+    }, 30000);
 
     return () => {
-      supabase.removeChannel(channel);
+      clearInterval(intervalId);
     };
   }, [loadActions]);
 

@@ -1,12 +1,11 @@
-
 /**
  * MAIN APPLICATION PAGE
  * -------------------
  * Displays the action dashboard and handles data loading
  * 
  * Backend connections:
- * - Fetches actions from the database via fetchActions()
- * - Sets up real-time subscription to action updates
+ * - Fetches actions from the PostgreSQL database via fetchActions()
+ * - Uses polling for data refresh instead of Supabase's realtime
  * - Redirects to auth page if user is not authenticated
  */
 
@@ -16,10 +15,9 @@ import { ActionDashboard } from "@/components/ActionDashboard";
 import { Header } from "@/components/Header";
 import { ActionItem } from "@/types/action";
 import { EmailIntegrationCard } from "@/components/EmailIntegrationCard";
-import { fetchActions } from "@/lib/actions";
+import { fetchActions } from "@/lib/postgres-actions";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ChartPieIcon } from "lucide-react";
 
@@ -54,28 +52,15 @@ export default function Index() {
     };
 
     loadActions();
-
-    // Subscribe to realtime updates for the actions table
-    const channel = supabase
-      .channel('actions_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'actions'
-        },
-        (payload) => {
-          console.log('Realtime update received:', payload);
-          loadActions(); // Reload all actions when any change occurs
-        }
-      )
-      .subscribe((status) => {
-        console.log('Subscription status:', status);
-      });
+    
+    // Set up polling for data refresh every 30 seconds
+    // This replaces Supabase's realtime functionality
+    const intervalId = setInterval(() => {
+      loadActions();
+    }, 30000);
 
     return () => {
-      supabase.removeChannel(channel);
+      clearInterval(intervalId);
     };
   }, [session, navigate, toast]);
   

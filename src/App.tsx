@@ -16,6 +16,7 @@ import Dashboard from "./pages/Dashboard";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import { TestEmailNotification } from "@/components/TestEmailNotification";
+import DatabaseSetup from "./pages/DatabaseSetup";
 
 const queryClient = new QueryClient();
 
@@ -74,6 +75,14 @@ const App = () => {
                 element={
                   <AuthGuard>
                     <ManagedActions />
+                  </AuthGuard>
+                } 
+              />
+              <Route 
+                path="/database-setup" 
+                element={
+                  <AuthGuard>
+                    <DatabaseSetup />
                   </AuthGuard>
                 } 
               />

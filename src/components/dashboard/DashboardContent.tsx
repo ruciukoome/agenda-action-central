@@ -4,7 +4,7 @@ import { NotesStatistics } from "./NotesStatistics";
 import { ActionCharts } from "./ActionCharts";
 import { UpcomingDeadlines } from "./UpcomingDeadlines";
 import { ActionItem } from "@/types/action";
-import { fetchActions } from "@/lib/actions";
+import { fetchActions } from "@/lib/postgres-actions";
 
 export function DashboardContent() {
   const [actions, setActions] = useState<ActionItem[]>([]);
@@ -24,6 +24,15 @@ export function DashboardContent() {
     };
 
     loadActions();
+    
+    // Set up polling for data refresh every 30 seconds
+    const intervalId = setInterval(() => {
+      loadActions();
+    }, 30000);
+
+    return () => {
+      clearInterval(intervalId);
+    };
   }, []);
 
   return (

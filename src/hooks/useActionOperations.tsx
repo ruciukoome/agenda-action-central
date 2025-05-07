@@ -1,7 +1,7 @@
 
 import { useState, useCallback } from "react";
 import { ActionItem } from "@/types/action";
-import { deleteAction } from "@/lib/actions";
+import { deleteAction } from "@/lib/postgres-actions";
 import { toast } from "@/components/ui/use-toast";
 import { useActionExport } from "@/hooks/useActionExport";
 
