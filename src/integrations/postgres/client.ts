@@ -43,7 +43,7 @@ function loadCredentialsFromStorage() {
 loadCredentialsFromStorage();
 
 // Create a connection pool
-let pool: Pool;
+let pool: typeof Pool.prototype;
 
 function getPool() {
   // Reload credentials from localStorage to ensure we have the latest
