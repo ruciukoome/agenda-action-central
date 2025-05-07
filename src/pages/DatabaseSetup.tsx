@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Header } from "@/components/Header";
 import { Loader2 } from "lucide-react";
 import { MigrationButton } from "@/utils/migrateData";
+import { SchemaSetupButton } from "@/utils/runDatabaseSchema";
 
 export default function DatabaseSetup() {
   const { toast } = useToast();
@@ -140,16 +141,25 @@ export default function DatabaseSetup() {
           
           <Card>
             <CardHeader>
-              <CardTitle>Data Migration</CardTitle>
+              <CardTitle>Database Setup</CardTitle>
               <CardDescription>
-                Transfer your existing data from Supabase to your PostgreSQL database.
+                Set up your PostgreSQL database schema and migrate your data.
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <p className="mb-4 text-sm text-muted-foreground">
-                This will copy all your existing action items from Supabase to your configured PostgreSQL database. Make sure your database is set up correctly before proceeding.
-              </p>
-              <MigrationButton />
+            <CardContent className="space-y-4">
+              <div className="mb-4">
+                <p className="text-sm text-muted-foreground mb-2">
+                  First, set up the database schema (tables, types, indexes)
+                </p>
+                <SchemaSetupButton />
+              </div>
+              
+              <div className="pt-2 border-t">
+                <p className="mb-4 text-sm text-muted-foreground">
+                  Then, migrate your existing data from Supabase to PostgreSQL
+                </p>
+                <MigrationButton />
+              </div>
             </CardContent>
           </Card>
         </div>

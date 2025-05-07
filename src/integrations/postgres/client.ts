@@ -6,21 +6,36 @@ import { Pool } from 'pg';
  * ---------------------
  * This file configures the connection to the PostgreSQL database.
  * 
- * Connection is established using environment variables:
+ * Connection is established using environment variables or localStorage values:
  * - POSTGRES_HOST: The PostgreSQL host URL
  * - POSTGRES_PORT: The PostgreSQL port
  * - POSTGRES_DATABASE: The PostgreSQL database name
  * - POSTGRES_USER: The PostgreSQL username
  * - POSTGRES_PASSWORD: The PostgreSQL password
- * 
- * For development, these can be set in the Supabase Edge Function secrets.
  */
 
-const POSTGRES_HOST = process.env.POSTGRES_HOST || 'localhost';
-const POSTGRES_PORT = parseInt(process.env.POSTGRES_PORT || '5432');
-const POSTGRES_DATABASE = process.env.POSTGRES_DATABASE || 'postgres';
-const POSTGRES_USER = process.env.POSTGRES_USER || 'postgres';
-const POSTGRES_PASSWORD = process.env.POSTGRES_PASSWORD || '';
+// Load credentials from localStorage if available (browser environment)
+let POSTGRES_HOST = 'localhost';
+let POSTGRES_PORT = 5432;
+let POSTGRES_DATABASE = 'postgres';
+let POSTGRES_USER = 'postgres';
+let POSTGRES_PASSWORD = '';
+
+// Try to get credentials from localStorage
+if (typeof window !== 'undefined') {
+  POSTGRES_HOST = localStorage.getItem('POSTGRES_HOST') || POSTGRES_HOST;
+  POSTGRES_PORT = parseInt(localStorage.getItem('POSTGRES_PORT') || `${POSTGRES_PORT}`);
+  POSTGRES_DATABASE = localStorage.getItem('POSTGRES_DATABASE') || POSTGRES_DATABASE;
+  POSTGRES_USER = localStorage.getItem('POSTGRES_USER') || POSTGRES_USER;
+  POSTGRES_PASSWORD = localStorage.getItem('POSTGRES_PASSWORD') || POSTGRES_PASSWORD;
+}
+
+// Use environment variables as fallback
+if (process.env.POSTGRES_HOST) POSTGRES_HOST = process.env.POSTGRES_HOST;
+if (process.env.POSTGRES_PORT) POSTGRES_PORT = parseInt(process.env.POSTGRES_PORT);
+if (process.env.POSTGRES_DATABASE) POSTGRES_DATABASE = process.env.POSTGRES_DATABASE;
+if (process.env.POSTGRES_USER) POSTGRES_USER = process.env.POSTGRES_USER;
+if (process.env.POSTGRES_PASSWORD) POSTGRES_PASSWORD = process.env.POSTGRES_PASSWORD;
 
 // Create a connection pool
 const pool = new Pool({

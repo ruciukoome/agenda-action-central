@@ -8,7 +8,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { executeQuery } from "@/integrations/postgres/client";
-import { DbAction } from "@/lib/actions/types";
+import { DbAction } from "@/integrations/postgres/types";
 import { toast } from "@/components/ui/use-toast";
 
 export async function migrateActionsToPostgres(): Promise<{ success: boolean, message: string }> {
