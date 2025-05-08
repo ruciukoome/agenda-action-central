@@ -255,11 +255,11 @@ async function sendEmailWithSendGrid(to: string, subject: string, htmlContent: s
         }
       ],
       from: { 
-        email: "support@platinumcredit.co.ke", 
+        email: "onboarding@resend.dev", 
         name: "Action Central" 
       },
       reply_to: {
-        email: "no-reply@platinumcredit.co.ke",
+        email: "no-reply@example.com",
         name: "Action Central"
       },
       content: [
@@ -273,9 +273,10 @@ async function sendEmailWithSendGrid(to: string, subject: string, htmlContent: s
         }
       ],
       // Adding message identifiers for tracking and threading
-      message_id: `due-reminder-${Date.now()}@platinumcredit.co.ke`,
+      message_id: `due-reminder-${Date.now()}@example.com`,
+      // Adding hardcoded unsubscribe group ID as requested
       asm: {
-        group_id: 31666, // Hardcoded unsubscribe group ID
+        group_id: 31666,
         groups_to_display: [31666]
       },
       // Adding mail settings to improve deliverability
@@ -300,8 +301,12 @@ async function sendEmailWithSendGrid(to: string, subject: string, htmlContent: s
     })
   });
 
+  // Log response information for debugging
+  const responseText = await response.text();
+  console.log("SendGrid API response status:", response.status);
+  console.log("SendGrid API response text:", responseText);
+
   if (!response.ok) {
-    const responseText = await response.text();
     throw new Error(`SendGrid API error: ${response.status} - ${responseText}`);
   }
 

@@ -21,9 +21,9 @@ const API_URL = 'http://localhost:5000/api';
 // Default connection parameters - these will be overridden by localStorage
 let POSTGRES_HOST = 'localhost';
 let POSTGRES_PORT = 5432;
-let POSTGRES_DATABASE = 'actionpoint'; // Updated to match the user's database
+let POSTGRES_DATABASE = 'actionpoint'; // Corrected database name
 let POSTGRES_USER = 'postgres';
-let POSTGRES_PASSWORD = 'Qwerty&00Asdfgh'; // Updated to match the user's password
+let POSTGRES_PASSWORD = 'Qwerty&00Asdfgh';
 
 // Create axios instance for API calls
 const api = axios.create({

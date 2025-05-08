@@ -19,8 +19,11 @@ export async function createAction(
       dueDate: action.dueDate ? action.dueDate : undefined
     };
     
+    // Log due date information for debugging
     console.log('Creating action in PostgreSQL with formatted date:', 
-      actionWithFormattedDate.dueDate ? new Date(actionWithFormattedDate.dueDate).toISOString() : 'No due date');
+      actionWithFormattedDate.dueDate ? 
+        `${new Date(actionWithFormattedDate.dueDate).toISOString()} (original: ${actionWithFormattedDate.dueDate})` : 
+        'No due date');
     
     try {
       // Send request to the backend API with a timeout
