@@ -1,4 +1,3 @@
-
 /**
  * EDGE FUNCTION: DUE DATE REMINDERS
  * -------------------------------
@@ -255,11 +254,11 @@ async function sendEmailWithSendGrid(to: string, subject: string, htmlContent: s
         }
       ],
       from: { 
-        email: "onboarding@resend.dev", 
+        email: "joseph.odhiambo@platinumcredit.co.ke", 
         name: "Action Central" 
       },
       reply_to: {
-        email: "no-reply@example.com",
+        email: "no-reply@platinumcredit.co.ke",
         name: "Action Central"
       },
       content: [
@@ -273,7 +272,7 @@ async function sendEmailWithSendGrid(to: string, subject: string, htmlContent: s
         }
       ],
       // Adding message identifiers for tracking and threading
-      message_id: `due-reminder-${Date.now()}@example.com`,
+      message_id: `due-reminder-${Date.now()}@platinumcredit.co.ke`,
       // Adding hardcoded unsubscribe group ID as requested
       asm: {
         group_id: 31666,

@@ -61,7 +61,7 @@ serve(async (req) => {
     // Generate email content based on notification type
     const { subject, htmlContent, textContent } = generateEmailContent(action, type);
     
-    console.log(`Sending email from: onboarding@resend.dev to: ${action.ownerEmail}`);
+    console.log(`Sending email from: joseph.odhiambo@platinumcredit.co.ke to: ${action.ownerEmail}`);
     
     // Send email using SendGrid with improved deliverability settings
     const response = await fetch("https://api.sendgrid.com/v3/mail/send", {
@@ -84,11 +84,11 @@ serve(async (req) => {
           }
         ],
         from: { 
-          email: "onboarding@resend.dev", 
+          email: "joseph.odhiambo@platinumcredit.co.ke", 
           name: "Action Central" 
         },
         reply_to: {
-          email: "no-reply@example.com",
+          email: "no-reply@platinumcredit.co.ke",
           name: "Action Central"
         },
         content: [
@@ -102,7 +102,7 @@ serve(async (req) => {
           }
         ],
         // Adding message identifiers for tracking and threading
-        message_id: `action-${action.id}-${Date.now()}@example.com`,
+        message_id: `action-${action.id}-${Date.now()}@platinumcredit.co.ke`,
         // Adding hardcoded unsubscribe group ID as requested
         asm: {
           group_id: 31666,

@@ -14,6 +14,7 @@
 
 import axios from 'axios';
 import { testConnection as apiTestConnection, initializeDatabase } from './api';
+import { toast } from 'sonner';
 
 // Base URL for API requests
 const API_URL = 'http://localhost:5000/api';
@@ -21,7 +22,7 @@ const API_URL = 'http://localhost:5000/api';
 // Default connection parameters - these will be overridden by localStorage
 let POSTGRES_HOST = 'localhost';
 let POSTGRES_PORT = 5432;
-let POSTGRES_DATABASE = 'actionpoint'; // Corrected database name
+let POSTGRES_DATABASE = 'actionpoint'; // Correct database name
 let POSTGRES_USER = 'postgres';
 let POSTGRES_PASSWORD = 'Qwerty&00Asdfgh';
 
@@ -49,6 +50,16 @@ export function loadCredentialsFromStorage() {
       user: POSTGRES_USER,
       // Password omitted for security
     });
+    
+    // Check if database is misspelled and fix it automatically
+    if (POSTGRES_DATABASE === 'actionpooint') {
+      console.warn('Fixed database name typo: changing "actionpooint" to "actionpoint"');
+      POSTGRES_DATABASE = 'actionpoint';
+      localStorage.setItem('POSTGRES_DATABASE', POSTGRES_DATABASE);
+      toast.info("Database name corrected", {
+        description: "Fixed typo in database name: 'actionpooint' → 'actionpoint'"
+      });
+    }
   }
 }
 
