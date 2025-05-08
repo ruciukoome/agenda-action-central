@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ActionForm } from "@/components/ActionForm";
 import { ActionItem } from "@/types/action";
 import { useToast } from "@/components/ui/use-toast";
-import { createAction } from "@/lib/actions";
+import { createAction } from "@/lib/postgres-actions"; // Changed to use postgres-actions
 import { Header } from "@/components/Header";
 
 export default function AddAction() {
@@ -12,8 +12,13 @@ export default function AddAction() {
   
   const handleSave = async (action: ActionItem) => {
     try {
+      console.log("Saving action with due date:", action.dueDate);
+      
+      // Get user ID from localStorage - in a real app, get this from auth context
+      const userId = localStorage.getItem("USER_ID") || "test-user-id";
+      
       // Use our createAction function to add the new action to our store
-      await createAction(action);
+      await createAction(action, userId);
       
       toast({
         title: "Action created",

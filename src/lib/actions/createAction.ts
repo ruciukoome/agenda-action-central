@@ -27,8 +27,27 @@ export async function createAction(action: Omit<ActionItem, 'id' | 'createdAt' |
     throw new Error('Owner email is required and must be valid');
   }
 
-  // We now ensure the userId is always defined
-  const dbAction = mapActionItemToDbAction(action as ActionItem, userData.user.id);
+  // Log all fields in the action object before saving
+  console.log("Creating action in Supabase with data:", JSON.stringify(action, null, 2));
+  
+  // Explicitly prepare the dbAction object to ensure due date is preserved
+  const dbAction = {
+    description: action.description,
+    department: action.department,
+    meeting_date: action.meetingDate,
+    priority: action.priority,
+    owner_email: action.ownerEmail,
+    completed: action.completed,
+    progress_status: action.progressStatus,
+    notes: action.notes || '',
+    user_id: userData.user.id,
+    // Make sure due_date is explicitly included
+    due_date: action.dueDate ? action.dueDate : null
+  };
+
+  // Log the prepared dbAction object
+  console.log("Prepared dbAction object:", JSON.stringify(dbAction, null, 2));
+  console.log("Due date value:", action.dueDate ? new Date(action.dueDate).toISOString() : "No due date");
 
   const { data, error } = await supabase
     .from('actions')
@@ -44,6 +63,7 @@ export async function createAction(action: Omit<ActionItem, 'id' | 'createdAt' |
   const createdAction = mapDbActionToActionItem(data as DbAction);
 
   console.log("Action created successfully:", createdAction);
+  console.log("Due date in created action:", createdAction.dueDate || "Not set");
   console.log("Sending notification for new action to:", createdAction.ownerEmail);
 
   try {

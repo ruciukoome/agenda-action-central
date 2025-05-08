@@ -50,11 +50,13 @@ serve(async (req) => {
     
     console.log(`Checking for actions with due date on: ${tomorrowFormatted}`);
 
-    // Query the database for actions due tomorrow
+    // Query the database for actions due tomorrow with proper date handling
     const { data: actions, error } = await supabase
       .from('actions')
       .select('*')
-      .like('due_date', `${tomorrowFormatted}%`); // Using a LIKE query to match the date part
+      .filter('due_date', 'gte', `${tomorrowFormatted}T00:00:00`)
+      .filter('due_date', 'lt', `${tomorrowFormatted}T23:59:59`)
+      .eq('completed', false); // Only look for incomplete actions
 
     if (error) {
       throw new Error(`Database query failed: ${error.message}`);
@@ -94,7 +96,7 @@ serve(async (req) => {
       try {
         const emailResult = await sendEmailWithSendGrid(
           action.ownerEmail,
-          "ACTION DUE TOMORROW - " + action.description,
+          "ACTION DUE TOMORROW - " + action.description.substring(0, 50) + (action.description.length > 50 ? "..." : ""),
           emailContent
         );
         
@@ -155,53 +157,53 @@ function generateDueDateReminderEmail(action: any): string {
   });
 
   return `
+    <!DOCTYPE html>
     <html>
       <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <title>Action Item Due Tomorrow</title>
         <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background-color: #f8f9fa; padding: 15px; border-bottom: 3px solid #0070f3; }
-          .content { padding: 20px 0; }
-          .footer { font-size: 12px; color: #666; border-top: 1px solid #eee; padding-top: 15px; }
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; }
+          .header { background-color: #0070f3; color: white; padding: 20px; text-align: center; }
+          .content { padding: 20px; }
+          .footer { font-size: 12px; color: #666; border-top: 1px solid #eee; padding: 20px; text-align: center; }
           .priority-high { color: #e53e3e; font-weight: bold; }
           .priority-medium { color: #dd6b20; font-weight: bold; }
           .priority-low { color: #38a169; font-weight: bold; }
           .button { background-color: #0070f3; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-block; margin-top: 15px; }
-          .unsubscribe { color: #999; font-size: 11px; }
         </style>
       </head>
       <body>
-        <div class="container">
-          <div class="header">
-            <h2>Action Item Due Tomorrow</h2>
-          </div>
-          <div class="content">
-            <p>Hello,</p>
-            <p>This is a reminder that you have an action item due <strong>tomorrow</strong>.</p>
-            
-            <h3>${action.description}</h3>
-            <p><strong>Due Date:</strong> ${dueDate}</p>
-            <p><strong>Department:</strong> ${action.department}</p>
-            <p><strong>Priority:</strong> <span class="priority-${action.priority}">${action.priority}</span></p>
-            <p><strong>Current Progress:</strong> ${action.progressStatus}</p>
-            ${action.notes ? `<p><strong>Notes:</strong> ${action.notes}</p>` : ''}
-            
-            <p>Please log in to the Action Central system to update your progress or mark this item as complete.</p>
-            <a href="https://actioncentral.platinumcredit.co.ke" class="button">Access Action Central</a>
-          </div>
-          <div class="footer">
-            <p>This is an automated message from the Action Central system. Please do not reply directly to this email.</p>
-            <p>Platinum Credit Limited</p>
-            <p>Send from a verified domain: <strong>platinumcredit.co.ke</strong></p>
-            <p class="unsubscribe">To manage your notification preferences, please log in to your Action Central account settings.</p>
-          </div>
+        <div class="header">
+          <h2>Action Item Due Tomorrow</h2>
+        </div>
+        <div class="content">
+          <p>Hello,</p>
+          <p>This is a reminder that you have an action item due <strong>tomorrow</strong>.</p>
+          
+          <h3>${action.description}</h3>
+          <p><strong>Due Date:</strong> ${dueDate}</p>
+          <p><strong>Department:</strong> ${action.department}</p>
+          <p><strong>Priority:</strong> <span class="priority-${action.priority}">${action.priority}</span></p>
+          <p><strong>Current Progress:</strong> ${action.progressStatus}</p>
+          ${action.notes ? `<p><strong>Notes:</strong> ${action.notes}</p>` : ''}
+          
+          <p>Please log in to the Action Central system to update your progress or mark this item as complete.</p>
+          <a href="https://actioncentral.platinumcredit.co.ke" class="button">Access Action Central</a>
+        </div>
+        <div class="footer">
+          <p>This is an automated message from the Action Central system. Please do not reply directly to this email.</p>
+          <p>Platinum Credit Limited</p>
+          <p>Sent from a verified domain: <strong>platinumcredit.co.ke</strong></p>
+          <p>To manage your notification preferences, please log in to your Action Central account settings.</p>
         </div>
       </body>
     </html>
   `;
 }
 
-// Function to send email using SendGrid API
+// Function to send email using SendGrid API with improved deliverability
 async function sendEmailWithSendGrid(to: string, subject: string, htmlContent: string): Promise<any> {
   const response = await fetch("https://api.sendgrid.com/v3/mail/send", {
     method: "POST",
@@ -236,13 +238,26 @@ async function sendEmailWithSendGrid(to: string, subject: string, htmlContent: s
           value: htmlContent
         }
       ],
-      // Adding SendGrid tracking settings
+      // Adding mail settings to improve deliverability
+      mail_settings: {
+        bypass_list_management: {
+          enable: false
+        },
+        footer: {
+          enable: true
+        },
+        sandbox_mode: {
+          enable: false
+        }
+      },
+      // Adding tracking settings
       tracking_settings: {
         click_tracking: { enable: true },
-        open_tracking: { enable: true }
+        open_tracking: { enable: true },
+        subscription_tracking: { enable: false }
       },
       // Adding a category to help with tracking/analytics
-      categories: ["action_reminder"]
+      categories: ["action_due_reminder"]
     })
   });
 
