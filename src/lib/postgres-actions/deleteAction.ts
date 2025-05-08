@@ -8,6 +8,8 @@ export async function deleteAction(
   userId: string
 ): Promise<void> {
   try {
+    console.log('Starting delete action process for:', actionId);
+
     // First try the PostgreSQL backend
     try {
       console.log('Attempting to delete action via PostgreSQL API', { actionId, userId });
@@ -24,6 +26,8 @@ export async function deleteAction(
       toast.success("Action Deleted", {
         description: "Successfully deleted action"
       });
+
+      return; // Exit early if PostgreSQL deletion succeeded
     } catch (postgresError) {
       console.error('PostgreSQL deletion failed, falling back to Supabase:', postgresError);
       

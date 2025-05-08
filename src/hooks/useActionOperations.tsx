@@ -39,7 +39,7 @@ export function useActionOperations(actions: ActionItem[], onActionDeleted: () =
           description: `Successfully deleted ${deletedCount} action${deletedCount > 1 ? 's' : ''}.`,
         });
         
-        // Refresh the actions list
+        // Refresh the actions list after deletion
         onActionDeleted();
       }
       

@@ -24,8 +24,10 @@ export async function fetchActions(userId?: string): Promise<ActionItem[]> {
     
     // Attempt to connect to PostgreSQL API and fetch actions
     try {
+      console.log("Attempting to fetch actions from PostgreSQL API");
       const response = await axios.get(`http://localhost:5000/api/actions`, {
-        params: { userId }
+        params: { userId },
+        timeout: 3000 // Add timeout to fail faster if server not running
       });
       
       const actions = response.data;
@@ -60,11 +62,9 @@ export async function fetchActions(userId?: string): Promise<ActionItem[]> {
       console.log(`Found ${actions.length} actions in Supabase`);
       
       // Show a toast notification about using Supabase as fallback
-      if (actions.length > 0) {
-        toast.info("Using Supabase Data", {
-          description: "Could not connect to PostgreSQL. Showing actions from Supabase instead."
-        });
-      }
+      toast.info("Using Supabase Data", {
+        description: "Could not connect to PostgreSQL. Showing actions from Supabase instead."
+      });
       
       return actions;
     }

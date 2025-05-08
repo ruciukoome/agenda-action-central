@@ -33,7 +33,7 @@ export default function EditAction() {
             description: "The action you're trying to edit could not be found.",
             variant: "destructive",
           });
-          navigate("/");
+          navigate("/managed-actions");
         }
       } catch (error) {
         console.error("Failed to load action:", error);
@@ -54,10 +54,12 @@ export default function EditAction() {
   
   const handleSave = async (updatedAction: ActionItem) => {
     try {
+      console.log("Saving updated action:", updatedAction);
       // Get a user ID for PostgreSQL - in a real app, get this from auth context
       const userId = localStorage.getItem("USER_ID") || "test-user-id";
       
       await updateAction(updatedAction.id, updatedAction, userId);
+      console.log("Action updated successfully, navigating to managed actions page");
       
       // Navigate to the managed actions page after successful update
       navigate("/managed-actions");

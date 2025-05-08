@@ -12,6 +12,7 @@ export async function updateAction(
 ): Promise<ActionItem> {
   try {
     let updatedAction: ActionItem;
+    console.log('Starting update action process for:', actionId);
     
     // First try the PostgreSQL backend
     try {
@@ -35,12 +36,13 @@ export async function updateAction(
       toast.success("Action Updated", {
         description: `Successfully updated action: ${updatedAction.description.substring(0, 30)}...`
       });
+      
+      return updatedAction;
     } catch (postgresError) {
       console.error('PostgreSQL update failed, falling back to Supabase:', postgresError);
       
       // If the PostgreSQL server is not running, fall back to Supabase
-      // We need to ensure we're passing a complete ActionItem to the updateSupabaseAction function
-      // First, try to fetch the complete action to combine with our updates
+      // First, fetch the complete action to combine with our updates
       try {
         // Import the Supabase fetchActions function
         const { fetchActions: fetchSupabaseActions } = await import('@/lib/actions/fetchActions');
@@ -53,46 +55,30 @@ export async function updateAction(
         
         if (existingAction) {
           // Merge the existing action with the updates
-          updatedAction = await updateSupabaseAction({ 
+          console.log('Found existing action in Supabase, merging with updates');
+          const fullActionData = { 
             ...existingAction, 
             ...actionData 
-          });
-        } else {
-          // If we can't find the action, we might not have all required fields
-          // Check if actionData contains all required fields for ActionItem
-          if (!isCompleteActionItem(actionData)) {
-            throw new Error('Cannot update action: Missing required fields and could not find existing action');
-          }
+          };
           
-          // If actionData is complete, use it directly
-          updatedAction = await updateSupabaseAction({ 
-            id: actionId, 
-            ...actionData as ActionItem 
+          updatedAction = await updateSupabaseAction(fullActionData);
+          
+          console.log('Action updated successfully via Supabase fallback:', updatedAction);
+          
+          // Show success toast
+          toast.success("Action Updated", {
+            description: `Successfully updated action using Supabase (fallback): ${updatedAction.description.substring(0, 30)}...`
           });
-        }
-      } catch (fetchError) {
-        console.error('Failed to fetch existing action, trying direct update:', fetchError);
-        
-        // Last resort - if actionData contains all required fields, use it directly
-        if (isCompleteActionItem(actionData)) {
-          updatedAction = await updateSupabaseAction({ 
-            id: actionId, 
-            ...actionData as ActionItem 
-          });
+          
+          return updatedAction;
         } else {
-          throw new Error('Cannot update action: Missing required fields and could not fetch existing action');
+          throw new Error('Could not find existing action in Supabase');
         }
+      } catch (fallbackError) {
+        console.error('Supabase fallback failed:', fallbackError);
+        throw new Error(`Failed to update action: ${fallbackError.message}`);
       }
-      
-      console.log('Action updated successfully via Supabase fallback:', updatedAction);
-      
-      // Show success toast with fallback info
-      toast.success("Action Updated", {
-        description: `Successfully updated action using Supabase (fallback): ${updatedAction.description.substring(0, 30)}...`
-      });
     }
-    
-    return updatedAction;
   } catch (error) {
     console.error('Error updating action:', error);
     
@@ -108,14 +94,4 @@ export async function updateAction(
     });
     throw error;
   }
-}
-
-// Helper function to check if an object has all required ActionItem properties
-function isCompleteActionItem(obj: Partial<ActionItem>): boolean {
-  const requiredFields: (keyof ActionItem)[] = [
-    'id', 'description', 'department', 'meetingDate', 'priority', 
-    'ownerEmail', 'completed', 'progressStatus', 'notes', 'createdAt', 'updatedAt'
-  ];
-  
-  return requiredFields.every(field => obj[field] !== undefined);
 }
