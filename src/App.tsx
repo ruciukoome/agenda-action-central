@@ -29,8 +29,9 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/managed-actions" element={<ManagedActions />} />
         <Route path="/add-action" element={<AddAction />} />
-        <Route path="/add" element={<AddAction />} /> {/* Add this route to match "/add" */}
+        <Route path="/add" element={<AddAction />} />
         <Route path="/edit-action/:id" element={<EditAction />} />
+        <Route path="/edit/:id" element={<EditAction />} /> {/* Add this route to fix the 404 issue */}
         <Route path="/my-actions" element={<MyActions userEmail={mockUserEmail} onEditAction={handleEditAction} />} />
         <Route path="/database-setup" element={<DatabaseSetup />} />
         <Route path="*" element={<NotFound />} />

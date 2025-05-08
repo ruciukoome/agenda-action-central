@@ -7,9 +7,10 @@ import { useActionExport } from "@/hooks/useActionExport";
 
 export function useActionOperations(actions: ActionItem[], onActionDeleted: () => void) {
   const { handleExport } = useActionExport();
+  const [isDeleting, setIsDeleting] = useState(false);
   
   const handleDeleteSelected = async (selectedActions: string[]) => {
-    if (selectedActions.length === 0) return;
+    if (selectedActions.length === 0 || isDeleting) return;
     
     const confirmed = window.confirm(
       `Are you sure you want to delete ${selectedActions.length} action${selectedActions.length > 1 ? 's' : ''}?`
@@ -18,21 +19,36 @@ export function useActionOperations(actions: ActionItem[], onActionDeleted: () =
     if (!confirmed) return;
     
     try {
+      setIsDeleting(true);
       let deletedCount = 0;
       
       for (const id of selectedActions) {
-        // Pass a user ID for PostgreSQL - in a real app, get this from auth context
-        const userId = localStorage.getItem("USER_ID") || "test-user-id";
-        await deleteAction(id, userId);
-        deletedCount++;
+        try {
+          // Pass a user ID for PostgreSQL - in a real app, get this from auth context
+          const userId = localStorage.getItem("USER_ID") || "test-user-id";
+          await deleteAction(id, userId);
+          deletedCount++;
+        } catch (error) {
+          console.error(`Failed to delete action ${id}:`, error);
+        }
       }
       
-      toast({
-        title: "Actions deleted",
-        description: `Successfully deleted ${deletedCount} action${deletedCount > 1 ? 's' : ''}.`,
-      });
+      if (deletedCount > 0) {
+        toast({
+          title: "Actions deleted",
+          description: `Successfully deleted ${deletedCount} action${deletedCount > 1 ? 's' : ''}.`,
+        });
+        
+        onActionDeleted();
+      }
       
-      onActionDeleted();
+      if (deletedCount < selectedActions.length) {
+        toast({
+          title: "Partial success",
+          description: `${selectedActions.length - deletedCount} action(s) could not be deleted.`,
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       console.error("Failed to delete actions:", error);
       toast({
@@ -40,6 +56,8 @@ export function useActionOperations(actions: ActionItem[], onActionDeleted: () =
         description: "Some actions could not be deleted. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -56,6 +74,7 @@ export function useActionOperations(actions: ActionItem[], onActionDeleted: () =
 
   return {
     handleDeleteSelected,
-    handleExportSelected
+    handleExportSelected,
+    isDeleting
   };
 }

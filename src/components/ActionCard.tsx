@@ -5,6 +5,7 @@ import { ActionStatusBadge } from "@/components/ActionStatusBadge";
 import { Button } from "@/components/ui/button";
 import { formatDate, getDueStatus } from "@/utils/emailUtils";
 import { Calendar, Clock, Mail, FileText } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface ActionCardProps {
   action: ActionItem;
@@ -12,7 +13,14 @@ interface ActionCardProps {
 }
 
 export function ActionCard({ action, onEdit }: ActionCardProps) {
+  const navigate = useNavigate();
   const dueStatus = action.dueDate ? getDueStatus(action.dueDate) : "none";
+  
+  const handleEdit = () => {
+    // Provide both direct navigation and onEdit callback for flexibility
+    navigate(`/edit/${action.id}`);
+    onEdit(action);
+  };
   
   return (
     <Card className="w-full shadow-md hover:shadow-lg transition-shadow duration-200">
@@ -67,7 +75,7 @@ export function ActionCard({ action, onEdit }: ActionCardProps) {
           <ActionStatusBadge type="progress" value={action.progressStatus} />
           <ActionStatusBadge type="completion" value={action.completed.toString()} />
         </div>
-        <Button size="sm" variant="outline" onClick={() => onEdit(action)}>
+        <Button size="sm" variant="outline" onClick={handleEdit}>
           Update
         </Button>
       </CardFooter>

@@ -4,7 +4,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import { ActionForm } from "@/components/ActionForm";
 import { ActionItem } from "@/types/action";
 import { useToast } from "@/components/ui/use-toast";
-import { fetchActions, updateAction } from "@/lib/actions";
+import { fetchActions } from "@/lib/postgres-actions";
+import { updateAction } from "@/lib/postgres-actions";
 import { Header } from "@/components/Header";
 
 export default function EditAction() {
@@ -18,7 +19,10 @@ export default function EditAction() {
     const loadAction = async () => {
       try {
         setIsLoading(true);
-        const actions = await fetchActions();
+        // Get a user ID for PostgreSQL - in a real app, get this from auth context
+        const userId = localStorage.getItem("USER_ID") || "test-user-id";
+        
+        const actions = await fetchActions(userId);
         const foundAction = actions.find(a => a.id === id);
         
         if (foundAction) {
@@ -50,11 +54,10 @@ export default function EditAction() {
   
   const handleSave = async (updatedAction: ActionItem) => {
     try {
-      await updateAction(updatedAction);
-      toast({
-        title: "Action updated",
-        description: "Your action item has been updated successfully.",
-      });
+      // Get a user ID for PostgreSQL - in a real app, get this from auth context
+      const userId = localStorage.getItem("USER_ID") || "test-user-id";
+      
+      await updateAction(updatedAction.id, updatedAction, userId);
       navigate("/");
     } catch (error) {
       console.error("Failed to update action:", error);
