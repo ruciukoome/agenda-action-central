@@ -28,8 +28,11 @@ export async function createAction(
         action: actionWithFormattedDate,
         userId
       }, {
-        timeout: 3000 // Add a timeout to fail faster if the server is not running
+        timeout: 5000 // Add a timeout to fail faster if the server is not running
       });
+      
+      // Log the raw response data to see exactly what's returned
+      console.log('Raw PostgreSQL response:', JSON.stringify(response.data, null, 2));
       
       // Map the database response to an ActionItem
       const dbAction = response.data as DbAction;

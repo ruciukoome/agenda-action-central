@@ -173,6 +173,7 @@ function generateDueDateReminderEmail(action: any): { emailHtml: string, emailTe
           .priority-medium { color: #dd6b20; font-weight: bold; }
           .priority-low { color: #38a169; font-weight: bold; }
           .button { background-color: #0070f3; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-block; margin-top: 15px; }
+          .unsubscribe { font-size: 11px; color: #999; margin-top: 20px; }
           @media only screen and (max-width: 480px) {
             .content { padding: 10px; }
             .header { padding: 10px; }
@@ -199,10 +200,9 @@ function generateDueDateReminderEmail(action: any): { emailHtml: string, emailTe
           <a href="https://actioncentral.platinumcredit.co.ke" class="button">Access Action Central</a>
         </div>
         <div class="footer">
-          <p>This is an automated message from the Action Central system. Please do not reply directly to this email.</p>
+          <p>This is an automated message from the Action Central system.</p>
           <p>Platinum Credit Limited</p>
-          <p>Sent from a verified domain: <strong>platinumcredit.co.ke</strong></p>
-          <p>To manage your notification preferences, please log in to your Action Central account settings.</p>
+          <p class="unsubscribe">You can <a href="https://actioncentral.platinumcredit.co.ke/unsubscribe">unsubscribe</a> from these notifications at any time.</p>
         </div>
       </body>
     </html>
@@ -224,8 +224,10 @@ ${action.notes ? `Notes: ${action.notes}` : ''}
 Please log in to the Action Central system to update your progress or mark this item as complete:
 https://actioncentral.platinumcredit.co.ke
 
-This is an automated message from the Action Central system. Please do not reply directly to this email.
+This is an automated message from the Action Central system.
 Platinum Credit Limited
+
+To unsubscribe: https://actioncentral.platinumcredit.co.ke/unsubscribe
   `;
 
   return { emailHtml, emailText };
@@ -248,14 +250,12 @@ async function sendEmailWithSendGrid(to: string, subject: string, htmlContent: s
           headers: {
             "List-Unsubscribe": "<https://actioncentral.platinumcredit.co.ke/unsubscribe>",
             "Precedence": "Bulk",
-            "X-Auto-Response-Suppress": "OOF, AutoReply",
-            "X-SG-EID": "qTU0JGIwcTUxLWE4Yi1UZXN0IEVtYWls",
-            "X-Entity-Ref-ID": `due-reminder-${Date.now()}`
+            "X-Auto-Response-Suppress": "OOF, AutoReply"
           }
         }
       ],
       from: { 
-        email: "noreply@platinumcredit.co.ke", 
+        email: "support@platinumcredit.co.ke", 
         name: "Action Central" 
       },
       reply_to: {
@@ -275,8 +275,8 @@ async function sendEmailWithSendGrid(to: string, subject: string, htmlContent: s
       // Adding message identifiers for tracking and threading
       message_id: `due-reminder-${Date.now()}@platinumcredit.co.ke`,
       asm: {
-        group_id: 123456, // You will need to set up this group in SendGrid
-        groups_to_display: [123456]
+        group_id: 31666, // Hardcoded unsubscribe group ID
+        groups_to_display: [31666]
       },
       // Adding mail settings to improve deliverability
       mail_settings: {
@@ -293,12 +293,10 @@ async function sendEmailWithSendGrid(to: string, subject: string, htmlContent: s
       tracking_settings: {
         click_tracking: { enable: true },
         open_tracking: { enable: true },
-        subscription_tracking: { enable: false }
+        subscription_tracking: { enable: true }
       },
       // Adding a category to help with tracking/analytics
-      categories: ["action_due_reminder"],
-      // IP pool name if you have dedicated IPs in SendGrid
-      ip_pool_name: "transactional"
+      categories: ["action_due_reminder"]
     })
   });
 

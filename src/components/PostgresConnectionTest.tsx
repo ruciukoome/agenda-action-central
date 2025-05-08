@@ -14,12 +14,12 @@ export function PostgresConnectionTest() {
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   
-  // Connection parameters
+  // Connection parameters with default values updated to match user's database
   const [host, setHost] = useState(() => localStorage.getItem('POSTGRES_HOST') || 'localhost');
   const [port, setPort] = useState(() => localStorage.getItem('POSTGRES_PORT') || '5432');
-  const [database, setDatabase] = useState(() => localStorage.getItem('POSTGRES_DATABASE') || 'postgres');
+  const [database, setDatabase] = useState(() => localStorage.getItem('POSTGRES_DATABASE') || 'actionpoint');
   const [username, setUsername] = useState(() => localStorage.getItem('POSTGRES_USER') || 'postgres');
-  const [password, setPassword] = useState(() => localStorage.getItem('POSTGRES_PASSWORD') || '');
+  const [password, setPassword] = useState(() => localStorage.getItem('POSTGRES_PASSWORD') || 'Qwerty&00Asdfgh');
   const [isConfigChanged, setIsConfigChanged] = useState(false);
 
   const saveConnectionSettings = () => {
@@ -125,7 +125,7 @@ export function PostgresConnectionTest() {
             id="database" 
             value={database} 
             onChange={(e) => { setDatabase(e.target.value); handleInputChange(); }} 
-            placeholder="postgres"
+            placeholder="actionpoint"
           />
         </div>
         
