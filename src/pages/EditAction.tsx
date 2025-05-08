@@ -58,7 +58,9 @@ export default function EditAction() {
       const userId = localStorage.getItem("USER_ID") || "test-user-id";
       
       await updateAction(updatedAction.id, updatedAction, userId);
-      navigate("/");
+      
+      // Navigate to the managed actions page after successful update
+      navigate("/managed-actions");
     } catch (error) {
       console.error("Failed to update action:", error);
       toast({

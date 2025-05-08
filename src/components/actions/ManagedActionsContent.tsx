@@ -12,9 +12,10 @@ import { useActionOperations } from "@/hooks/useActionOperations";
 interface ManagedActionsContentProps {
   actions: ActionItem[];
   isLoading: boolean;
+  onActionUpdated: () => void;
 }
 
-export function ManagedActionsContent({ actions, isLoading }: ManagedActionsContentProps) {
+export function ManagedActionsContent({ actions, isLoading, onActionUpdated }: ManagedActionsContentProps) {
   const [filters, setFilters] = useState<Filters>({
     search: "",
     priority: "all",
@@ -27,7 +28,7 @@ export function ManagedActionsContent({ actions, isLoading }: ManagedActionsCont
   const detailedFilteredActions = useDetailedActionFiltering(tabFilteredActions, filters);
   const { handleDeleteSelected, handleExportSelected } = useActionOperations(
     actions, 
-    () => clearSelection() // Clear selection after delete
+    onActionUpdated // Pass the refresh function to reload actions after delete
   );
   
   const { 

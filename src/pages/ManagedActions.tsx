@@ -58,7 +58,7 @@ export default function ManagedActions() {
       
       <div className="container py-10">
         <h1 className="text-3xl font-bold tracking-tight mb-6">Manage Actions</h1>
-        <ManagedActionsContent actions={actions} isLoading={isLoading} />
+        <ManagedActionsContent actions={actions} isLoading={isLoading} onActionUpdated={loadActions} />
       </div>
     </div>
   );
