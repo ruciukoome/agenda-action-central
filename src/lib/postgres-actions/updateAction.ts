@@ -39,7 +39,50 @@ export async function updateAction(
       console.error('PostgreSQL update failed, falling back to Supabase:', postgresError);
       
       // If the PostgreSQL server is not running, fall back to Supabase
-      updatedAction = await updateSupabaseAction({ id: actionId, ...actionData });
+      // We need to ensure we're passing a complete ActionItem to the updateSupabaseAction function
+      // First, try to fetch the complete action to combine with our updates
+      try {
+        // Import the Supabase fetchActions function
+        const { fetchActions: fetchSupabaseActions } = await import('@/lib/actions/fetchActions');
+        
+        // Get all actions from Supabase
+        const actions = await fetchSupabaseActions();
+        
+        // Find the action we're trying to update
+        const existingAction = actions.find(action => action.id === actionId);
+        
+        if (existingAction) {
+          // Merge the existing action with the updates
+          updatedAction = await updateSupabaseAction({ 
+            ...existingAction, 
+            ...actionData 
+          });
+        } else {
+          // If we can't find the action, we might not have all required fields
+          // Check if actionData contains all required fields for ActionItem
+          if (!isCompleteActionItem(actionData)) {
+            throw new Error('Cannot update action: Missing required fields and could not find existing action');
+          }
+          
+          // If actionData is complete, use it directly
+          updatedAction = await updateSupabaseAction({ 
+            id: actionId, 
+            ...actionData as ActionItem 
+          });
+        }
+      } catch (fetchError) {
+        console.error('Failed to fetch existing action, trying direct update:', fetchError);
+        
+        // Last resort - if actionData contains all required fields, use it directly
+        if (isCompleteActionItem(actionData)) {
+          updatedAction = await updateSupabaseAction({ 
+            id: actionId, 
+            ...actionData as ActionItem 
+          });
+        } else {
+          throw new Error('Cannot update action: Missing required fields and could not fetch existing action');
+        }
+      }
       
       console.log('Action updated successfully via Supabase fallback:', updatedAction);
       
@@ -65,4 +108,14 @@ export async function updateAction(
     });
     throw error;
   }
+}
+
+// Helper function to check if an object has all required ActionItem properties
+function isCompleteActionItem(obj: Partial<ActionItem>): boolean {
+  const requiredFields: (keyof ActionItem)[] = [
+    'id', 'description', 'department', 'meetingDate', 'priority', 
+    'ownerEmail', 'completed', 'progressStatus', 'notes', 'createdAt', 'updatedAt'
+  ];
+  
+  return requiredFields.every(field => obj[field] !== undefined);
 }
