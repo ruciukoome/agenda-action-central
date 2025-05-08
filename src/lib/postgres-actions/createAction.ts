@@ -36,6 +36,7 @@ export async function createAction(
       const createdAction = mapDbActionToActionItem(dbAction);
       
       console.log('Action created successfully in PostgreSQL:', createdAction);
+      console.log('Due date in created action:', createdAction.dueDate || "Not set");
       
       // Show success toast
       toast.success("Action Created", {
@@ -50,6 +51,7 @@ export async function createAction(
       const createdAction = await createSupabaseAction(actionWithFormattedDate as ActionItem);
       
       console.log('Action created successfully via Supabase fallback:', createdAction);
+      console.log('Due date in created action (Supabase fallback):', createdAction.dueDate || "Not set");
       
       // Show success toast with fallback info
       toast.success("Action Created", {

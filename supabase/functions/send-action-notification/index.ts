@@ -59,11 +59,11 @@ serve(async (req) => {
     }
 
     // Generate email content based on notification type
-    const { subject, htmlContent } = generateEmailContent(action, type);
+    const { subject, htmlContent, textContent } = generateEmailContent(action, type);
     
-    console.log(`Sending email from: joseph.odhiambo@platinumcredit.co.ke to: ${action.ownerEmail}`);
+    console.log(`Sending email from: noreply@platinumcredit.co.ke to: ${action.ownerEmail}`);
     
-    // Send email using SendGrid
+    // Send email using SendGrid with improved deliverability settings
     const response = await fetch("https://api.sendgrid.com/v3/mail/send", {
       method: "POST",
       headers: {
@@ -79,12 +79,14 @@ serve(async (req) => {
             headers: {
               "List-Unsubscribe": "<https://actioncentral.platinumcredit.co.ke/unsubscribe>",
               "Precedence": "Bulk",
-              "X-Auto-Response-Suppress": "OOF, AutoReply"
+              "X-Auto-Response-Suppress": "OOF, AutoReply",
+              "X-SG-EID": "qTU0JGIwcTUxLWE4Yi1UZXN0IEVtYWls",
+              "X-Entity-Ref-ID": `action-${action.id}-notification`
             }
           }
         ],
         from: { 
-          email: "joseph.odhiambo@platinumcredit.co.ke", 
+          email: "noreply@platinumcredit.co.ke", 
           name: "Action Central" 
         },
         reply_to: {
@@ -93,11 +95,21 @@ serve(async (req) => {
         },
         content: [
           {
+            type: "text/plain",
+            value: textContent
+          },
+          {
             type: "text/html",
             value: htmlContent
           }
         ],
-        // Add message identifiers for tracking and threading
+        // Adding message identifiers for tracking and threading
+        message_id: `action-${action.id}-${Date.now()}@platinumcredit.co.ke`,
+        asm: {
+          group_id: 123456, // You will need to set up this group in SendGrid
+          groups_to_display: [123456]
+        },
+        // Adding mail settings to improve deliverability
         mail_settings: {
           bypass_list_management: {
             enable: false
@@ -115,7 +127,9 @@ serve(async (req) => {
           subscription_tracking: { enable: false }
         },
         // Adding a category to help with tracking/analytics
-        categories: ["action_notification"]
+        categories: ["action_notification"],
+        // IP pool name if you have dedicated IPs in SendGrid
+        ip_pool_name: "transactional"
       })
     });
 
@@ -173,6 +187,11 @@ function generateEmailContent(action: any, type: NotificationType) {
     .priority-medium { color: #dd6b20; font-weight: bold; }
     .priority-low { color: #38a169; font-weight: bold; }
     .button { background-color: #0070f3; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-block; margin-top: 15px; }
+    @media only screen and (max-width: 480px) {
+      .content { padding: 10px; }
+      .header { padding: 10px; }
+      h2 { font-size: 20px; }
+    }
   `;
 
   // Base template for all emails
@@ -204,6 +223,7 @@ function generateEmailContent(action: any, type: NotificationType) {
 
   let subject = "";
   let content = "";
+  let plainTextContent = "";
 
   switch (type) {
     case "assigned":
@@ -220,6 +240,24 @@ function generateEmailContent(action: any, type: NotificationType) {
         
         <p>Please log in to the Action Central system to update your progress.</p>
         <a href="https://actioncentral.platinumcredit.co.ke" class="button">Access Action Central</a>
+      `;
+      plainTextContent = `
+Hello,
+
+You've been assigned a new action item in Action Central.
+
+${action.description}
+
+Department: ${action.department}
+Priority: ${action.priority}
+Due Date: ${formatDate(action.dueDate)}
+${action.notes ? `Notes: ${action.notes}` : ''}
+
+Please log in to the Action Central system to update your progress:
+https://actioncentral.platinumcredit.co.ke
+
+This is an automated message from the Action Central system.
+Platinum Credit Limited
       `;
       break;
       
@@ -239,6 +277,25 @@ function generateEmailContent(action: any, type: NotificationType) {
         <p>Please log in to the Action Central system to view the updates.</p>
         <a href="https://actioncentral.platinumcredit.co.ke" class="button">Access Action Central</a>
       `;
+      plainTextContent = `
+Hello,
+
+An action item assigned to you has been updated.
+
+${action.description}
+
+Department: ${action.department}
+Priority: ${action.priority}
+Due Date: ${formatDate(action.dueDate)}
+Current Progress: ${action.progressStatus}
+${action.notes ? `Notes: ${action.notes}` : ''}
+
+Please log in to the Action Central system to view the updates:
+https://actioncentral.platinumcredit.co.ke
+
+This is an automated message from the Action Central system.
+Platinum Credit Limited
+      `;
       break;
       
     case "due_soon":
@@ -256,6 +313,25 @@ function generateEmailContent(action: any, type: NotificationType) {
         
         <p>Please log in to the Action Central system to update your progress or mark this item as complete.</p>
         <a href="https://actioncentral.platinumcredit.co.ke" class="button">Access Action Central</a>
+      `;
+      plainTextContent = `
+Hello,
+
+This is a reminder that you have an action item due soon.
+
+${action.description}
+
+Due Date: ${formatDate(action.dueDate)}
+Department: ${action.department}
+Priority: ${action.priority}
+Current Progress: ${action.progressStatus}
+${action.notes ? `Notes: ${action.notes}` : ''}
+
+Please log in to the Action Central system to update your progress or mark this item as complete:
+https://actioncentral.platinumcredit.co.ke
+
+This is an automated message from the Action Central system.
+Platinum Credit Limited
       `;
       break;
       
@@ -275,6 +351,25 @@ function generateEmailContent(action: any, type: NotificationType) {
         <p>Please log in to the Action Central system and update this item as soon as possible.</p>
         <a href="https://actioncentral.platinumcredit.co.ke" class="button">Access Action Central</a>
       `;
+      plainTextContent = `
+Hello,
+
+An action item assigned to you is now overdue.
+
+${action.description}
+
+Due Date: ${formatDate(action.dueDate)} (OVERDUE)
+Department: ${action.department}
+Priority: ${action.priority}
+Current Progress: ${action.progressStatus}
+${action.notes ? `Notes: ${action.notes}` : ''}
+
+Please log in to the Action Central system and update this item as soon as possible:
+https://actioncentral.platinumcredit.co.ke
+
+This is an automated message from the Action Central system.
+Platinum Credit Limited
+      `;
       break;
       
     default:
@@ -292,10 +387,29 @@ function generateEmailContent(action: any, type: NotificationType) {
         <p>Please log in to the Action Central system for more details.</p>
         <a href="https://actioncentral.platinumcredit.co.ke" class="button">Access Action Central</a>
       `;
+      plainTextContent = `
+Hello,
+
+There's been an update to your action item.
+
+${action.description}
+
+Department: ${action.department}
+Priority: ${action.priority}
+Due Date: ${formatDate(action.dueDate)}
+${action.notes ? `Notes: ${action.notes}` : ''}
+
+Please log in to the Action Central system for more details:
+https://actioncentral.platinumcredit.co.ke
+
+This is an automated message from the Action Central system.
+Platinum Credit Limited
+      `;
   }
 
   return {
     subject,
-    htmlContent: baseTemplate(subject, content)
+    htmlContent: baseTemplate(subject, content),
+    textContent: plainTextContent.trim()
   };
 }

@@ -90,14 +90,15 @@ serve(async (req) => {
         continue;
       }
 
-      const emailContent = generateDueDateReminderEmail(action);
+      const { emailHtml, emailText } = generateDueDateReminderEmail(action);
       console.log(`Sending reminder email to ${action.ownerEmail} for action: ${action.description}`);
       
       try {
         const emailResult = await sendEmailWithSendGrid(
           action.ownerEmail,
           "ACTION DUE TOMORROW - " + action.description.substring(0, 50) + (action.description.length > 50 ? "..." : ""),
-          emailContent
+          emailHtml,
+          emailText
         );
         
         results.push({
@@ -148,7 +149,7 @@ serve(async (req) => {
 });
 
 // Function to generate HTML email content
-function generateDueDateReminderEmail(action: any): string {
+function generateDueDateReminderEmail(action: any): { emailHtml: string, emailText: string } {
   const dueDate = new Date(action.dueDate).toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',
@@ -156,7 +157,7 @@ function generateDueDateReminderEmail(action: any): string {
     day: 'numeric'
   });
 
-  return `
+  const emailHtml = `
     <!DOCTYPE html>
     <html>
       <head>
@@ -172,6 +173,11 @@ function generateDueDateReminderEmail(action: any): string {
           .priority-medium { color: #dd6b20; font-weight: bold; }
           .priority-low { color: #38a169; font-weight: bold; }
           .button { background-color: #0070f3; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-block; margin-top: 15px; }
+          @media only screen and (max-width: 480px) {
+            .content { padding: 10px; }
+            .header { padding: 10px; }
+            h2 { font-size: 20px; }
+          }
         </style>
       </head>
       <body>
@@ -201,10 +207,32 @@ function generateDueDateReminderEmail(action: any): string {
       </body>
     </html>
   `;
+
+  const emailText = `
+Hello,
+
+This is a reminder that you have an action item due TOMORROW.
+
+${action.description}
+
+Due Date: ${dueDate}
+Department: ${action.department}
+Priority: ${action.priority}
+Current Progress: ${action.progressStatus}
+${action.notes ? `Notes: ${action.notes}` : ''}
+
+Please log in to the Action Central system to update your progress or mark this item as complete:
+https://actioncentral.platinumcredit.co.ke
+
+This is an automated message from the Action Central system. Please do not reply directly to this email.
+Platinum Credit Limited
+  `;
+
+  return { emailHtml, emailText };
 }
 
 // Function to send email using SendGrid API with improved deliverability
-async function sendEmailWithSendGrid(to: string, subject: string, htmlContent: string): Promise<any> {
+async function sendEmailWithSendGrid(to: string, subject: string, htmlContent: string, textContent: string): Promise<any> {
   const response = await fetch("https://api.sendgrid.com/v3/mail/send", {
     method: "POST",
     headers: {
@@ -220,12 +248,14 @@ async function sendEmailWithSendGrid(to: string, subject: string, htmlContent: s
           headers: {
             "List-Unsubscribe": "<https://actioncentral.platinumcredit.co.ke/unsubscribe>",
             "Precedence": "Bulk",
-            "X-Auto-Response-Suppress": "OOF, AutoReply"
+            "X-Auto-Response-Suppress": "OOF, AutoReply",
+            "X-SG-EID": "qTU0JGIwcTUxLWE4Yi1UZXN0IEVtYWls",
+            "X-Entity-Ref-ID": `due-reminder-${Date.now()}`
           }
         }
       ],
       from: { 
-        email: "joseph.odhiambo@platinumcredit.co.ke", 
+        email: "noreply@platinumcredit.co.ke", 
         name: "Action Central" 
       },
       reply_to: {
@@ -234,10 +264,20 @@ async function sendEmailWithSendGrid(to: string, subject: string, htmlContent: s
       },
       content: [
         {
+          type: "text/plain",
+          value: textContent
+        },
+        {
           type: "text/html",
           value: htmlContent
         }
       ],
+      // Adding message identifiers for tracking and threading
+      message_id: `due-reminder-${Date.now()}@platinumcredit.co.ke`,
+      asm: {
+        group_id: 123456, // You will need to set up this group in SendGrid
+        groups_to_display: [123456]
+      },
       // Adding mail settings to improve deliverability
       mail_settings: {
         bypass_list_management: {
@@ -250,14 +290,15 @@ async function sendEmailWithSendGrid(to: string, subject: string, htmlContent: s
           enable: false
         }
       },
-      // Adding tracking settings
       tracking_settings: {
         click_tracking: { enable: true },
         open_tracking: { enable: true },
         subscription_tracking: { enable: false }
       },
       // Adding a category to help with tracking/analytics
-      categories: ["action_due_reminder"]
+      categories: ["action_due_reminder"],
+      // IP pool name if you have dedicated IPs in SendGrid
+      ip_pool_name: "transactional"
     })
   });
 

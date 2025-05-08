@@ -100,5 +100,8 @@ function_serving_port = 54330
 [functions.send-due-date-reminders]
 verify_jwt = false
 
+[functions.send-action-notification] 
+verify_jwt = false
+
 [cron]
 enabled = true

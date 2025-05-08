@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ActionItem } from "@/types/action";
 import { toast } from "@/components/ui/use-toast";
 import { sendActionNotification } from "@/lib/notifications";
-import { DbAction, mapActionItemToDbAction, mapDbActionToActionItem } from "./types";
+import { DbAction, mapDbActionToActionItem } from "./types";
 
 /**
  * Creates a new action in the database

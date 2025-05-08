@@ -42,10 +42,11 @@ export async function sendActionNotification(action: ActionItem, type: "assigned
     }
     
     // Prepare request information for logging
-    const edgeFunctionUrl = "https://mdwrmfqjxakhpwmfyvft.functions.supabase.co/send-action-notification";
+    const edgeFunctionUrl = "https://mdwrmfqjxakhpwmfyvft.supabase.co/functions/v1/send-action-notification";
     console.info("[Email Service] Sending request from:", senderEmail);
     console.info("[Email Service] Sending to recipient:", action.ownerEmail);
     console.info("[Email Service] Type:", type);
+    console.info("[Email Service] Due date in notification:", action.dueDate || "Not set");
     
     // Prepare the payload that will be sent to the edge function
     const payload = {
