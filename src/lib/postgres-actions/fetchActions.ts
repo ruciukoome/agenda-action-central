@@ -54,6 +54,24 @@ export async function fetchActions(userId?: string): Promise<ActionItem[]> {
       // If we failed to fetch from PostgreSQL API, try to fetch from Supabase as fallback
       console.log("Falling back to Supabase for fetching actions");
       
+      // Check if we already showed the fallback toast recently
+      const lastShownTime = localStorage.getItem('postgres_fallback_toast_time');
+      const currentTime = new Date().getTime();
+      
+      // Only show toast if it hasn't been shown in the last 30 seconds
+      if (!lastShownTime || (currentTime - parseInt(lastShownTime)) > 30000) {
+        // Show a toast notification about using Supabase as fallback
+        toast.info("Using Supabase Data", {
+          id: "postgres-fallback-toast", // Use a unique ID to prevent duplicate toasts
+          description: "Could not connect to PostgreSQL. Showing actions from Supabase instead.",
+          duration: 3000, // Shorter duration to minimize disruption
+          position: "top-right"
+        });
+        
+        // Store the time we showed this toast
+        localStorage.setItem('postgres_fallback_toast_time', currentTime.toString());
+      }
+      
       // Import the Supabase fetchActions function
       const { fetchActions: fetchSupabaseActions } = await import('@/lib/actions/fetchActions');
       
@@ -61,23 +79,27 @@ export async function fetchActions(userId?: string): Promise<ActionItem[]> {
       const actions = await fetchSupabaseActions();
       console.log(`Found ${actions.length} actions in Supabase`);
       
-      // Show a toast notification about using Supabase as fallback
-      // Use a unique ID to prevent duplicate toasts
-      toast.info("Using Supabase Data", {
-        id: "postgres-fallback-toast",
-        description: "Could not connect to PostgreSQL. Showing actions from Supabase instead.",
-        duration: 3000 // Shorter duration to minimize disruption
-      });
-      
       return actions;
     }
   } catch (error) {
     console.error("Error fetching actions:", error);
-    toast.error("Failed to fetch actions", {
-      id: "fetch-error-toast", // Use a consistent ID to prevent multiple similar toasts
-      description: error instanceof Error ? error.message : 'Unknown error',
-      duration: 3000
-    });
+    
+    // Check if we already showed this error toast recently
+    const lastErrorTime = localStorage.getItem('fetch_error_toast_time');
+    const currentTime = new Date().getTime();
+    
+    // Only show error toast if it hasn't been shown in the last 30 seconds
+    if (!lastErrorTime || (currentTime - parseInt(lastErrorTime)) > 30000) {
+      toast.error("Failed to fetch actions", {
+        id: "fetch-error-toast", // Use a consistent ID to prevent multiple similar toasts
+        description: error instanceof Error ? error.message : 'Unknown error',
+        duration: 3000
+      });
+      
+      // Store the time we showed this error
+      localStorage.setItem('fetch_error_toast_time', currentTime.toString());
+    }
+    
     // Return empty array instead of throwing to prevent page from breaking
     return [];
   }

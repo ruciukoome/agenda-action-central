@@ -49,10 +49,21 @@ function App() {
         closeButton
         richColors
         duration={3000}
+        style={{
+          position: 'fixed',
+          zIndex: 9999,
+          top: 16,
+          right: 16,
+          margin: 0,
+          padding: 0,
+          transform: 'none'
+        }}
         className="fixed-toast"
         toastOptions={{
           style: {
-            position: 'relative' // Prevent layout shifts
+            position: 'relative',
+            transform: 'none',
+            transition: 'opacity 0.2s ease-out'
           }
         }}
       />
