@@ -11,10 +11,16 @@ import EditAction from './pages/EditAction';
 import NotFound from './pages/NotFound';
 import MyActions from './pages/MyActions';
 import DatabaseSetup from './pages/DatabaseSetup';
+import { useIdleTimeout } from './hooks/useIdleTimeout';
+import { useAuth } from '@/lib/auth';
 
 function App() {
   // Mock user email for development purposes
   const mockUserEmail = "user@example.com";
+  
+  // Set up idle timeout - will only be active when user is logged in
+  const { user } = useAuth();
+  useIdleTimeout(user ? 10 * 60 * 1000 : undefined); // 10 minutes
   
   const handleEditAction = (action: any) => {
     console.log("Edit action:", action);
