@@ -28,15 +28,28 @@ function App() {
         <Route path="/auth" element={<Auth />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/managed-actions" element={<ManagedActions />} />
+        <Route path="/manage-actions" element={<ManagedActions />} /> {/* Add this route to fix the navigation */}
         <Route path="/add-action" element={<AddAction />} />
         <Route path="/add" element={<AddAction />} />
         <Route path="/edit-action/:id" element={<EditAction />} />
-        <Route path="/edit/:id" element={<EditAction />} /> {/* Add this route to fix the 404 issue */}
+        <Route path="/edit/:id" element={<EditAction />} />
         <Route path="/my-actions" element={<MyActions userEmail={mockUserEmail} onEditAction={handleEditAction} />} />
         <Route path="/database-setup" element={<DatabaseSetup />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
-      <Toaster />
+      <Toaster 
+        position="top-right"
+        expand={false}
+        closeButton
+        richColors
+        duration={3000}
+        className="fixed-toast"
+        toastOptions={{
+          style: {
+            position: 'relative' // Prevent layout shifts
+          }
+        }}
+      />
     </>
   );
 }

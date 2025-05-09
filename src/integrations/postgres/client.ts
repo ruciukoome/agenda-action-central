@@ -57,7 +57,9 @@ export function loadCredentialsFromStorage() {
       POSTGRES_DATABASE = 'actionpoint';
       localStorage.setItem('POSTGRES_DATABASE', POSTGRES_DATABASE);
       toast.info("Database name corrected", {
-        description: "Fixed typo in database name: 'actionpooint' → 'actionpoint'"
+        id: "db-name-fixed-toast", // Add ID to prevent duplicates
+        description: "Fixed typo in database name: 'actionpooint' → 'actionpoint'",
+        duration: 3000
       });
     }
   }

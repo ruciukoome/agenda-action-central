@@ -62,8 +62,11 @@ export async function fetchActions(userId?: string): Promise<ActionItem[]> {
       console.log(`Found ${actions.length} actions in Supabase`);
       
       // Show a toast notification about using Supabase as fallback
+      // Use a unique ID to prevent duplicate toasts
       toast.info("Using Supabase Data", {
-        description: "Could not connect to PostgreSQL. Showing actions from Supabase instead."
+        id: "postgres-fallback-toast",
+        description: "Could not connect to PostgreSQL. Showing actions from Supabase instead.",
+        duration: 3000 // Shorter duration to minimize disruption
       });
       
       return actions;
@@ -71,8 +74,11 @@ export async function fetchActions(userId?: string): Promise<ActionItem[]> {
   } catch (error) {
     console.error("Error fetching actions:", error);
     toast.error("Failed to fetch actions", {
-      description: error instanceof Error ? error.message : 'Unknown error'
+      id: "fetch-error-toast", // Use a consistent ID to prevent multiple similar toasts
+      description: error instanceof Error ? error.message : 'Unknown error',
+      duration: 3000
     });
-    throw new Error(`Failed to fetch actions: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    // Return empty array instead of throwing to prevent page from breaking
+    return [];
   }
 }
