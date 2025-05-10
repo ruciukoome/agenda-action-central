@@ -7,6 +7,7 @@ import { ActionCard } from '@/components/ActionCard';
 import { Button } from '@/components/ui/button';
 import { AuthUserWrapper } from '@/components/AuthUserWrapper';
 import { PasswordChangeForm } from '@/components/PasswordChangeForm';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface MyActionsProps {
   userEmail: string;
@@ -16,6 +17,7 @@ interface MyActionsProps {
 export default function MyActions({ userEmail, onEditAction }: MyActionsProps) {
   const [actions, setActions] = useState<ActionItem[]>([]);
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   // For demo purposes, we'll filter the actions by the user's email
   const fetchMyActions = async (email: string) => {
@@ -36,7 +38,7 @@ export default function MyActions({ userEmail, onEditAction }: MyActionsProps) {
     <AuthUserWrapper>
       {(email) => (
         <div className="container py-6 grid gap-6 md:grid-cols-2">
-          <div>
+          <div className={isMobile ? 'order-2' : ''}>
             <Card>
               <CardHeader>
                 <CardTitle className="text-xl">My Profile</CardTitle>
@@ -60,7 +62,7 @@ export default function MyActions({ userEmail, onEditAction }: MyActionsProps) {
             </div>
           </div>
           
-          <div>
+          <div className={isMobile ? 'order-1' : ''}>
             <Card>
               <CardHeader>
                 <CardTitle className="text-xl">My Actions</CardTitle>

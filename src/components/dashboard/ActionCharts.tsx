@@ -7,6 +7,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend
 } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ActionChartsProps {
   actions: ActionItem[];
@@ -14,6 +15,8 @@ interface ActionChartsProps {
 }
 
 export function ActionCharts({ actions, isLoading }: ActionChartsProps) {
+  const isMobile = useIsMobile();
+  
   // Data for completed vs pending tasks pie chart
   const completionData = [
     {
@@ -42,7 +45,7 @@ export function ActionCharts({ actions, isLoading }: ActionChartsProps) {
   const departmentData = Object.entries(departmentMap)
     .map(([name, value]) => ({ name, value }))
     .sort((a, b) => b.value - a.value)
-    .slice(0, 10); // Show only top 10 departments
+    .slice(0, isMobile ? 5 : 10); // Show fewer departments on mobile
     
   const chartConfig = {
     completed: { label: "Completed", color: "#0088FE" },
@@ -70,19 +73,19 @@ export function ActionCharts({ actions, isLoading }: ActionChartsProps) {
           <CardTitle className="text-lg font-medium">Task Completion Status</CardTitle>
         </CardHeader>
         <CardContent className="pt-6">
-          <div className="h-[300px] w-full">
+          <div className={`${isMobile ? 'h-[200px]' : 'h-[300px]'} w-full`}>
             <ChartContainer config={chartConfig}>
               <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
+                <PieChart margin={isMobile ? { top: 0, right: 0, bottom: 0, left: 0 } : { top: 5, right: 30, left: 20, bottom: 5 }}>
                   <Pie
                     data={completionData}
                     cx="50%"
                     cy="50%"
-                    labelLine={false}
-                    outerRadius={100}
+                    labelLine={!isMobile}
+                    outerRadius={isMobile ? 60 : 100}
                     fill="#8884d8"
                     dataKey="value"
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    label={!isMobile ? ({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%` : undefined}
                   >
                     {completionData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -112,6 +115,7 @@ export function ActionCharts({ actions, isLoading }: ActionChartsProps) {
                       ) : null
                     )}
                   />
+                  {isMobile && <Legend />}
                 </PieChart>
               </ResponsiveContainer>
             </ChartContainer>
@@ -124,33 +128,46 @@ export function ActionCharts({ actions, isLoading }: ActionChartsProps) {
           <CardTitle className="text-lg font-medium">Task Distribution by Department</CardTitle>
         </CardHeader>
         <CardContent className="pt-6">
-          <div className="h-[300px] w-full">
+          <div className={`${isMobile ? 'h-[200px]' : 'h-[300px]'} w-full`}>
             <ChartContainer config={chartConfig}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={departmentData}
-                  layout="vertical"
-                  margin={{
-                    top: 5,
-                    right: 30,
-                    left: 20,
-                    bottom: 5,
-                  }}
+                  layout={isMobile ? "horizontal" : "vertical"}
+                  margin={isMobile ? 
+                    { top: 5, right: 10, left: 10, bottom: 30 } : 
+                    { top: 5, right: 30, left: 20, bottom: 5 }
+                  }
                 >
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                  <XAxis type="number" />
-                  <YAxis 
-                    type="category" 
-                    dataKey="name" 
-                    width={150}
-                    tick={{ fontSize: 12 }}
-                  />
+                  <CartesianGrid strokeDasharray="3 3" horizontal={!isMobile} vertical={isMobile} />
+                  {isMobile ? (
+                    <>
+                      <XAxis 
+                        dataKey="name" 
+                        tick={{ fontSize: 10 }}
+                        angle={-45}
+                        textAnchor="end"
+                        height={50}
+                      />
+                      <YAxis type="number" />
+                    </>
+                  ) : (
+                    <>
+                      <XAxis type="number" />
+                      <YAxis 
+                        type="category" 
+                        dataKey="name" 
+                        width={150}
+                        tick={{ fontSize: 12 }}
+                      />
+                    </>
+                  )}
                   <ChartTooltip
                     content={({ active, payload, label }) => (
                       active && payload && payload.length ? (
                         <div className="rounded-lg border bg-background p-2 shadow-sm">
                           <p className="text-sm font-medium">
-                            {label}: {payload[0].value}
+                            {isMobile ? label : payload[0].payload.name}: {payload[0].value}
                           </p>
                         </div>
                       ) : null

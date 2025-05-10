@@ -2,6 +2,7 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
+import { X, Home, ClipboardList, PlusCircle, Database, LogOut } from "lucide-react";
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -19,39 +20,63 @@ export function MobileMenu({ isOpen, onClose, onSignOut }: MobileMenuProps) {
       <div className="fixed inset-y-0 right-0 w-3/4 max-w-sm bg-background p-6 shadow-lg">
         <div className="mb-4 flex justify-end">
           <Button variant="ghost" size="sm" onClick={onClose}>
-            ✕
+            <X className="h-5 w-5" />
           </Button>
         </div>
         <ul className="flex flex-col space-y-4">
           <li>
-            <Link to="/dashboard" className="block px-4 py-2 rounded hover:bg-accent hover:text-accent-foreground" onClick={onClose}>
-              Dashboard
+            <Link 
+              to="/dashboard" 
+              className="flex items-center gap-2 px-4 py-2 rounded hover:bg-accent hover:text-accent-foreground" 
+              onClick={onClose}
+            >
+              <Home className="h-4 w-4" /> Dashboard
             </Link>
           </li>
           <li>
-            <Link to="/my-actions" className="block px-4 py-2 rounded hover:bg-accent hover:text-accent-foreground" onClick={onClose}>
-              My Actions
+            <Link 
+              to="/my-actions" 
+              className="flex items-center gap-2 px-4 py-2 rounded hover:bg-accent hover:text-accent-foreground" 
+              onClick={onClose}
+            >
+              <ClipboardList className="h-4 w-4" /> My Actions
             </Link>
           </li>
           <li>
-            <Link to="/add-action" className="block px-4 py-2 rounded hover:bg-accent hover:text-accent-foreground" onClick={onClose}>
-              Add Action
+            <Link 
+              to="/add-action" 
+              className="flex items-center gap-2 px-4 py-2 rounded hover:bg-accent hover:text-accent-foreground" 
+              onClick={onClose}
+            >
+              <PlusCircle className="h-4 w-4" /> Add Action
             </Link>
           </li>
           <li>
-            <Link to="/managed-actions" className="block px-4 py-2 rounded hover:bg-accent hover:text-accent-foreground" onClick={onClose}>
-              Actions
+            <Link 
+              to="/managed-actions" 
+              className="flex items-center gap-2 px-4 py-2 rounded hover:bg-accent hover:text-accent-foreground" 
+              onClick={onClose}
+            >
+              <ClipboardList className="h-4 w-4" /> Actions
             </Link>
           </li>
           <li>
-            <Link to="/database-setup" className="block px-4 py-2 rounded font-bold hover:bg-accent hover:text-accent-foreground" onClick={onClose}>
-              Database Setup
+            <Link 
+              to="/database-setup" 
+              className="flex items-center gap-2 px-4 py-2 rounded font-bold hover:bg-accent hover:text-accent-foreground" 
+              onClick={onClose}
+            >
+              <Database className="h-4 w-4" /> Database Setup
             </Link>
           </li>
           {session?.user && (
             <li className="mt-4">
-              <Button variant="outline" className="w-full" onClick={() => { onSignOut(); onClose(); }}>
-                Sign out
+              <Button 
+                variant="outline" 
+                className="w-full flex items-center gap-2" 
+                onClick={() => { onSignOut(); onClose(); }}
+              >
+                <LogOut className="h-4 w-4" /> Sign out
               </Button>
             </li>
           )}

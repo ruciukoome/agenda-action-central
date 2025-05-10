@@ -1,24 +1,16 @@
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { UserMenu } from "@/components/navigation/UserMenu";
 import { MobileMenu } from "@/components/navigation/MobileMenu";
 import { MainNavigation } from "@/components/navigation/MainNavigation";
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export function Header() {
-  // Check if the user is on a mobile device
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const isMobile = useIsMobile();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
 
   const handleSignOut = async () => {
     // This is a placeholder for the actual sign out functionality
@@ -28,11 +20,24 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center">
+        <div className="mr-4 md:hidden">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setMobileMenuOpen(true)}
+            className="md:hidden"
+          >
+            <Menu className="h-5 w-5" />
+            <span className="sr-only">Toggle menu</span>
+          </Button>
+        </div>
+        
         <MainNavigation />
+        
         <div className="ml-auto flex items-center space-x-2">
           {/* Navigation links for bigger screens */}
           {!isMobile && (
-            <nav className="flex items-center space-x-2">
+            <nav className="hidden md:flex items-center space-x-4">
               <Link
                 to="/dashboard"
                 className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
@@ -53,33 +58,23 @@ export function Header() {
               </Link>
               <Link
                 to="/database-setup"
-                className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary font-bold" /* Bold to make it stand out */
+                className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary font-bold"
               >
                 Database Setup
               </Link>
             </nav>
           )}
+          
           {/* User menu for all screen sizes */}
-          {isMobile ? (
-            <>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="md:hidden"
-              >
-                <Menu className="h-5 w-5" />
-              </Button>
-              {mobileMenuOpen && (
-                <MobileMenu
-                  isOpen={mobileMenuOpen}
-                  onClose={() => setMobileMenuOpen(false)}
-                  onSignOut={handleSignOut}
-                />
-              )}
-            </>
-          ) : (
-            <UserMenu />
+          <UserMenu />
+          
+          {/* Mobile menu */}
+          {mobileMenuOpen && (
+            <MobileMenu
+              isOpen={mobileMenuOpen}
+              onClose={() => setMobileMenuOpen(false)}
+              onSignOut={handleSignOut}
+            />
           )}
         </div>
       </div>
