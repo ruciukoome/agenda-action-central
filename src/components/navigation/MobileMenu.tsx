@@ -27,7 +27,7 @@ export function MobileMenu({ isOpen, onClose, onSignOut }: MobileMenuProps) {
           <li>
             <Link 
               to="/dashboard" 
-              className="flex items-center gap-2 px-4 py-2 rounded hover:bg-accent hover:text-accent-foreground" 
+              className="flex items-center gap-2 px-4 py-2 rounded bg-card hover:bg-accent hover:text-accent-foreground" 
               onClick={onClose}
             >
               <Home className="h-4 w-4" /> Dashboard
@@ -36,7 +36,7 @@ export function MobileMenu({ isOpen, onClose, onSignOut }: MobileMenuProps) {
           <li>
             <Link 
               to="/my-actions" 
-              className="flex items-center gap-2 px-4 py-2 rounded hover:bg-accent hover:text-accent-foreground" 
+              className="flex items-center gap-2 px-4 py-2 rounded bg-card hover:bg-accent hover:text-accent-foreground" 
               onClick={onClose}
             >
               <ClipboardList className="h-4 w-4" /> My Actions
@@ -45,7 +45,7 @@ export function MobileMenu({ isOpen, onClose, onSignOut }: MobileMenuProps) {
           <li>
             <Link 
               to="/add-action" 
-              className="flex items-center gap-2 px-4 py-2 rounded hover:bg-accent hover:text-accent-foreground" 
+              className="flex items-center gap-2 px-4 py-2 rounded bg-card hover:bg-accent hover:text-accent-foreground" 
               onClick={onClose}
             >
               <PlusCircle className="h-4 w-4" /> Add Action
@@ -54,7 +54,7 @@ export function MobileMenu({ isOpen, onClose, onSignOut }: MobileMenuProps) {
           <li>
             <Link 
               to="/managed-actions" 
-              className="flex items-center gap-2 px-4 py-2 rounded hover:bg-accent hover:text-accent-foreground" 
+              className="flex items-center gap-2 px-4 py-2 rounded bg-card hover:bg-accent hover:text-accent-foreground" 
               onClick={onClose}
             >
               <ClipboardList className="h-4 w-4" /> Actions
@@ -63,7 +63,7 @@ export function MobileMenu({ isOpen, onClose, onSignOut }: MobileMenuProps) {
           <li>
             <Link 
               to="/database-setup" 
-              className="flex items-center gap-2 px-4 py-2 rounded font-bold hover:bg-accent hover:text-accent-foreground" 
+              className="flex items-center gap-2 px-4 py-2 rounded font-bold bg-card hover:bg-accent hover:text-accent-foreground" 
               onClick={onClose}
             >
               <Database className="h-4 w-4" /> Database Setup

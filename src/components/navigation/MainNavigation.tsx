@@ -12,7 +12,7 @@ export function MainNavigation() {
   
   return (
     <NavigationMenu className="hidden sm:flex">
-      <NavigationMenuList>
+      <NavigationMenuList className="bg-background">
         <NavigationActions />
         <NavigationFilters />
       </NavigationMenuList>
