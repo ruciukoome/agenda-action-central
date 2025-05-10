@@ -75,8 +75,6 @@ export default function Auth() {
       
       const errorMsg = (error as Error).message;
       setErrorMessage(errorMsg);
-      
-      // Toast notification handled in auth.tsx
     }
   };
 
@@ -157,24 +155,6 @@ export default function Auth() {
                 </>
               )}
             </Button>
-            
-            {/* Add a visible switch mode button */}
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              onClick={() => setIsLogin(!isLogin)}
-              disabled={isLoading}
-            >
-              {isLogin 
-                ? "Don't have an account? Sign up" 
-                : "Already have an account? Sign in"}
-            </Button>
-            
-            {/* Info about keyboard shortcuts */}
-            <div className="text-xs text-center text-muted-foreground mt-4">
-              Press <span className="font-medium">Alt+S</span> to switch to signup or <span className="font-medium">Alt+L</span> to switch to login
-            </div>
           </CardFooter>
         </form>
       </Card>
