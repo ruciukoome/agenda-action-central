@@ -94,8 +94,10 @@ export function ActionForm({ actionToEdit, onSave }: ActionFormProps) {
     
     // If this is a new action, send an email notification
     if (!actionToEdit) {
-      const emailContent = generateActionAssignedEmailContent(actionData);
       try {
+        // Generate email content - this returns a Promise so we need to await it
+        const emailContent = await generateActionAssignedEmailContent(actionData);
+        
         // In a real implementation, this would connect to an email service
         const sent = await sendEmail(
           values.ownerEmail,

@@ -60,6 +60,11 @@ export default function MyActions() {
     }
   }, [user]);
 
+  // Function to handle editing an action
+  const handleEditAction = (action: ActionItem) => {
+    navigate(`/edit-action/${action.id}`);
+  };
+
   return (
     <AuthUserWrapper>
       {(email) => (
@@ -99,6 +104,7 @@ export default function MyActions() {
                     <ActionCard
                       key={action.id}
                       action={action}
+                      onEdit={handleEditAction}
                     />
                   ))
                 ) : (
