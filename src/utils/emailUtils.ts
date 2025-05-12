@@ -23,7 +23,16 @@ export const getDueStatus = (dueDate?: string): "overdue" | "upcoming" | "future
   return "future";
 };
 
+// Generate action direct update URL (used for previews and testing)
+export const getActionUpdateUrl = (action: ActionItem): string => {
+  // This is a placeholder URL - the actual URL will come from the backend
+  // with a secure token
+  return `https://actioncentral.platinumcredit.co.ke/update-task/${action.id}`;
+};
+
 export const generateActionAssignedEmailContent = (action: ActionItem): string => {
+  const updateUrl = getActionUpdateUrl(action);
+
   return `
     <h2>You've been assigned a new action item</h2>
     <p><strong>Description:</strong> ${action.description}</p>
@@ -31,12 +40,17 @@ export const generateActionAssignedEmailContent = (action: ActionItem): string =
     <p><strong>Priority:</strong> ${action.priority}</p>
     ${action.dueDate ? `<p><strong>Due Date:</strong> ${formatDate(action.dueDate)}</p>` : ''}
     <p><strong>Notes:</strong> ${action.notes}</p>
-    <p>Please log in to the Action Central system to update your progress.</p>
+    <p>You can update your progress directly by clicking the button below:</p>
+    <p style="text-align: center;">
+      <a href="${updateUrl}" style="background-color: #0070f3; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-block;">Access Action Central</a>
+    </p>
+    <p><small>(No login required when using this link)</small></p>
   `;
 };
 
 export const generateActionDueEmailContent = (action: ActionItem): string => {
   const dueStatus = getDueStatus(action.dueDate);
+  const updateUrl = getActionUpdateUrl(action);
   
   return `
     <h2>${dueStatus === "overdue" ? "OVERDUE ACTION ITEM" : "Action Item Due Soon"}</h2>
@@ -45,7 +59,11 @@ export const generateActionDueEmailContent = (action: ActionItem): string => {
     <p><strong>Priority:</strong> ${action.priority}</p>
     <p><strong>Due Date:</strong> ${action.dueDate ? formatDate(action.dueDate) : 'Not specified'}</p>
     <p><strong>Current Progress:</strong> ${action.progressStatus}</p>
-    <p>Please log in to the Action Central system to update your progress.</p>
+    <p>You can update your progress directly by clicking the button below:</p>
+    <p style="text-align: center;">
+      <a href="${updateUrl}" style="background-color: #0070f3; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-block;">Update Action Status</a>
+    </p>
+    <p><small>(No login required when using this link)</small></p>
   `;
 };
 

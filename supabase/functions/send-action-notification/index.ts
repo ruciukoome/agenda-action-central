@@ -14,6 +14,7 @@
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
 
 // Define CORS headers for browser access
 const corsHeaders = {
@@ -23,6 +24,15 @@ const corsHeaders = {
 
 // Define notification types
 type NotificationType = "assigned" | "updated" | "due_soon" | "overdue";
+
+// Utility function to generate a secure token for the action update link
+function generateSecureToken(actionId: string, ownerEmail: string): string {
+  // In a real implementation, we'd use a more secure method with encryption
+  // For now, we'll create a simple hash-like token that includes the action ID and email
+  const timestamp = new Date().getTime();
+  const baseString = `${actionId}:${ownerEmail}:${timestamp}`;
+  return btoa(baseString); // Base64 encode for simplicity
+}
 
 // Request handler
 serve(async (req) => {
@@ -58,8 +68,14 @@ serve(async (req) => {
       throw new Error("SENDGRID_API_KEY not found in environment variables");
     }
 
+    // Generate a secure token for this action and recipient
+    const actionToken = generateSecureToken(action.id, action.ownerEmail);
+    
+    // Generate the direct update URL for the action
+    const actionUpdateUrl = `https://platinumcredit.co.ke/update-task/${action.id}?token=${actionToken}`;
+    
     // Generate email content based on notification type
-    const { subject, htmlContent, textContent } = generateEmailContent(action, type);
+    const { subject, htmlContent, textContent } = generateEmailContent(action, type, actionUpdateUrl);
     
     console.log(`Sending email from: joseph.odhiambo@platinumcredit.co.ke to: ${action.ownerEmail}`);
     
@@ -88,8 +104,8 @@ serve(async (req) => {
           name: "Action Central" 
         },
         reply_to: {
-          email: "no-reply@platinumcredit.co.ke",
-          name: "Action Central"
+          email: "joseph.odhiambo@platinumcredit.co.ke",
+          name: "Joseph Odhiambo"
         },
         content: [
           {
@@ -139,6 +155,33 @@ serve(async (req) => {
       throw new Error(`SendGrid API error: ${response.status} - ${responseText}`);
     }
 
+    // Store token in the database for verification later
+    try {
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL') || 'https://mdwrmfqjxakhpwmfyvft.supabase.co',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '',
+        { auth: { persistSession: false } }
+      );
+      
+      // Store the token with an expiration (48 hours from now)
+      const expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + 48);
+      
+      await supabase
+        .from('action_tokens')
+        .insert({
+          token: actionToken,
+          action_id: action.id,
+          owner_email: action.ownerEmail,
+          expires_at: expiresAt.toISOString()
+        });
+        
+      console.log("Token stored successfully for action:", action.id);
+    } catch (tokenError) {
+      // Log but don't fail the request if token storage fails
+      console.error("Error storing token:", tokenError);
+    }
+
     console.log(`Email sent successfully, SendGrid status: ${response.status}`);
 
     // Return success response
@@ -164,7 +207,7 @@ serve(async (req) => {
 });
 
 // Helper function to generate email content
-function generateEmailContent(action: any, type: NotificationType) {
+function generateEmailContent(action: any, type: NotificationType, actionUpdateUrl: string) {
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return "Not set";
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -213,6 +256,7 @@ function generateEmailContent(action: any, type: NotificationType) {
         <div class="footer">
           <p>This is an automated message from the Action Central system.</p>
           <p>Platinum Credit Limited</p>
+          <p>You can reply directly to this email to contact Joseph Odhiambo regarding this task.</p>
           <p class="unsubscribe">You can <a href="https://actioncentral.platinumcredit.co.ke/unsubscribe">unsubscribe</a> from these notifications at any time.</p>
         </div>
       </body>
@@ -236,8 +280,11 @@ function generateEmailContent(action: any, type: NotificationType) {
         <p><strong>Due Date:</strong> ${formatDate(action.dueDate)}</p>
         ${action.notes ? `<p><strong>Notes:</strong> ${action.notes}</p>` : ''}
         
-        <p>Please log in to the Action Central system to update your progress.</p>
-        <a href="https://actioncentral.platinumcredit.co.ke" class="button">Access Action Central</a>
+        <p>You can directly update your progress on this task by clicking the button below.</p>
+        <p style="text-align: center;">
+          <a href="${actionUpdateUrl}" class="button">Access Action Central</a>
+        </p>
+        <p><small>(No login required when using this link)</small></p>
       `;
       plainTextContent = `
 Hello,
@@ -251,11 +298,14 @@ Priority: ${action.priority}
 Due Date: ${formatDate(action.dueDate)}
 ${action.notes ? `Notes: ${action.notes}` : ''}
 
-Please log in to the Action Central system to update your progress:
-https://actioncentral.platinumcredit.co.ke
+You can directly update your progress on this task by clicking the link below:
+${actionUpdateUrl}
+(No login required when using this link)
 
 This is an automated message from the Action Central system.
 Platinum Credit Limited
+
+You can reply directly to this email to contact Joseph Odhiambo regarding this task.
 
 To unsubscribe: https://actioncentral.platinumcredit.co.ke/unsubscribe
       `;
@@ -274,8 +324,11 @@ To unsubscribe: https://actioncentral.platinumcredit.co.ke/unsubscribe
         <p><strong>Current Progress:</strong> ${action.progressStatus}</p>
         ${action.notes ? `<p><strong>Notes:</strong> ${action.notes}</p>` : ''}
         
-        <p>Please log in to the Action Central system to view the updates.</p>
-        <a href="https://actioncentral.platinumcredit.co.ke" class="button">Access Action Central</a>
+        <p>You can directly update your progress on this task by clicking the button below.</p>
+        <p style="text-align: center;">
+          <a href="${actionUpdateUrl}" class="button">Access Action Central</a>
+        </p>
+        <p><small>(No login required when using this link)</small></p>
       `;
       plainTextContent = `
 Hello,
@@ -290,11 +343,14 @@ Due Date: ${formatDate(action.dueDate)}
 Current Progress: ${action.progressStatus}
 ${action.notes ? `Notes: ${action.notes}` : ''}
 
-Please log in to the Action Central system to view the updates:
-https://actioncentral.platinumcredit.co.ke
+You can directly update your progress on this task by clicking the link below:
+${actionUpdateUrl}
+(No login required when using this link)
 
 This is an automated message from the Action Central system.
 Platinum Credit Limited
+
+You can reply directly to this email to contact Joseph Odhiambo regarding this task.
 
 To unsubscribe: https://actioncentral.platinumcredit.co.ke/unsubscribe
       `;
@@ -313,8 +369,11 @@ To unsubscribe: https://actioncentral.platinumcredit.co.ke/unsubscribe
         <p><strong>Current Progress:</strong> ${action.progressStatus}</p>
         ${action.notes ? `<p><strong>Notes:</strong> ${action.notes}</p>` : ''}
         
-        <p>Please log in to the Action Central system to update your progress or mark this item as complete.</p>
-        <a href="https://actioncentral.platinumcredit.co.ke" class="button">Access Action Central</a>
+        <p>You can directly update your progress on this task by clicking the button below.</p>
+        <p style="text-align: center;">
+          <a href="${actionUpdateUrl}" class="button">Access Action Central</a>
+        </p>
+        <p><small>(No login required when using this link)</small></p>
       `;
       plainTextContent = `
 Hello,
@@ -329,11 +388,14 @@ Priority: ${action.priority}
 Current Progress: ${action.progressStatus}
 ${action.notes ? `Notes: ${action.notes}` : ''}
 
-Please log in to the Action Central system to update your progress or mark this item as complete:
-https://actioncentral.platinumcredit.co.ke
+You can directly update your progress on this task by clicking the link below:
+${actionUpdateUrl}
+(No login required when using this link)
 
 This is an automated message from the Action Central system.
 Platinum Credit Limited
+
+You can reply directly to this email to contact Joseph Odhiambo regarding this task.
 
 To unsubscribe: https://actioncentral.platinumcredit.co.ke/unsubscribe
       `;
@@ -352,8 +414,11 @@ To unsubscribe: https://actioncentral.platinumcredit.co.ke/unsubscribe
         <p><strong>Current Progress:</strong> ${action.progressStatus}</p>
         ${action.notes ? `<p><strong>Notes:</strong> ${action.notes}</p>` : ''}
         
-        <p>Please log in to the Action Central system and update this item as soon as possible.</p>
-        <a href="https://actioncentral.platinumcredit.co.ke" class="button">Access Action Central</a>
+        <p>You can directly update your progress on this task by clicking the button below.</p>
+        <p style="text-align: center;">
+          <a href="${actionUpdateUrl}" class="button">Access Action Central</a>
+        </p>
+        <p><small>(No login required when using this link)</small></p>
       `;
       plainTextContent = `
 Hello,
@@ -368,11 +433,14 @@ Priority: ${action.priority}
 Current Progress: ${action.progressStatus}
 ${action.notes ? `Notes: ${action.notes}` : ''}
 
-Please log in to the Action Central system and update this item as soon as possible:
-https://actioncentral.platinumcredit.co.ke
+You can directly update your progress on this task by clicking the link below:
+${actionUpdateUrl}
+(No login required when using this link)
 
 This is an automated message from the Action Central system.
 Platinum Credit Limited
+
+You can reply directly to this email to contact Joseph Odhiambo regarding this task.
 
 To unsubscribe: https://actioncentral.platinumcredit.co.ke/unsubscribe
       `;
@@ -390,8 +458,11 @@ To unsubscribe: https://actioncentral.platinumcredit.co.ke/unsubscribe
         <p><strong>Due Date:</strong> ${formatDate(action.dueDate)}</p>
         ${action.notes ? `<p><strong>Notes:</strong> ${action.notes}</p>` : ''}
         
-        <p>Please log in to the Action Central system for more details.</p>
-        <a href="https://actioncentral.platinumcredit.co.ke" class="button">Access Action Central</a>
+        <p>You can directly update your progress on this task by clicking the button below.</p>
+        <p style="text-align: center;">
+          <a href="${actionUpdateUrl}" class="button">Access Action Central</a>
+        </p>
+        <p><small>(No login required when using this link)</small></p>
       `;
       plainTextContent = `
 Hello,
@@ -405,11 +476,14 @@ Priority: ${action.priority}
 Due Date: ${formatDate(action.dueDate)}
 ${action.notes ? `Notes: ${action.notes}` : ''}
 
-Please log in to the Action Central system for more details:
-https://actioncentral.platinumcredit.co.ke
+You can directly update your progress on this task by clicking the link below:
+${actionUpdateUrl}
+(No login required when using this link)
 
 This is an automated message from the Action Central system.
 Platinum Credit Limited
+
+You can reply directly to this email to contact Joseph Odhiambo regarding this task.
 
 To unsubscribe: https://actioncentral.platinumcredit.co.ke/unsubscribe
       `;
