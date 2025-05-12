@@ -52,7 +52,7 @@ export default function UpdateTask() {
         
         // Use the database function to validate the token and get the action in one call
         const { data, error } = await supabase
-          .rpc('get_action_by_token', { 
+          .rpc('get_action_token_by_id_and_token', { 
             p_action_id: id,
             p_token: token
           });
@@ -68,7 +68,8 @@ export default function UpdateTask() {
         }
         
         // Get the token and action data
-        const actionData = data[0];
+        const tokenData = data[0] as ActionToken;
+        const actionData = tokenData.action_data;
         
         console.log("Token validated successfully, action data:", actionData);
         setTokenIsValid(true);
