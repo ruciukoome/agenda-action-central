@@ -8,7 +8,7 @@
  * - Sends notification emails when actions are assigned or updated
  * - Uses SendGrid for reliable email delivery with proper authentication
  * - Implements SPF, DKIM and other anti-spam practices
- * - Includes secure action update links with tokens
+ * - Encourages email replies for updates
  * 
  * Environment variables:
  * - SENDGRID_API_KEY: API key for SendGrid email service
@@ -30,42 +30,6 @@ type NotificationType = "assigned" | "updated" | "due_soon" | "overdue";
 const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
 const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
 const supabase = createClient(supabaseUrl, supabaseKey);
-
-// Generate a secure token for action access
-async function createActionToken(actionId: string): Promise<string | null> {
-  try {
-    // Create expiration date (14 days from now for better user experience)
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 14);
-    
-    // Generate a random token (using crypto API for better security)
-    const tokenBuffer = new Uint8Array(32); // 256 bits
-    crypto.getRandomValues(tokenBuffer);
-    const token = Array.from(tokenBuffer)
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('');
-    
-    // Save token to the database
-    const { error } = await supabase
-      .from('action_tokens')
-      .insert({
-        action_id: actionId,
-        token: token,
-        expires_at: expiresAt.toISOString(),
-        used: false
-      });
-    
-    if (error) {
-      console.error("Error creating token:", error);
-      return null;
-    }
-    
-    return token;
-  } catch (err) {
-    console.error("Token creation error:", err);
-    return null;
-  }
-}
 
 // Request handler
 serve(async (req) => {
@@ -101,25 +65,14 @@ serve(async (req) => {
       throw new Error("SENDGRID_API_KEY not found in environment variables");
     }
     
-    // Create a token for the action
-    const token = await createActionToken(action.id);
-    console.log("Generated token for action:", token ? "Success" : "Failed");
-    
     // Get app URL from request origin or fall back to a default
     const appUrl = req.headers.get('origin') || "http://localhost:5173";
     console.log("Using app URL for links:", appUrl);
-    
-    // Action update link with token
-    const updateLink = token 
-      ? `${appUrl}/update-task/${action.id}?token=${token}` 
-      : `${appUrl}/my-actions`;
 
-    console.log("Generated action update link:", updateLink);
-
-    // Generate email content based on notification type
-    const { subject, htmlContent, textContent } = generateEmailContent(action, type, updateLink);
-    
     console.log(`Sending email from: joseph.odhiambo@platinumcredit.co.ke to: ${action.ownerEmail}`);
+    
+    // Generate email content based on notification type
+    const { subject, htmlContent, textContent } = generateEmailContent(action, type);
     
     // Send email using SendGrid with improved deliverability settings
     const response = await fetch("https://api.sendgrid.com/v3/mail/send", {
@@ -221,8 +174,8 @@ serve(async (req) => {
   }
 });
 
-// Helper function to generate email content with action update link
-function generateEmailContent(action: any, type: NotificationType, updateLink: string) {
+// Helper function to generate email content without action update link
+function generateEmailContent(action: any, type: NotificationType) {
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return "Not set";
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -242,7 +195,7 @@ function generateEmailContent(action: any, type: NotificationType, updateLink: s
     .priority-high { color: #e53e3e; font-weight: bold; }
     .priority-medium { color: #dd6b20; font-weight: bold; }
     .priority-low { color: #38a169; font-weight: bold; }
-    .button { background-color: #0070f3; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-block; margin-top: 15px; }
+    .reply-instruction { background-color: #f7f7f7; padding: 15px; border-left: 4px solid #0070f3; margin: 20px 0; }
     .unsubscribe { font-size: 11px; color: #999; margin-top: 20px; }
     @media only screen and (max-width: 480px) {
       .content { padding: 10px; }
@@ -294,13 +247,9 @@ function generateEmailContent(action: any, type: NotificationType, updateLink: s
         <p><strong>Due Date:</strong> ${formatDate(action.dueDate)}</p>
         ${action.notes ? `<p><strong>Notes:</strong> ${action.notes}</p>` : ''}
         
-        <p>You can update your progress by clicking the button below:</p>
-        <div style="text-align: center; margin: 30px 0;">
-          <a href="${updateLink}" style="background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">
-            Update Action Progress
-          </a>
+        <div class="reply-instruction">
+          <p><strong>Kindly reply to this email for updates of your action point</strong></p>
         </div>
-        <p style="font-size: 12px; color: #666;">This link will expire in 14 days. If you need assistance, please contact your administrator.</p>
       `;
       plainTextContent = `
 Hello,
@@ -314,8 +263,7 @@ Priority: ${action.priority}
 Due Date: ${formatDate(action.dueDate)}
 ${action.notes ? `Notes: ${action.notes}` : ''}
 
-You can update your progress by clicking this link (valid for 14 days):
-${updateLink}
+Kindly reply to this email for updates of your action point.
 
 This is an automated message from the Action Central system.
 Platinum Credit Limited
@@ -337,13 +285,9 @@ To unsubscribe: https://actioncentral.platinumcredit.co.ke/unsubscribe
         <p><strong>Current Progress:</strong> ${action.progressStatus}</p>
         ${action.notes ? `<p><strong>Notes:</strong> ${action.notes}</p>` : ''}
         
-        <p>You can update your progress by clicking the button below:</p>
-        <div style="text-align: center; margin: 30px 0;">
-          <a href="${updateLink}" style="background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">
-            Update Action Progress
-          </a>
+        <div class="reply-instruction">
+          <p><strong>Kindly reply to this email for updates of your action point</strong></p>
         </div>
-        <p style="font-size: 12px; color: #666;">This link will expire in 14 days. If you need assistance, please contact your administrator.</p>
       `;
       plainTextContent = `
 Hello,
@@ -358,8 +302,7 @@ Due Date: ${formatDate(action.dueDate)}
 Current Progress: ${action.progressStatus}
 ${action.notes ? `Notes: ${action.notes}` : ''}
 
-You can update your progress by clicking this link (valid for 14 days):
-${updateLink}
+Kindly reply to this email for updates of your action point.
 
 This is an automated message from the Action Central system.
 Platinum Credit Limited
@@ -381,13 +324,9 @@ To unsubscribe: https://actioncentral.platinumcredit.co.ke/unsubscribe
         <p><strong>Current Progress:</strong> ${action.progressStatus}</p>
         ${action.notes ? `<p><strong>Notes:</strong> ${action.notes}</p>` : ''}
         
-        <p>You can update your progress by clicking the button below:</p>
-        <div style="text-align: center; margin: 30px 0;">
-          <a href="${updateLink}" style="background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">
-            Update Action Progress
-          </a>
+        <div class="reply-instruction">
+          <p><strong>Kindly reply to this email for updates of your action point</strong></p>
         </div>
-        <p style="font-size: 12px; color: #666;">This link will expire in 14 days. If you need assistance, please contact your administrator.</p>
       `;
       plainTextContent = `
 Hello,
@@ -402,8 +341,7 @@ Priority: ${action.priority}
 Current Progress: ${action.progressStatus}
 ${action.notes ? `Notes: ${action.notes}` : ''}
 
-You can update your progress by clicking this link (valid for 14 days):
-${updateLink}
+Kindly reply to this email for updates of your action point.
 
 This is an automated message from the Action Central system.
 Platinum Credit Limited
@@ -425,13 +363,9 @@ To unsubscribe: https://actioncentral.platinumcredit.co.ke/unsubscribe
         <p><strong>Current Progress:</strong> ${action.progressStatus}</p>
         ${action.notes ? `<p><strong>Notes:</strong> ${action.notes}</p>` : ''}
         
-        <p>You can update your progress by clicking the button below:</p>
-        <div style="text-align: center; margin: 30px 0;">
-          <a href="${updateLink}" style="background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">
-            Update Action Progress
-          </a>
+        <div class="reply-instruction">
+          <p><strong>Kindly reply to this email for updates of your action point</strong></p>
         </div>
-        <p style="font-size: 12px; color: #666;">This link will expire in 14 days. If you need assistance, please contact your administrator.</p>
       `;
       plainTextContent = `
 Hello,
@@ -446,8 +380,7 @@ Priority: ${action.priority}
 Current Progress: ${action.progressStatus}
 ${action.notes ? `Notes: ${action.notes}` : ''}
 
-You can update your progress by clicking this link (valid for 14 days):
-${updateLink}
+Kindly reply to this email for updates of your action point.
 
 This is an automated message from the Action Central system.
 Platinum Credit Limited
@@ -468,13 +401,9 @@ To unsubscribe: https://actioncentral.platinumcredit.co.ke/unsubscribe
         <p><strong>Due Date:</strong> ${formatDate(action.dueDate)}</p>
         ${action.notes ? `<p><strong>Notes:</strong> ${action.notes}</p>` : ''}
         
-        <p>You can update your progress by clicking the button below:</p>
-        <div style="text-align: center; margin: 30px 0;">
-          <a href="${updateLink}" style="background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">
-            Update Action Progress
-          </a>
+        <div class="reply-instruction">
+          <p><strong>Kindly reply to this email for updates of your action point</strong></p>
         </div>
-        <p style="font-size: 12px; color: #666;">This link will expire in 14 days. If you need assistance, please contact your administrator.</p>
       `;
       plainTextContent = `
 Hello,
@@ -488,8 +417,7 @@ Priority: ${action.priority}
 Due Date: ${formatDate(action.dueDate)}
 ${action.notes ? `Notes: ${action.notes}` : ''}
 
-You can update your progress by clicking this link (valid for 14 days):
-${updateLink}
+Kindly reply to this email for updates of your action point.
 
 This is an automated message from the Action Central system.
 Platinum Credit Limited

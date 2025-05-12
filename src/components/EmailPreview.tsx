@@ -37,7 +37,7 @@ export function EmailPreview({ action }: EmailPreviewProps) {
       <CardHeader>
         <CardTitle>Email Notifications Preview</CardTitle>
         <CardDescription>
-          Preview of automatic emails that will be sent to task owners, including direct action links
+          Preview of automatic emails that will be sent to task owners
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -96,7 +96,7 @@ export function EmailPreview({ action }: EmailPreviewProps) {
         </Tabs>
       </CardContent>
       <CardFooter className="text-xs text-muted-foreground">
-        Note: Each email contains a secure link that allows task owners to update their assigned actions without logging in.
+        Note: Recipients can reply to these emails directly to provide updates about their assigned actions.
       </CardFooter>
     </Card>
   );
