@@ -90,7 +90,7 @@ export function EmailPreview({ action }: EmailPreviewProps) {
         </Tabs>
       </CardContent>
       <CardFooter className="text-xs text-muted-foreground">
-        Note: In a production environment, emails will include links that allow users to update tasks without logging in.
+        Note: Each email contains a secure link that allows task owners to update their assigned actions without logging in.
       </CardFooter>
     </Card>
   );

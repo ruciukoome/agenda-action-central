@@ -8,31 +8,57 @@ import { Button } from '@/components/ui/button';
 import { AuthUserWrapper } from '@/components/AuthUserWrapper';
 import { PasswordChangeForm } from '@/components/PasswordChangeForm';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useAuth } from '@/lib/auth';
+import { supabase } from '@/integrations/supabase/client';
 
-interface MyActionsProps {
-  userEmail: string;
-  onEditAction?: (action: ActionItem) => void;
-}
-
-export default function MyActions({ userEmail, onEditAction }: MyActionsProps) {
+export default function MyActions() {
   const [actions, setActions] = useState<ActionItem[]>([]);
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-
-  // For demo purposes, we'll filter the actions by the user's email
-  const fetchMyActions = async (email: string) => {
-    try {
-      // In a real app, we'd fetch actions from the server
-      const response = await fetch('/api/actions');
-      const data = await response.json();
-      const filtered = data.filter((action: ActionItem) => action.ownerEmail === email);
-      setActions(filtered);
-    } catch (error) {
-      console.error('Error fetching actions:', error);
-      // Use mock data as a fallback
-      setActions([]);
+  const { user } = useAuth();
+  
+  // Fetch actions for the current user
+  useEffect(() => {
+    const fetchMyActions = async () => {
+      if (!user?.email) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('actions')
+          .select('*')
+          .eq('owner_email', user.email);
+        
+        if (error) {
+          console.error('Error fetching actions:', error);
+          return;
+        }
+        
+        // Map the data to ActionItem format
+        const mappedActions = data.map(action => ({
+          id: action.id,
+          description: action.description,
+          department: action.department,
+          meetingDate: action.meeting_date,
+          priority: action.priority,
+          ownerEmail: action.owner_email,
+          completed: action.completed,
+          progressStatus: action.progress_status,
+          notes: action.notes || '',
+          createdAt: action.created_at,
+          updatedAt: action.updated_at,
+          dueDate: action.due_date
+        }));
+        
+        setActions(mappedActions);
+      } catch (error) {
+        console.error('Error fetching actions:', error);
+      }
+    };
+    
+    if (user) {
+      fetchMyActions();
     }
-  };
+  }, [user]);
 
   return (
     <AuthUserWrapper>
@@ -73,7 +99,6 @@ export default function MyActions({ userEmail, onEditAction }: MyActionsProps) {
                     <ActionCard
                       key={action.id}
                       action={action}
-                      onEdit={onEditAction ? () => onEditAction(action) : undefined}
                     />
                   ))
                 ) : (

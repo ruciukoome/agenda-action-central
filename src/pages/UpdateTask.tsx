@@ -11,7 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { ActionItem, ProgressStatus } from "@/types/action";
 
-// Define the interface for tokens
+// Define the interface for tokens from the database
 interface ActionToken {
   id: string;
   action_id: string;
@@ -19,6 +19,7 @@ interface ActionToken {
   expires_at: string;
   created_at: string;
   used: boolean;
+  action_data: any; // This will contain the action item data
 }
 
 export default function UpdateTask() {
@@ -46,42 +47,43 @@ export default function UpdateTask() {
         
         setIsLoading(true);
         
-        // First, validate the token and get the action
-        const { data: tokenData, error: tokenError } = await supabase
-          .from('action_tokens')
-          .select('*')
-          .eq('action_id', id)
-          .eq('token', token)
-          .single();
+        // Use the database function to validate the token and get the action in one call
+        const { data, error } = await supabase
+          .rpc('get_action_token_by_id_and_token', { 
+            p_action_id: id,
+            p_token: token
+          });
         
-        if (tokenError || !tokenData) {
-          console.error("Token error:", tokenError);
+        if (error || !data || data.length === 0) {
+          console.error("Token validation error:", error);
           throw new Error("Invalid or expired token");
         }
         
-        // Check if token is used or expired
-        const tokenObj = tokenData as ActionToken;
-        if (tokenObj.used || new Date(tokenObj.expires_at) < new Date()) {
-          throw new Error("This link has expired or already been used");
-        }
+        // Get the token and action data
+        const tokenData = data[0] as ActionToken;
+        const actionData = tokenData.action_data;
         
-        // Fetch the action associated with this token
-        const { data: actionData, error: actionError } = await supabase
-          .from('actions')
-          .select('*')
-          .eq('id', id)
-          .single();
-        
-        if (actionError || !actionData) {
-          console.error("Action error:", actionError);
-          throw new Error("Could not find the associated action");
-        }
+        // Map the action data to our ActionItem format
+        const mappedAction: ActionItem = {
+          id: actionData.id,
+          description: actionData.description,
+          department: actionData.department,
+          meetingDate: actionData.meeting_date,
+          priority: actionData.priority,
+          ownerEmail: actionData.owner_email,
+          completed: actionData.completed,
+          progressStatus: actionData.progress_status,
+          notes: actionData.notes || '',
+          createdAt: actionData.created_at,
+          updatedAt: actionData.updated_at,
+          dueDate: actionData.due_date
+        };
         
         // Set action data
-        setAction(actionData as ActionItem);
-        setNotes(actionData.notes || '');
-        setProgress(actionData.progressStatus || 'Not Started');
-        setIsComplete(actionData.completed || false);
+        setAction(mappedAction);
+        setNotes(mappedAction.notes || '');
+        setProgress(mappedAction.progressStatus || 'Not Started');
+        setIsComplete(mappedAction.completed || false);
         
       } catch (err: any) {
         console.error("Error loading action:", err);
@@ -102,10 +104,10 @@ export default function UpdateTask() {
       
       // Update the action
       const updates = {
-        progressStatus: progress,
+        progress_status: progress,
         completed: isComplete,
         notes: notes,
-        updatedAt: new Date().toISOString()
+        updated_at: new Date().toISOString()
       };
       
       const { error: updateError } = await supabase

@@ -9,6 +9,41 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      action_tokens: {
+        Row: {
+          action_id: string
+          created_at: string
+          expires_at: string
+          id: string
+          token: string
+          used: boolean
+        }
+        Insert: {
+          action_id: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          token: string
+          used?: boolean
+        }
+        Update: {
+          action_id?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          token?: string
+          used?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "action_tokens_action_id_fkey"
+            columns: ["action_id"]
+            isOneToOne: false
+            referencedRelation: "actions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       actions: {
         Row: {
           completed: boolean
@@ -86,6 +121,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_action_token_by_id_and_token: {
+        Args: { p_action_id: string; p_token: string }
+        Returns: {
+          id: string
+          action_id: string
+          token: string
+          created_at: string
+          expires_at: string
+          used: boolean
+          action_data: Json
+        }[]
+      }
       get_enum_values: {
         Args: { enum_name: string }
         Returns: string[]

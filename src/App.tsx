@@ -21,11 +21,6 @@ function App() {
   const { user } = useAuth();
   useIdleTimeout(user ? 10 * 60 * 1000 : undefined); // 10 minutes
   
-  const handleEditAction = (action: any) => {
-    console.log("Edit action:", action);
-    // This would be handled by the router in a real app
-  };
-  
   return (
     <>
       <Routes>
