@@ -10,14 +10,13 @@ import AddAction from './pages/AddAction';
 import EditAction from './pages/EditAction';
 import NotFound from './pages/NotFound';
 import MyActions from './pages/MyActions';
+import UpdateTask from './pages/UpdateTask';
+import UpdateSuccess from './pages/UpdateSuccess';
 import DatabaseSetup from './pages/DatabaseSetup';
 import { useIdleTimeout } from './hooks/useIdleTimeout';
 import { useAuth } from '@/lib/auth';
 
 function App() {
-  // Mock user email for development purposes
-  const mockUserEmail = "user@example.com";
-  
   // Set up idle timeout - will only be active when user is logged in
   const { user } = useAuth();
   useIdleTimeout(user ? 10 * 60 * 1000 : undefined); // 10 minutes
@@ -39,7 +38,9 @@ function App() {
         <Route path="/add" element={<AddAction />} />
         <Route path="/edit-action/:id" element={<EditAction />} />
         <Route path="/edit/:id" element={<EditAction />} />
-        <Route path="/my-actions" element={<MyActions userEmail={mockUserEmail} onEditAction={handleEditAction} />} />
+        <Route path="/my-actions" element={<MyActions />} />
+        <Route path="/update-task/:id" element={<UpdateTask />} />
+        <Route path="/update-success" element={<UpdateSuccess />} />
         <Route path="/database-setup" element={<DatabaseSetup />} />
         <Route path="*" element={<NotFound />} />
       </Routes>

@@ -8,12 +8,14 @@
  * - Sends notification emails when actions are assigned or updated
  * - Uses SendGrid for reliable email delivery with proper authentication
  * - Implements SPF, DKIM and other anti-spam practices
+ * - Includes secure action update links with tokens
  * 
  * Environment variables:
  * - SENDGRID_API_KEY: API key for SendGrid email service
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // Define CORS headers for browser access
 const corsHeaders = {
@@ -23,6 +25,47 @@ const corsHeaders = {
 
 // Define notification types
 type NotificationType = "assigned" | "updated" | "due_soon" | "overdue";
+
+// Create Supabase client
+const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+// Generate a secure token for action access
+async function createActionToken(actionId: string): Promise<string | null> {
+  try {
+    // Create expiration date (7 days from now)
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
+    
+    // Generate a random token (using crypto API for better security)
+    const tokenBuffer = new Uint8Array(32); // 256 bits
+    crypto.getRandomValues(tokenBuffer);
+    const token = Array.from(tokenBuffer)
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+    
+    // Save token to the database
+    const { error } = await supabase
+      .from('action_tokens')
+      .insert({
+        action_id: actionId,
+        token: token,
+        expires_at: expiresAt.toISOString(),
+        used: false
+      });
+    
+    if (error) {
+      console.error("Error creating token:", error);
+      return null;
+    }
+    
+    return token;
+  } catch (err) {
+    console.error("Token creation error:", err);
+    return null;
+  }
+}
 
 // Request handler
 serve(async (req) => {
@@ -57,9 +100,21 @@ serve(async (req) => {
     if (!sendGridApiKey) {
       throw new Error("SENDGRID_API_KEY not found in environment variables");
     }
+    
+    // Create a token for the action
+    const token = await createActionToken(action.id);
+    console.log("Generated token for action:", token ? "Success" : "Failed");
+    
+    // App URL for links - would be configured in production
+    const appUrl = "https://actioncentral.platinumcredit.co.ke";
+    
+    // Action update link with token
+    const updateLink = token 
+      ? `${appUrl}/update-task/${action.id}?token=${token}` 
+      : `${appUrl}/my-actions`;
 
     // Generate email content based on notification type
-    const { subject, htmlContent, textContent } = generateEmailContent(action, type);
+    const { subject, htmlContent, textContent } = generateEmailContent(action, type, updateLink);
     
     console.log(`Sending email from: joseph.odhiambo@platinumcredit.co.ke to: ${action.ownerEmail}`);
     
@@ -88,7 +143,7 @@ serve(async (req) => {
           name: "Action Central" 
         },
         reply_to: {
-          email: "no-reply@platinumcredit.co.ke",
+          email: "joseph.odhiambo@platinumcredit.co.ke",
           name: "Action Central"
         },
         content: [
@@ -163,8 +218,8 @@ serve(async (req) => {
   }
 });
 
-// Helper function to generate email content
-function generateEmailContent(action: any, type: NotificationType) {
+// Helper function to generate email content with action update link
+function generateEmailContent(action: any, type: NotificationType, updateLink: string) {
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return "Not set";
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -236,8 +291,13 @@ function generateEmailContent(action: any, type: NotificationType) {
         <p><strong>Due Date:</strong> ${formatDate(action.dueDate)}</p>
         ${action.notes ? `<p><strong>Notes:</strong> ${action.notes}</p>` : ''}
         
-        <p>Please log in to the Action Central system to update your progress.</p>
-        <a href="https://actioncentral.platinumcredit.co.ke" class="button">Access Action Central</a>
+        <p>You can update your progress by clicking the button below:</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${updateLink}" style="background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">
+            Access Action Central
+          </a>
+        </div>
+        <p style="font-size: 12px; color: #666;">This link will expire in 7 days. If you need assistance, please contact your administrator.</p>
       `;
       plainTextContent = `
 Hello,
@@ -251,8 +311,8 @@ Priority: ${action.priority}
 Due Date: ${formatDate(action.dueDate)}
 ${action.notes ? `Notes: ${action.notes}` : ''}
 
-Please log in to the Action Central system to update your progress:
-https://actioncentral.platinumcredit.co.ke
+You can update your progress by clicking this link (valid for 7 days):
+${updateLink}
 
 This is an automated message from the Action Central system.
 Platinum Credit Limited
@@ -274,8 +334,13 @@ To unsubscribe: https://actioncentral.platinumcredit.co.ke/unsubscribe
         <p><strong>Current Progress:</strong> ${action.progressStatus}</p>
         ${action.notes ? `<p><strong>Notes:</strong> ${action.notes}</p>` : ''}
         
-        <p>Please log in to the Action Central system to view the updates.</p>
-        <a href="https://actioncentral.platinumcredit.co.ke" class="button">Access Action Central</a>
+        <p>You can update your progress by clicking the button below:</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${updateLink}" style="background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">
+            Access Action Central
+          </a>
+        </div>
+        <p style="font-size: 12px; color: #666;">This link will expire in 7 days. If you need assistance, please contact your administrator.</p>
       `;
       plainTextContent = `
 Hello,
@@ -290,8 +355,8 @@ Due Date: ${formatDate(action.dueDate)}
 Current Progress: ${action.progressStatus}
 ${action.notes ? `Notes: ${action.notes}` : ''}
 
-Please log in to the Action Central system to view the updates:
-https://actioncentral.platinumcredit.co.ke
+You can update your progress by clicking this link (valid for 7 days):
+${updateLink}
 
 This is an automated message from the Action Central system.
 Platinum Credit Limited
@@ -313,8 +378,13 @@ To unsubscribe: https://actioncentral.platinumcredit.co.ke/unsubscribe
         <p><strong>Current Progress:</strong> ${action.progressStatus}</p>
         ${action.notes ? `<p><strong>Notes:</strong> ${action.notes}</p>` : ''}
         
-        <p>Please log in to the Action Central system to update your progress or mark this item as complete.</p>
-        <a href="https://actioncentral.platinumcredit.co.ke" class="button">Access Action Central</a>
+        <p>You can update your progress by clicking the button below:</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${updateLink}" style="background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">
+            Access Action Central
+          </a>
+        </div>
+        <p style="font-size: 12px; color: #666;">This link will expire in 7 days. If you need assistance, please contact your administrator.</p>
       `;
       plainTextContent = `
 Hello,
@@ -329,8 +399,8 @@ Priority: ${action.priority}
 Current Progress: ${action.progressStatus}
 ${action.notes ? `Notes: ${action.notes}` : ''}
 
-Please log in to the Action Central system to update your progress or mark this item as complete:
-https://actioncentral.platinumcredit.co.ke
+You can update your progress by clicking this link (valid for 7 days):
+${updateLink}
 
 This is an automated message from the Action Central system.
 Platinum Credit Limited
@@ -352,8 +422,13 @@ To unsubscribe: https://actioncentral.platinumcredit.co.ke/unsubscribe
         <p><strong>Current Progress:</strong> ${action.progressStatus}</p>
         ${action.notes ? `<p><strong>Notes:</strong> ${action.notes}</p>` : ''}
         
-        <p>Please log in to the Action Central system and update this item as soon as possible.</p>
-        <a href="https://actioncentral.platinumcredit.co.ke" class="button">Access Action Central</a>
+        <p>You can update your progress by clicking the button below:</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${updateLink}" style="background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">
+            Access Action Central
+          </a>
+        </div>
+        <p style="font-size: 12px; color: #666;">This link will expire in 7 days. If you need assistance, please contact your administrator.</p>
       `;
       plainTextContent = `
 Hello,
@@ -368,8 +443,8 @@ Priority: ${action.priority}
 Current Progress: ${action.progressStatus}
 ${action.notes ? `Notes: ${action.notes}` : ''}
 
-Please log in to the Action Central system and update this item as soon as possible:
-https://actioncentral.platinumcredit.co.ke
+You can update your progress by clicking this link (valid for 7 days):
+${updateLink}
 
 This is an automated message from the Action Central system.
 Platinum Credit Limited
@@ -390,8 +465,13 @@ To unsubscribe: https://actioncentral.platinumcredit.co.ke/unsubscribe
         <p><strong>Due Date:</strong> ${formatDate(action.dueDate)}</p>
         ${action.notes ? `<p><strong>Notes:</strong> ${action.notes}</p>` : ''}
         
-        <p>Please log in to the Action Central system for more details.</p>
-        <a href="https://actioncentral.platinumcredit.co.ke" class="button">Access Action Central</a>
+        <p>You can update your progress by clicking the button below:</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${updateLink}" style="background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">
+            Access Action Central
+          </a>
+        </div>
+        <p style="font-size: 12px; color: #666;">This link will expire in 7 days. If you need assistance, please contact your administrator.</p>
       `;
       plainTextContent = `
 Hello,
@@ -405,8 +485,8 @@ Priority: ${action.priority}
 Due Date: ${formatDate(action.dueDate)}
 ${action.notes ? `Notes: ${action.notes}` : ''}
 
-Please log in to the Action Central system for more details:
-https://actioncentral.platinumcredit.co.ke
+You can update your progress by clicking this link (valid for 7 days):
+${updateLink}
 
 This is an automated message from the Action Central system.
 Platinum Credit Limited
