@@ -42,18 +42,6 @@ export function EmailPreview({ action }: EmailPreviewProps) {
                 </div>
               </div>
               <div className="space-y-1">
-                <Label>From</Label>
-                <div className="rounded-md border px-4 py-2 text-sm">
-                  joseph.odhiambo@platinumcredit.co.ke
-                </div>
-              </div>
-              <div className="space-y-1">
-                <Label>Reply-To</Label>
-                <div className="rounded-md border px-4 py-2 text-sm">
-                  joseph.odhiambo@platinumcredit.co.ke
-                </div>
-              </div>
-              <div className="space-y-1">
                 <Label>Content</Label>
                 <div className="rounded-md border p-4 text-sm">
                   <div dangerouslySetInnerHTML={{ __html: assignedEmailContent }} />
@@ -79,18 +67,6 @@ export function EmailPreview({ action }: EmailPreviewProps) {
                 </div>
               </div>
               <div className="space-y-1">
-                <Label>From</Label>
-                <div className="rounded-md border px-4 py-2 text-sm">
-                  joseph.odhiambo@platinumcredit.co.ke
-                </div>
-              </div>
-              <div className="space-y-1">
-                <Label>Reply-To</Label>
-                <div className="rounded-md border px-4 py-2 text-sm">
-                  joseph.odhiambo@platinumcredit.co.ke
-                </div>
-              </div>
-              <div className="space-y-1">
                 <Label>Content</Label>
                 <div className="rounded-md border p-4 text-sm">
                   <div dangerouslySetInnerHTML={{ __html: dueEmailContent }} />
@@ -101,10 +77,7 @@ export function EmailPreview({ action }: EmailPreviewProps) {
         </Tabs>
       </CardContent>
       <CardFooter className="text-xs text-muted-foreground">
-        <p>
-          Note: In a production environment, these emails include a secure link for users to update their tasks directly without logging in.
-          The reply-to address is set to joseph.odhiambo@platinumcredit.co.ke so recipients can respond with questions.
-        </p>
+        Note: In a production environment, these emails would be automatically sent when actions are assigned or approaching their due date.
       </CardFooter>
     </Card>
   );

@@ -45,13 +45,13 @@ export function TestEmailNotification() {
       const testAction: ActionItem = {
         id: 'test-' + Date.now(),
         description: 'Test Action Item',
-        department: 'NTSA/KRA' as Department,
+        department: 'Engineering' as Department,
         meetingDate: new Date().toISOString(),
         priority: 'medium',
         ownerEmail: userEmail, // Use the user's email
         completed: false,
         progressStatus: 'Not Started' as ProgressStatus,
-        notes: 'This is a test notification from the Action Central system. The email includes a direct update link that lets you update your task without logging in.',
+        notes: 'This is a test notification from the Action Central system.',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 1 week from now
@@ -73,7 +73,7 @@ export function TestEmailNotification() {
       } else {
         toast({
           title: "Test Email Sent",
-          description: `Notification sent to ${userEmail} with direct update link and reply-to address set to joseph.odhiambo@platinumcredit.co.ke`,
+          description: `Notification sent to ${userEmail}`,
         });
       }
     } catch (error) {
@@ -107,8 +107,7 @@ export function TestEmailNotification() {
       </CardHeader>
       <CardContent>
         <p className="text-sm text-muted-foreground mb-4">
-          This will send a test action item notification to your email address with a direct update link and reply-to address.
-          Make sure you're logged in.
+          This will send a test action item notification to your email address. Make sure you're logged in.
         </p>
         
         {error && (

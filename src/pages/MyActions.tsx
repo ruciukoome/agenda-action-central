@@ -5,16 +5,19 @@ import { ActionItem } from '@/types/action';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ActionCard } from '@/components/ActionCard';
 import { Button } from '@/components/ui/button';
+import { AuthUserWrapper } from '@/components/AuthUserWrapper';
 import { PasswordChangeForm } from '@/components/PasswordChangeForm';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useAuth } from '@/lib/auth';
 
-export default function MyActions() {
+interface MyActionsProps {
+  userEmail: string;
+  onEditAction?: (action: ActionItem) => void;
+}
+
+export default function MyActions({ userEmail, onEditAction }: MyActionsProps) {
   const [actions, setActions] = useState<ActionItem[]>([]);
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const { user } = useAuth();
-  const email = user?.email || '';
 
   // For demo purposes, we'll filter the actions by the user's email
   const fetchMyActions = async (email: string) => {
@@ -31,58 +34,56 @@ export default function MyActions() {
     }
   };
 
-  useEffect(() => {
-    if (email) {
-      fetchMyActions(email);
-    }
-  }, [email]);
-
   return (
-    <div className="container py-6 grid gap-6 md:grid-cols-2">
-      <div className={isMobile ? 'order-2' : ''}>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-xl">My Profile</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Email</p>
-              <p>{email}</p>
+    <AuthUserWrapper>
+      {(email) => (
+        <div className="container py-6 grid gap-6 md:grid-cols-2">
+          <div className={isMobile ? 'order-2' : ''}>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-xl">My Profile</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Email</p>
+                  <p>{email}</p>
+                </div>
+                <Button 
+                  variant="outline"
+                  onClick={() => navigate('/dashboard')}
+                >
+                  Go to Dashboard
+                </Button>
+              </CardContent>
+            </Card>
+            
+            <div className="mt-6">
+              <PasswordChangeForm />
             </div>
-            <Button 
-              variant="outline"
-              onClick={() => navigate('/dashboard')}
-            >
-              Go to Dashboard
-            </Button>
-          </CardContent>
-        </Card>
-        
-        <div className="mt-6">
-          <PasswordChangeForm />
+          </div>
+          
+          <div className={isMobile ? 'order-1' : ''}>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-xl">My Actions</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {actions.length > 0 ? (
+                  actions.map((action) => (
+                    <ActionCard
+                      key={action.id}
+                      action={action}
+                      onEdit={onEditAction ? () => onEditAction(action) : undefined}
+                    />
+                  ))
+                ) : (
+                  <p className="text-muted-foreground">No actions assigned to you yet.</p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
-      </div>
-      
-      <div className={isMobile ? 'order-1' : ''}>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-xl">My Actions</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {actions.length > 0 ? (
-              actions.map((action) => (
-                <ActionCard
-                  key={action.id}
-                  action={action}
-                  onEdit={() => navigate(`/edit-action/${action.id}`)}
-                />
-              ))
-            ) : (
-              <p className="text-muted-foreground">No actions assigned to you yet.</p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+      )}
+    </AuthUserWrapper>
   );
 }
