@@ -46,8 +46,8 @@ export function Header() {
                 Dashboard
               </Link>
               <Link
-                to="/my-actions"
-                className={`text-sm font-medium ${location.pathname === "/my-actions" ? "text-primary" : "text-muted-foreground"} transition-colors hover:text-primary`}
+                to="/"
+                className={`text-sm font-medium ${location.pathname === "/" ? "text-primary" : "text-muted-foreground"} transition-colors hover:text-primary`}
               >
                 My Actions
               </Link>

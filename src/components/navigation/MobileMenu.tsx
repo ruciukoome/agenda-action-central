@@ -36,8 +36,8 @@ export function MobileMenu({ isOpen, onClose, onSignOut }: MobileMenuProps) {
           </li>
           <li>
             <Link 
-              to="/my-actions" 
-              className={`flex items-center gap-2 px-4 py-2 rounded ${location.pathname === '/my-actions' ? 'bg-primary/10 text-primary' : 'bg-card hover:bg-accent hover:text-accent-foreground'}`}
+              to="/" 
+              className={`flex items-center gap-2 px-4 py-2 rounded ${location.pathname === '/' ? 'bg-primary/10 text-primary' : 'bg-card hover:bg-accent hover:text-accent-foreground'}`}
               onClick={onClose}
             >
               <ClipboardList className="h-4 w-4" /> My Actions
