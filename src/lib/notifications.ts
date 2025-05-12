@@ -48,10 +48,6 @@ export async function sendActionNotification(action: ActionItem, type: "assigned
     console.info("[Email Service] Type:", type);
     console.info("[Email Service] Due date in notification:", action.dueDate || "Not set");
     
-    // Create a properly formatted update URL - using email parameter
-    const updateUrl = `${window.location.origin}/update-task/${action.id}?email=${encodeURIComponent(action.ownerEmail)}`;
-    console.info("[Email Service] Update URL:", updateUrl);
-    
     // Prepare the payload that will be sent to the edge function
     const payload = {
       action: {
@@ -59,8 +55,7 @@ export async function sendActionNotification(action: ActionItem, type: "assigned
         id: action.id,
         created_at: action.createdAt,
         updated_at: action.updatedAt,
-        owner_email: action.ownerEmail,
-        update_url: updateUrl
+        owner_email: action.ownerEmail // Ensure this field is explicitly set
       },
       type,
       senderEmail
