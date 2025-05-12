@@ -28,7 +28,7 @@ function App() {
         <Route path="/auth" element={<Auth />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/managed-actions" element={<ManagedActions />} />
-        <Route path="/manage-actions" element={<ManagedActions />} /> {/* Add this route to fix the navigation */}
+        <Route path="/manage-actions" element={<ManagedActions />} />
         <Route path="/add-action" element={<AddAction />} />
         <Route path="/add" element={<AddAction />} />
         <Route path="/edit-action/:id" element={<EditAction />} />

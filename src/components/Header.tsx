@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { UserMenu } from "@/components/navigation/UserMenu";
 import { MobileMenu } from "@/components/navigation/MobileMenu";
 import { MainNavigation } from "@/components/navigation/MainNavigation";
@@ -11,6 +11,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 export function Header() {
   const isMobile = useIsMobile();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const location = useLocation();
 
   const handleSignOut = async () => {
     // This is a placeholder for the actual sign out functionality
@@ -40,25 +41,25 @@ export function Header() {
             <nav className="hidden md:flex items-center space-x-4">
               <Link
                 to="/dashboard"
-                className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+                className={`text-sm font-medium ${location.pathname === "/dashboard" ? "text-primary" : "text-muted-foreground"} transition-colors hover:text-primary`}
               >
                 Dashboard
               </Link>
               <Link
                 to="/my-actions"
-                className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+                className={`text-sm font-medium ${location.pathname === "/my-actions" ? "text-primary" : "text-muted-foreground"} transition-colors hover:text-primary`}
               >
                 My Actions
               </Link>
               <Link
                 to="/managed-actions"
-                className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+                className={`text-sm font-medium ${location.pathname === "/managed-actions" ? "text-primary" : "text-muted-foreground"} transition-colors hover:text-primary`}
               >
                 Actions
               </Link>
               <Link
                 to="/database-setup"
-                className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary font-bold"
+                className={`text-sm font-medium ${location.pathname === "/database-setup" ? "text-primary" : "text-muted-foreground"} transition-colors hover:text-primary font-bold`}
               >
                 Database Setup
               </Link>

@@ -35,6 +35,8 @@ export const createActionToken = async (actionId: string): Promise<string | null
     // Generate a secure random token
     const token = uuidv4();
     
+    console.log("Creating token for action:", actionId);
+    
     // Save token to the database
     const { error } = await supabase
       .from('action_tokens')
@@ -72,13 +74,15 @@ export const generateActionAssignedEmailContent = async (action: ActionItem): Pr
     ? `${getBaseUrl()}/update-task/${action.id}?token=${token}` 
     : `${getBaseUrl()}/my-actions`; // Fallback to login page
   
+  console.log("Generated update link:", updateLink);
+  
   return `
     <h2>You've been assigned a new action item</h2>
     <p><strong>Description:</strong> ${action.description}</p>
     <p><strong>Department:</strong> ${action.department}</p>
     <p><strong>Priority:</strong> ${action.priority}</p>
     ${action.dueDate ? `<p><strong>Due Date:</strong> ${formatDate(action.dueDate)}</p>` : ''}
-    <p><strong>Notes:</strong> ${action.notes}</p>
+    <p><strong>Notes:</strong> ${action.notes || 'No notes provided'}</p>
     <p>You can update your progress by clicking the button below:</p>
     <div style="text-align: center; margin: 30px 0;">
       <a href="${updateLink}" style="background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">

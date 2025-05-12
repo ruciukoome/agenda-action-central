@@ -1,5 +1,5 @@
 
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -11,16 +11,18 @@ import {
 import { cn } from "@/lib/utils";
 
 export function NavigationActions() {
+  const location = useLocation();
+  
   return (
     <NavigationMenuItem>
-      <NavigationMenuTrigger>Actions</NavigationMenuTrigger>
+      <NavigationMenuTrigger className={location.pathname.includes('/action') ? 'bg-accent/50' : ''}>Actions</NavigationMenuTrigger>
       <NavigationMenuContent>
         <ul className="grid gap-3 p-6 md:w-[400px] lg:w-[500px] md:grid-cols-2">
           <li className="row-span-3">
             <NavigationMenuLink asChild>
-              <a
+              <Link
+                to="/managed-actions"
                 className="relative flex aspect-square items-center justify-center rounded-md bg-gradient-to-br from-sky-500 to-violet-500 text-white no-underline outline-none focus:shadow-md"
-                href="/"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -49,7 +51,7 @@ export function NavigationActions() {
                 <div className="absolute bottom-0 left-0 right-0 rounded-md bg-muted p-2 text-center text-xs font-medium">
                   Action Items
                 </div>
-              </a>
+              </Link>
             </NavigationMenuLink>
           </li>
           <li>

@@ -57,8 +57,8 @@ export function UserMenu() {
         <DropdownMenuLabel>My Account</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem>
-          <Link to="/my-actions">
-            Profile
+          <Link to="/my-actions" className="w-full">
+            My Profile
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={handleSignOut}>Sign out</DropdownMenuItem>

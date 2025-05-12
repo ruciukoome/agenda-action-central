@@ -59,10 +59,17 @@ export default function EditAction() {
       const userId = localStorage.getItem("USER_ID") || "test-user-id";
       
       await updateAction(updatedAction.id, updatedAction, userId);
-      console.log("Action updated successfully, navigating to managed actions page");
+      console.log("Action updated successfully");
       
-      // Navigate to the managed actions page after successful update
-      navigate("/managed-actions");
+      toast({
+        title: "Action Updated",
+        description: "The action has been updated successfully.",
+      });
+      
+      // Navigate back to the appropriate page based on context
+      const returnTo = localStorage.getItem("EDIT_RETURN_TO") || "/managed-actions";
+      localStorage.removeItem("EDIT_RETURN_TO"); // Clean up
+      navigate(returnTo);
     } catch (error) {
       console.error("Failed to update action:", error);
       toast({

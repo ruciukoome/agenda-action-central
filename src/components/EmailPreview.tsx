@@ -16,11 +16,17 @@ export function EmailPreview({ action }: EmailPreviewProps) {
   
   useEffect(() => {
     const loadEmailContent = async () => {
-      const assignedContent = await generateActionAssignedEmailContent(action);
-      const dueContent = await generateActionDueEmailContent(action);
-      
-      setAssignedEmailContent(assignedContent);
-      setDueEmailContent(dueContent);
+      try {
+        const assignedContent = await generateActionAssignedEmailContent(action);
+        const dueContent = await generateActionDueEmailContent(action);
+        
+        setAssignedEmailContent(assignedContent);
+        setDueEmailContent(dueContent);
+      } catch (error) {
+        console.error('Error loading email content:', error);
+        setAssignedEmailContent('Error loading email content');
+        setDueEmailContent('Error loading email content');
+      }
     };
     
     loadEmailContent();
