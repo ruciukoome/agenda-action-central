@@ -11,6 +11,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { ActionItem, ProgressStatus } from "@/types/action";
 import { AlertTriangle, Loader2 } from "lucide-react";
+import { ActionDetails } from '@/components/task/ActionDetails';
+import { UpdateForm } from '@/components/task/UpdateForm';
 
 export default function UpdateTask() {
   const { id } = useParams();
@@ -25,6 +27,7 @@ export default function UpdateTask() {
   const [progress, setProgress] = useState<ProgressStatus>('Not Started');
   const [isComplete, setIsComplete] = useState(false);
   const [accessIsValid, setAccessIsValid] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const fetchAction = async () => {
@@ -35,6 +38,7 @@ export default function UpdateTask() {
         
         setIsLoading(true);
         console.log("Fetching action with email validation...");
+        console.log(`Action ID: ${id}, Email: ${email}`);
         
         // Get the action directly
         const { data: actionData, error: actionError } = await supabase
@@ -129,9 +133,6 @@ export default function UpdateTask() {
       setIsSubmitting(false);
     }
   };
-  
-  // Form submission state
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (isLoading) {
     return (
@@ -176,70 +177,16 @@ export default function UpdateTask() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="font-medium">Department:</span>
-              <span>{action?.department}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="font-medium">Priority:</span>
-              <span className={`
-                ${action?.priority === 'high' ? 'text-red-500' : ''} 
-                ${action?.priority === 'medium' ? 'text-amber-500' : ''} 
-                ${action?.priority === 'low' ? 'text-green-500' : ''}
-              `}>
-                {action?.priority}
-              </span>
-            </div>
-            {action?.dueDate && (
-              <div className="flex items-center justify-between">
-                <span className="font-medium">Due Date:</span>
-                <span>{new Date(action.dueDate).toLocaleDateString()}</span>
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-2 pt-4">
-            <Label htmlFor="progress">Progress Status</Label>
-            <RadioGroup id="progress" value={progress} onValueChange={(value) => setProgress(value as ProgressStatus)} className="flex gap-4 flex-wrap">
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="Not Started" id="not-started" />
-                <Label htmlFor="not-started">Not Started</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="25%" id="progress-25" />
-                <Label htmlFor="progress-25">25%</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="50%" id="progress-50" />
-                <Label htmlFor="progress-50">50%</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="75%" id="progress-75" />
-                <Label htmlFor="progress-75">75%</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="100%" id="progress-100" />
-                <Label htmlFor="progress-100">100%</Label>
-              </div>
-            </RadioGroup>
-          </div>
-
-          <div className="flex items-center space-x-2 pt-2">
-            <Checkbox id="completed" checked={isComplete} onCheckedChange={(checked) => setIsComplete(!!checked)} />
-            <Label htmlFor="completed">Mark as completed</Label>
-          </div>
-
-          <div className="space-y-2 pt-4">
-            <Label htmlFor="notes">Notes</Label>
-            <Textarea
-              id="notes"
-              placeholder="Add your progress notes here..."
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              className="min-h-32"
-            />
-          </div>
+          {action && <ActionDetails action={action} />}
+          
+          <UpdateForm 
+            progress={progress}
+            setProgress={setProgress}
+            isComplete={isComplete}
+            setIsComplete={setIsComplete}
+            notes={notes}
+            setNotes={setNotes}
+          />
         </CardContent>
         <CardFooter className="flex justify-between">
           <Button variant="outline" onClick={() => window.close()}>Cancel</Button>

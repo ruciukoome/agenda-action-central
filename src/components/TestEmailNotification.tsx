@@ -18,12 +18,15 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { supabase } from '@/integrations/supabase/client';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Send } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export function TestEmailNotification() {
   const { toast } = useToast();
   const [isSending, setIsSending] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [testEmail, setTestEmail] = useState('');
 
   const handleTestEmail = async () => {
     try {
@@ -38,8 +41,9 @@ export function TestEmailNotification() {
         throw new Error("No user email found. Make sure you're logged in.");
       }
       
-      const userEmail = session.user.email;
-      console.log("Sending test email to:", userEmail);
+      // Use either the manually entered email or the current user's email
+      const recipientEmail = testEmail || session.user.email;
+      console.log("Sending test email to:", recipientEmail);
       
       // Create a test action item with valid types
       const testAction: ActionItem = {
@@ -48,7 +52,7 @@ export function TestEmailNotification() {
         department: 'Engineering' as Department,
         meetingDate: new Date().toISOString(),
         priority: 'medium',
-        ownerEmail: userEmail, // Use the user's email
+        ownerEmail: recipientEmail,
         completed: false,
         progressStatus: 'Not Started' as ProgressStatus,
         notes: 'This is a test notification from the Action Central system.',
@@ -73,7 +77,7 @@ export function TestEmailNotification() {
       } else {
         toast({
           title: "Test Email Sent",
-          description: `Notification sent to ${userEmail}`,
+          description: `Notification sent to ${recipientEmail}`,
         });
       }
     } catch (error) {
@@ -106,12 +110,29 @@ export function TestEmailNotification() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <p className="text-sm text-muted-foreground mb-4">
-          This will send a test action item notification to your email address. Make sure you're logged in.
-        </p>
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="testEmail">Test Recipient Email (optional)</Label>
+            <Input
+              id="testEmail"
+              type="email"
+              placeholder="Enter email address to send test to"
+              value={testEmail}
+              onChange={(e) => setTestEmail(e.target.value)}
+              className="mt-1"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Leave blank to use your own email address
+            </p>
+          </div>
+          
+          <p className="text-sm text-muted-foreground">
+            This will send a test action item notification to the specified email address.
+          </p>
+        </div>
         
         {error && (
-          <Alert variant="destructive" className="mb-4">
+          <Alert variant="destructive" className="mt-4">
             <AlertTitle>Error sending email</AlertTitle>
             <AlertDescription className="whitespace-pre-wrap break-all">{error}</AlertDescription>
           </Alert>
