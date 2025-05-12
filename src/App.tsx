@@ -15,6 +15,7 @@ import UpdateSuccess from './pages/UpdateSuccess';
 import DatabaseSetup from './pages/DatabaseSetup';
 import { useIdleTimeout } from './hooks/useIdleTimeout';
 import { useAuth } from '@/lib/auth';
+import { AuthGuard } from '@/components/AuthGuard';
 
 function App() {
   // Set up idle timeout - will only be active when user is logged in
@@ -26,17 +27,21 @@ function App() {
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/auth" element={<Auth />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/managed-actions" element={<ManagedActions />} />
-        <Route path="/manage-actions" element={<ManagedActions />} />
-        <Route path="/add-action" element={<AddAction />} />
-        <Route path="/add" element={<AddAction />} />
-        <Route path="/edit-action/:id" element={<EditAction />} />
-        <Route path="/edit/:id" element={<EditAction />} />
-        <Route path="/my-actions" element={<MyActions />} />
+        
+        {/* Public routes that don't require authentication */}
         <Route path="/update-task/:id" element={<UpdateTask />} />
         <Route path="/update-success" element={<UpdateSuccess />} />
-        <Route path="/database-setup" element={<DatabaseSetup />} />
+        
+        {/* Protected routes that require authentication */}
+        <Route path="/dashboard" element={<AuthGuard><Dashboard /></AuthGuard>} />
+        <Route path="/managed-actions" element={<AuthGuard><ManagedActions /></AuthGuard>} />
+        <Route path="/manage-actions" element={<AuthGuard><ManagedActions /></AuthGuard>} />
+        <Route path="/add-action" element={<AuthGuard><AddAction /></AuthGuard>} />
+        <Route path="/add" element={<AuthGuard><AddAction /></AuthGuard>} />
+        <Route path="/edit-action/:id" element={<AuthGuard><EditAction /></AuthGuard>} />
+        <Route path="/edit/:id" element={<AuthGuard><EditAction /></AuthGuard>} />
+        <Route path="/my-actions" element={<AuthGuard><MyActions /></AuthGuard>} />
+        <Route path="/database-setup" element={<AuthGuard><DatabaseSetup /></AuthGuard>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       <Toaster 
