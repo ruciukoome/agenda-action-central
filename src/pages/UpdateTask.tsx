@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { ActionItem, ProgressStatus } from "@/types/action";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Loader2 } from "lucide-react";
 
 // Define the interface for tokens from the database
 interface ActionToken {
@@ -52,7 +52,7 @@ export default function UpdateTask() {
         
         // Use the database function to validate the token and get the action in one call
         const { data, error } = await supabase
-          .rpc('get_action_token_by_id_and_token', { 
+          .rpc('get_action_by_token', { 
             p_action_id: id,
             p_token: token
           });
@@ -68,10 +68,9 @@ export default function UpdateTask() {
         }
         
         // Get the token and action data
-        const tokenData = data[0] as ActionToken;
-        const actionData = tokenData.action_data;
+        const actionData = data[0];
         
-        console.log("Token validated successfully:", tokenData);
+        console.log("Token validated successfully, action data:", actionData);
         setTokenIsValid(true);
         
         // Map the action data to our ActionItem format
@@ -160,7 +159,10 @@ export default function UpdateTask() {
   if (isLoading) {
     return (
       <div className="container flex items-center justify-center h-screen">
-        <div className="text-center">Loading...</div>
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <div>Loading action details...</div>
+        </div>
       </div>
     );
   }

@@ -37,6 +37,21 @@ export const createActionToken = async (actionId: string): Promise<string | null
     
     console.log("Creating token for action:", actionId);
     
+    // Check if a token already exists for this action and is still valid
+    const { data: existingTokens, error: fetchError } = await supabase
+      .from('action_tokens')
+      .select('*')
+      .eq('action_id', actionId)
+      .eq('used', false)
+      .gt('expires_at', new Date().toISOString());
+    
+    if (fetchError) {
+      console.error("Error checking existing tokens:", fetchError);
+    } else if (existingTokens && existingTokens.length > 0) {
+      console.log("Found existing valid token, returning it instead of creating a new one");
+      return existingTokens[0].token;
+    }
+    
     // Save token to the database
     const { error } = await supabase
       .from('action_tokens')
