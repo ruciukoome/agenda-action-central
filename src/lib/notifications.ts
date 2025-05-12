@@ -55,7 +55,8 @@ export async function sendActionNotification(action: ActionItem, type: "assigned
         id: action.id,
         created_at: action.createdAt,
         updated_at: action.updatedAt,
-        owner_email: action.ownerEmail // Ensure this field is explicitly set
+        owner_email: action.ownerEmail, // Ensure this field is explicitly set
+        update_url: `${window.location.origin}/update-task/${action.id}?email=${encodeURIComponent(action.ownerEmail)}`
       },
       type,
       senderEmail

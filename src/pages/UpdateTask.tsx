@@ -12,21 +12,10 @@ import { toast } from "sonner";
 import { ActionItem, ProgressStatus } from "@/types/action";
 import { AlertTriangle, Loader2 } from "lucide-react";
 
-// Define the interface for tokens from the database
-interface ActionToken {
-  id: string;
-  action_id: string;
-  token: string;
-  expires_at: string;
-  created_at: string;
-  used: boolean;
-  action_data: any; // This will contain the action item data
-}
-
 export default function UpdateTask() {
   const { id } = useParams();
   const [searchParams] = useSearchParams();
-  const token = searchParams.get('token');
+  const email = searchParams.get('email');
   const navigate = useNavigate();
   
   const [action, setAction] = useState<ActionItem | null>(null);
@@ -35,44 +24,38 @@ export default function UpdateTask() {
   const [notes, setNotes] = useState('');
   const [progress, setProgress] = useState<ProgressStatus>('Not Started');
   const [isComplete, setIsComplete] = useState(false);
-  const [tokenIsValid, setTokenIsValid] = useState(false);
-  
-  // Form submission state
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [accessIsValid, setAccessIsValid] = useState(false);
 
   useEffect(() => {
     const fetchAction = async () => {
       try {
-        if (!id || !token) {
-          throw new Error("Missing action ID or token");
+        if (!id || !email) {
+          throw new Error("Missing action ID or email");
         }
         
         setIsLoading(true);
-        console.log("Fetching action with token validation...");
+        console.log("Fetching action with email validation...");
         
-        // Use the database function to validate the token and get the action in one call
-        const { data, error } = await supabase
-          .rpc('get_action_token_by_id_and_token', { 
-            p_action_id: id,
-            p_token: token
-          });
+        // Get the action directly
+        const { data: actionData, error: actionError } = await supabase
+          .from('actions')
+          .select('*')
+          .eq('id', id)
+          .eq('owner_email', email)
+          .single();
         
-        if (error) {
-          console.error("Token validation error:", error);
-          throw new Error("Invalid or expired token");
+        if (actionError) {
+          console.error("Action fetch error:", actionError);
+          throw new Error("Invalid action ID or email");
         }
         
-        if (!data || data.length === 0) {
-          console.error("No data returned for token");
-          throw new Error("Invalid or expired token");
+        if (!actionData) {
+          console.error("No action found for the given ID and email");
+          throw new Error("Action not found");
         }
         
-        // Get the token and action data
-        const tokenData = data[0] as ActionToken;
-        const actionData = tokenData.action_data;
-        
-        console.log("Token validated successfully, action data:", actionData);
-        setTokenIsValid(true);
+        console.log("Action data fetched successfully:", actionData);
+        setAccessIsValid(true);
         
         // Map the action data to our ActionItem format
         const mappedAction: ActionItem = {
@@ -99,17 +82,17 @@ export default function UpdateTask() {
       } catch (err: any) {
         console.error("Error loading action:", err);
         setError(err.message || "An unexpected error occurred");
-        setTokenIsValid(false);
+        setAccessIsValid(false);
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchAction();
-  }, [id, token]);
+  }, [id, email]);
 
   const handleSubmit = async () => {
-    if (!action || !token || !id) return;
+    if (!action || !id || !email) return;
     
     try {
       setIsSubmitting(true);
@@ -125,21 +108,11 @@ export default function UpdateTask() {
       const { error: updateError } = await supabase
         .from('actions')
         .update(updates)
-        .eq('id', action.id);
+        .eq('id', action.id)
+        .eq('owner_email', email);
       
       if (updateError) {
         throw updateError;
-      }
-      
-      // Mark the token as used
-      const { error: tokenError } = await supabase
-        .from('action_tokens')
-        .update({ used: true })
-        .eq('action_id', id)
-        .eq('token', token);
-      
-      if (tokenError) {
-        console.error("Could not mark token as used:", tokenError);
       }
       
       toast.success("Action updated successfully!");
@@ -156,6 +129,9 @@ export default function UpdateTask() {
       setIsSubmitting(false);
     }
   };
+  
+  // Form submission state
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (isLoading) {
     return (
@@ -168,7 +144,7 @@ export default function UpdateTask() {
     );
   }
 
-  if (error || !tokenIsValid) {
+  if (error || !accessIsValid) {
     return (
       <div className="container py-8">
         <Card className="w-full max-w-lg mx-auto">
@@ -177,9 +153,9 @@ export default function UpdateTask() {
             <CardTitle className="text-red-500">Access Error</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-center mb-4">{error || "Invalid or expired link"}</p>
+            <p className="text-center mb-4">{error || "Invalid access link"}</p>
             <p className="mt-4 text-sm text-muted-foreground text-center">
-              This link may have expired or already been used. Please contact your administrator to get a new link.
+              This link may be invalid or you don't have permission to update this action. Please contact your administrator for assistance.
             </p>
           </CardContent>
           <CardFooter className="flex justify-center">

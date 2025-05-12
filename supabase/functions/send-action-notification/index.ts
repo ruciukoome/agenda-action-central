@@ -1,506 +1,208 @@
 
-/**
- * EDGE FUNCTION: ACTION NOTIFICATION SENDER
- * ----------------------------------------
- * This edge function sends email notifications for action items
- * 
- * Functionality:
- * - Sends notification emails when actions are assigned or updated
- * - Uses SendGrid for reliable email delivery with proper authentication
- * - Implements SPF, DKIM and other anti-spam practices
- * - Includes secure action update links with tokens
- * 
- * Environment variables:
- * - SENDGRID_API_KEY: API key for SendGrid email service
- */
+// Edge function that sends email notifications for task assignments and updates
+import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-// Define CORS headers for browser access
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Define notification types
-type NotificationType = "assigned" | "updated" | "due_soon" | "overdue";
-
-// Create Supabase client
-const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
-const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
-const supabase = createClient(supabaseUrl, supabaseKey);
-
-// Generate a secure token for action access
-async function createActionToken(actionId: string): Promise<string | null> {
-  try {
-    // Create expiration date (14 days from now for better user experience)
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 14);
-    
-    // Generate a random token (using crypto API for better security)
-    const tokenBuffer = new Uint8Array(32); // 256 bits
-    crypto.getRandomValues(tokenBuffer);
-    const token = Array.from(tokenBuffer)
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('');
-    
-    // Save token to the database
-    const { error } = await supabase
-      .from('action_tokens')
-      .insert({
-        action_id: actionId,
-        token: token,
-        expires_at: expiresAt.toISOString(),
-        used: false
-      });
-    
-    if (error) {
-      console.error("Error creating token:", error);
-      return null;
-    }
-    
-    return token;
-  } catch (err) {
-    console.error("Token creation error:", err);
-    return null;
-  }
-}
-
-// Request handler
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    console.log("Handling OPTIONS request");
     return new Response(null, { headers: corsHeaders });
   }
-
-  // Process request
-  console.log("Processing email notification request");
-  console.log("Request headers:", JSON.stringify(req.headers, null, 2));
-
+  
   try {
-    // Parse request data
-    const payload = await req.json();
-    console.log("Received request data:", JSON.stringify(payload));
-
-    // Extract data from payload
-    const { action, type, senderEmail } = payload;
+    // Get request body
+    const body = await req.json();
+    const { action, type, senderEmail } = body;
     
-    if (!action || !action.ownerEmail) {
-      throw new Error("Missing required data: action or owner email");
-    }
-
-    console.log(`Preparing to send ${type} notification for action: ${action.id}`);
-    
-    // Check SendGrid API key
-    const sendGridApiKey = Deno.env.get("SENDGRID_API_KEY");
-    console.log("Using SendGrid API key:", sendGridApiKey ? "API key is set" : "API key is NOT set");
-    
-    if (!sendGridApiKey) {
-      throw new Error("SENDGRID_API_KEY not found in environment variables");
+    // Validate inputs
+    if (!action || !action.id || !action.owner_email) {
+      throw new Error("Missing required fields in request");
     }
     
-    // Create a token for the action
-    const token = await createActionToken(action.id);
-    console.log("Generated token for action:", token ? "Success" : "Failed");
+    // Get API key from environment variable
+    const sendgridApiKey = Deno.env.get("SENDGRID_API_KEY");
+    if (!sendgridApiKey) {
+      throw new Error("SendGrid API key not configured");
+    }
     
-    // Get app URL from request origin or fall back to a default
-    const appUrl = req.headers.get('origin') || "http://localhost:5173";
-    console.log("Using app URL for links:", appUrl);
+    // Create email content based on notification type
+    const isAssigned = type === "assigned";
+    const isUpdated = type === "updated";
     
-    // Action update link with token
-    const updateLink = token 
-      ? `${appUrl}/update-task/${action.id}?token=${token}` 
-      : `${appUrl}/my-actions`;
-
-    console.log("Generated action update link:", updateLink);
-
-    // Generate email content based on notification type
-    const { subject, htmlContent, textContent } = generateEmailContent(action, type, updateLink);
+    if (!isAssigned && !isUpdated) {
+      throw new Error("Invalid notification type");
+    }
     
-    console.log(`Sending email from: joseph.odhiambo@platinumcredit.co.ke to: ${action.ownerEmail}`);
+    // Format dates for display
+    const dueDateFormatted = action.due_date 
+      ? new Date(action.due_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+      : "No due date set";
     
-    // Send email using SendGrid with improved deliverability settings
-    const response = await fetch("https://api.sendgrid.com/v3/mail/send", {
+    // Generate direct URL to update the task - using the new format with email
+    const updateUrl = action.update_url || `${req.headers.get("origin")}/update-task/${action.id}?email=${encodeURIComponent(action.owner_email)}`;
+    
+    // Create standardized email content
+    const subject = isAssigned 
+      ? `Action Item Assigned: ${action.description}`
+      : `Action Item Updated: ${action.description}`;
+    
+    // Standard styles
+    const styles = {
+      body: "font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;",
+      header: "background-color: #f0f4f8; padding: 20px; border-radius: 5px 5px 0 0;",
+      content: "background-color: #ffffff; padding: 20px; border-radius: 0 0 5px 5px; border: 1px solid #e5e7eb; border-top: none;",
+      title: "color: #1e40af; font-size: 20px; margin: 0 0 10px 0;",
+      subtitle: "color: #64748b; font-size: 16px; margin: 0 0 20px 0;",
+      button: "background-color: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block; margin: 20px 0;",
+      note: "color: #64748b; font-size: 14px; border-top: 1px solid #e5e7eb; margin-top: 20px; padding-top: 20px;",
+      footer: "color: #94a3b8; font-size: 12px; text-align: center; margin-top: 20px;",
+      label: "color: #64748b; font-weight: bold;",
+      table: "width: 100%; border-collapse: collapse;",
+      tr: "border-bottom: 1px solid #e5e7eb;",
+      td: "padding: 10px 0;",
+    };
+    
+    // Create HTML email content
+    const html = `
+    <div style="${styles.body}">
+      <div style="${styles.header}">
+        <h1 style="${styles.title}">${subject}</h1>
+        <p style="${styles.subtitle}">This ${isAssigned ? 'new task has been assigned to you' : 'task has been updated'}</p>
+      </div>
+      
+      <div style="${styles.content}">
+        <table style="${styles.table}">
+          <tr style="${styles.tr}">
+            <td style="${styles.td}"><span style="${styles.label}">Description:</span></td>
+            <td style="${styles.td}">${action.description}</td>
+          </tr>
+          <tr style="${styles.tr}">
+            <td style="${styles.td}"><span style="${styles.label}">Department:</span></td>
+            <td style="${styles.td}">${action.department}</td>
+          </tr>
+          <tr style="${styles.tr}">
+            <td style="${styles.td}"><span style="${styles.label}">Priority:</span></td>
+            <td style="${styles.td}">${action.priority}</td>
+          </tr>
+          <tr style="${styles.tr}">
+            <td style="${styles.td}"><span style="${styles.label}">Due Date:</span></td>
+            <td style="${styles.td}">${dueDateFormatted}</td>
+          </tr>
+          ${isUpdated && action.progress_status ? `
+          <tr style="${styles.tr}">
+            <td style="${styles.td}"><span style="${styles.label}">Progress:</span></td>
+            <td style="${styles.td}">${action.progress_status}</td>
+          </tr>
+          ` : ''}
+        </table>
+        
+        <p>You can update your progress on this task by clicking the button below:</p>
+        
+        <a href="${updateUrl}" style="${styles.button}">Update Task</a>
+        
+        <div style="${styles.note}">
+          <p>This email was sent by ${senderEmail || 'the system'}.</p>
+        </div>
+      </div>
+      
+      <div style="${styles.footer}">
+        <p>This is an automated notification. Please do not reply to this email.</p>
+      </div>
+    </div>
+    `;
+    
+    // Plain text version for email clients that don't support HTML
+    const text = `
+    ${subject}
+    
+    This ${isAssigned ? 'new task has been assigned to you' : 'task has been updated'}
+    
+    Description: ${action.description}
+    Department: ${action.department}
+    Priority: ${action.priority}
+    Due Date: ${dueDateFormatted}
+    ${isUpdated && action.progress_status ? `Progress: ${action.progress_status}` : ''}
+    
+    You can update your progress on this task by visiting:
+    ${updateUrl}
+    
+    This email was sent by ${senderEmail || 'the system'}.
+    
+    This is an automated notification. Please do not reply to this email.
+    `;
+    
+    // Send the email using SendGrid API
+    const sendgridUrl = "https://api.sendgrid.com/v3/mail/send";
+    const sendgridResponse = await fetch(sendgridUrl, {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${sendGridApiKey}`,
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${sendgridApiKey}`
       },
       body: JSON.stringify({
         personalizations: [
           {
-            to: [{ email: action.ownerEmail }],
-            subject: subject,
-            // Adding custom headers to improve deliverability
-            headers: {
-              "List-Unsubscribe": "<https://actioncentral.platinumcredit.co.ke/unsubscribe>",
-              "Precedence": "Bulk",
-              "X-Auto-Response-Suppress": "OOF, AutoReply"
-            }
+            to: [{ email: action.owner_email }]
           }
         ],
-        from: { 
-          email: "joseph.odhiambo@platinumcredit.co.ke", 
-          name: "Action Central" 
-        },
-        reply_to: {
-          email: "joseph.odhiambo@platinumcredit.co.ke",
-          name: "Action Central"
-        },
+        from: { email: "notifications@mdwrmfqjxakhpwmfyvft.supabase.co", name: "Action Items" },
+        subject: subject,
         content: [
           {
             type: "text/plain",
-            value: textContent
+            value: text
           },
           {
             type: "text/html",
-            value: htmlContent
+            value: html
           }
-        ],
-        // Adding message identifiers for tracking and threading
-        message_id: `action-${action.id}-${Date.now()}@platinumcredit.co.ke`,
-        // Adding hardcoded unsubscribe group ID as requested
-        asm: {
-          group_id: 31666,
-          groups_to_display: [31666]
-        },
-        // Adding mail settings to improve deliverability
-        mail_settings: {
-          bypass_list_management: {
-            enable: false
-          },
-          footer: {
-            enable: true
-          },
-          sandbox_mode: {
-            enable: false
-          }
-        },
-        tracking_settings: {
-          click_tracking: { enable: true },
-          open_tracking: { enable: true },
-          subscription_tracking: { enable: true }
-        },
-        // Adding a category to help with tracking/analytics
-        categories: ["action_notification"]
+        ]
       })
     });
-
-    // Log response information
-    const responseText = await response.text();
-    console.log("SendGrid API response status:", response.status);
-    console.log("SendGrid API response text:", responseText);
     
-    if (!response.ok) {
-      throw new Error(`SendGrid API error: ${response.status} - ${responseText}`);
-    }
-
-    console.log(`Email sent successfully, SendGrid status: ${response.status}`);
-
-    // Return success response
+    // Get the response from SendGrid
+    const sendgridData = await sendgridResponse.text();
+    const success = sendgridResponse.status >= 200 && sendgridResponse.status < 300;
+    
+    console.log(`Email ${success ? 'sent successfully' : 'failed to send'} to ${action.owner_email}`);
+    
+    // Return response
     return new Response(
-      JSON.stringify({ success: true, message: "Email notification sent" }),
-      { 
-        status: 200, 
-        headers: { ...corsHeaders, "Content-Type": "application/json" } 
+      JSON.stringify({
+        success,
+        message: success ? "Notification sent successfully" : "Failed to send notification",
+        details: sendgridData
+      }),
+      {
+        status: success ? 200 : 400,
+        headers: {
+          "Content-Type": "application/json",
+          ...corsHeaders
+        }
       }
     );
-  } catch (error) {
-    console.error("Error sending notification:", error);
     
-    // Return error response
+  } catch (error) {
+    console.error("Error processing notification:", error.message);
+    
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, "Content-Type": "application/json" } 
+      JSON.stringify({
+        success: false,
+        message: "Error processing notification",
+        error: error.message
+      }),
+      {
+        status: 400,
+        headers: {
+          "Content-Type": "application/json",
+          ...corsHeaders
+        }
       }
     );
   }
 });
-
-// Helper function to generate email content with action update link
-function generateEmailContent(action: any, type: NotificationType, updateLink: string) {
-  const formatDate = (dateString: string | undefined) => {
-    if (!dateString) return "Not set";
-    return new Date(dateString).toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
-
-  // Common styling for all email templates
-  const styles = `
-    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; }
-    .header { background-color: #0070f3; color: white; padding: 20px; text-align: center; }
-    .content { padding: 20px; }
-    .footer { font-size: 12px; color: #666; border-top: 1px solid #eee; padding: 20px; text-align: center; }
-    .priority-high { color: #e53e3e; font-weight: bold; }
-    .priority-medium { color: #dd6b20; font-weight: bold; }
-    .priority-low { color: #38a169; font-weight: bold; }
-    .button { background-color: #0070f3; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-block; margin-top: 15px; }
-    .unsubscribe { font-size: 11px; color: #999; margin-top: 20px; }
-    @media only screen and (max-width: 480px) {
-      .content { padding: 10px; }
-      .header { padding: 10px; }
-      h2 { font-size: 20px; }
-    }
-  `;
-
-  // Base template for all emails
-  const baseTemplate = (title: string, content: string) => `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-        <title>${title}</title>
-        <style>${styles}</style>
-      </head>
-      <body>
-        <div class="header">
-          <h2>${title}</h2>
-        </div>
-        <div class="content">
-          ${content}
-        </div>
-        <div class="footer">
-          <p>This is an automated message from the Action Central system.</p>
-          <p>Platinum Credit Limited</p>
-          <p class="unsubscribe">You can <a href="https://actioncentral.platinumcredit.co.ke/unsubscribe">unsubscribe</a> from these notifications at any time.</p>
-        </div>
-      </body>
-    </html>
-  `;
-
-  let subject = "";
-  let content = "";
-  let plainTextContent = "";
-
-  switch (type) {
-    case "assigned":
-      subject = `New Action Item Assigned: ${action.description.substring(0, 50)}${action.description.length > 50 ? '...' : ''}`;
-      content = `
-        <p>Hello,</p>
-        <p>You've been assigned a new action item in Action Central.</p>
-        
-        <h3>${action.description}</h3>
-        <p><strong>Department:</strong> ${action.department}</p>
-        <p><strong>Priority:</strong> <span class="priority-${action.priority}">${action.priority}</span></p>
-        <p><strong>Due Date:</strong> ${formatDate(action.dueDate)}</p>
-        ${action.notes ? `<p><strong>Notes:</strong> ${action.notes}</p>` : ''}
-        
-        <p>You can update your progress by clicking the button below:</p>
-        <div style="text-align: center; margin: 30px 0;">
-          <a href="${updateLink}" style="background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">
-            Update Action Progress
-          </a>
-        </div>
-        <p style="font-size: 12px; color: #666;">This link will expire in 14 days. If you need assistance, please contact your administrator.</p>
-      `;
-      plainTextContent = `
-Hello,
-
-You've been assigned a new action item in Action Central.
-
-${action.description}
-
-Department: ${action.department}
-Priority: ${action.priority}
-Due Date: ${formatDate(action.dueDate)}
-${action.notes ? `Notes: ${action.notes}` : ''}
-
-You can update your progress by clicking this link (valid for 14 days):
-${updateLink}
-
-This is an automated message from the Action Central system.
-Platinum Credit Limited
-
-To unsubscribe: https://actioncentral.platinumcredit.co.ke/unsubscribe
-      `;
-      break;
-      
-    case "updated":
-      subject = `Action Item Updated: ${action.description.substring(0, 50)}${action.description.length > 50 ? '...' : ''}`;
-      content = `
-        <p>Hello,</p>
-        <p>An action item assigned to you has been updated.</p>
-        
-        <h3>${action.description}</h3>
-        <p><strong>Department:</strong> ${action.department}</p>
-        <p><strong>Priority:</strong> <span class="priority-${action.priority}">${action.priority}</span></p>
-        <p><strong>Due Date:</strong> ${formatDate(action.dueDate)}</p>
-        <p><strong>Current Progress:</strong> ${action.progressStatus}</p>
-        ${action.notes ? `<p><strong>Notes:</strong> ${action.notes}</p>` : ''}
-        
-        <p>You can update your progress by clicking the button below:</p>
-        <div style="text-align: center; margin: 30px 0;">
-          <a href="${updateLink}" style="background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">
-            Update Action Progress
-          </a>
-        </div>
-        <p style="font-size: 12px; color: #666;">This link will expire in 14 days. If you need assistance, please contact your administrator.</p>
-      `;
-      plainTextContent = `
-Hello,
-
-An action item assigned to you has been updated.
-
-${action.description}
-
-Department: ${action.department}
-Priority: ${action.priority}
-Due Date: ${formatDate(action.dueDate)}
-Current Progress: ${action.progressStatus}
-${action.notes ? `Notes: ${action.notes}` : ''}
-
-You can update your progress by clicking this link (valid for 14 days):
-${updateLink}
-
-This is an automated message from the Action Central system.
-Platinum Credit Limited
-
-To unsubscribe: https://actioncentral.platinumcredit.co.ke/unsubscribe
-      `;
-      break;
-      
-    case "due_soon":
-      subject = `REMINDER: Action Item Due Soon: ${action.description.substring(0, 50)}${action.description.length > 50 ? '...' : ''}`;
-      content = `
-        <p>Hello,</p>
-        <p>This is a reminder that you have an action item due soon.</p>
-        
-        <h3>${action.description}</h3>
-        <p><strong>Due Date:</strong> ${formatDate(action.dueDate)}</p>
-        <p><strong>Department:</strong> ${action.department}</p>
-        <p><strong>Priority:</strong> <span class="priority-${action.priority}">${action.priority}</span></p>
-        <p><strong>Current Progress:</strong> ${action.progressStatus}</p>
-        ${action.notes ? `<p><strong>Notes:</strong> ${action.notes}</p>` : ''}
-        
-        <p>You can update your progress by clicking the button below:</p>
-        <div style="text-align: center; margin: 30px 0;">
-          <a href="${updateLink}" style="background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">
-            Update Action Progress
-          </a>
-        </div>
-        <p style="font-size: 12px; color: #666;">This link will expire in 14 days. If you need assistance, please contact your administrator.</p>
-      `;
-      plainTextContent = `
-Hello,
-
-This is a reminder that you have an action item due soon.
-
-${action.description}
-
-Due Date: ${formatDate(action.dueDate)}
-Department: ${action.department}
-Priority: ${action.priority}
-Current Progress: ${action.progressStatus}
-${action.notes ? `Notes: ${action.notes}` : ''}
-
-You can update your progress by clicking this link (valid for 14 days):
-${updateLink}
-
-This is an automated message from the Action Central system.
-Platinum Credit Limited
-
-To unsubscribe: https://actioncentral.platinumcredit.co.ke/unsubscribe
-      `;
-      break;
-      
-    case "overdue":
-      subject = `OVERDUE: Action Item Past Due Date: ${action.description.substring(0, 50)}${action.description.length > 50 ? '...' : ''}`;
-      content = `
-        <p>Hello,</p>
-        <p>An action item assigned to you is now overdue.</p>
-        
-        <h3>${action.description}</h3>
-        <p><strong>Due Date:</strong> ${formatDate(action.dueDate)} (OVERDUE)</p>
-        <p><strong>Department:</strong> ${action.department}</p>
-        <p><strong>Priority:</strong> <span class="priority-${action.priority}">${action.priority}</span></p>
-        <p><strong>Current Progress:</strong> ${action.progressStatus}</p>
-        ${action.notes ? `<p><strong>Notes:</strong> ${action.notes}</p>` : ''}
-        
-        <p>You can update your progress by clicking the button below:</p>
-        <div style="text-align: center; margin: 30px 0;">
-          <a href="${updateLink}" style="background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">
-            Update Action Progress
-          </a>
-        </div>
-        <p style="font-size: 12px; color: #666;">This link will expire in 14 days. If you need assistance, please contact your administrator.</p>
-      `;
-      plainTextContent = `
-Hello,
-
-An action item assigned to you is now overdue.
-
-${action.description}
-
-Due Date: ${formatDate(action.dueDate)} (OVERDUE)
-Department: ${action.department}
-Priority: ${action.priority}
-Current Progress: ${action.progressStatus}
-${action.notes ? `Notes: ${action.notes}` : ''}
-
-You can update your progress by clicking this link (valid for 14 days):
-${updateLink}
-
-This is an automated message from the Action Central system.
-Platinum Credit Limited
-
-To unsubscribe: https://actioncentral.platinumcredit.co.ke/unsubscribe
-      `;
-      break;
-      
-    default:
-      subject = `Action Central: ${action.description.substring(0, 50)}${action.description.length > 50 ? '...' : ''}`;
-      content = `
-        <p>Hello,</p>
-        <p>There's been an update to your action item.</p>
-        
-        <h3>${action.description}</h3>
-        <p><strong>Department:</strong> ${action.department}</p>
-        <p><strong>Priority:</strong> <span class="priority-${action.priority}">${action.priority}</span></p>
-        <p><strong>Due Date:</strong> ${formatDate(action.dueDate)}</p>
-        ${action.notes ? `<p><strong>Notes:</strong> ${action.notes}</p>` : ''}
-        
-        <p>You can update your progress by clicking the button below:</p>
-        <div style="text-align: center; margin: 30px 0;">
-          <a href="${updateLink}" style="background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">
-            Update Action Progress
-          </a>
-        </div>
-        <p style="font-size: 12px; color: #666;">This link will expire in 14 days. If you need assistance, please contact your administrator.</p>
-      `;
-      plainTextContent = `
-Hello,
-
-There's been an update to your action item.
-
-${action.description}
-
-Department: ${action.department}
-Priority: ${action.priority}
-Due Date: ${formatDate(action.dueDate)}
-${action.notes ? `Notes: ${action.notes}` : ''}
-
-You can update your progress by clicking this link (valid for 14 days):
-${updateLink}
-
-This is an automated message from the Action Central system.
-Platinum Credit Limited
-
-To unsubscribe: https://actioncentral.platinumcredit.co.ke/unsubscribe
-      `;
-  }
-
-  return {
-    subject,
-    htmlContent: baseTemplate(subject, content),
-    textContent: plainTextContent.trim()
-  };
-}
