@@ -36,6 +36,7 @@ function App() {
         <Route path="/dashboard" element={<AuthGuard><Dashboard /></AuthGuard>} />
         <Route path="/managed-actions" element={<AuthGuard><ManagedActions /></AuthGuard>} />
         <Route path="/manage-actions" element={<AuthGuard><ManagedActions /></AuthGuard>} />
+        <Route path="/action-items" element={<AuthGuard><MyActions /></AuthGuard>} />
         <Route path="/add-action" element={<AuthGuard><AddAction /></AuthGuard>} />
         <Route path="/add" element={<AuthGuard><AddAction /></AuthGuard>} />
         <Route path="/edit-action/:id" element={<AuthGuard><EditAction /></AuthGuard>} />

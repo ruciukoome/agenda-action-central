@@ -21,7 +21,7 @@ export function NavigationActions() {
           <li className="row-span-3">
             <NavigationMenuLink asChild>
               <Link
-                to="/managed-actions"
+                to="/my-actions"
                 className="relative flex aspect-square items-center justify-center rounded-md bg-gradient-to-br from-sky-500 to-violet-500 text-white no-underline outline-none focus:shadow-md"
               >
                 <svg
