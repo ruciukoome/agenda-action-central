@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { ActionItem, ProgressStatus } from "@/types/action";
@@ -55,13 +56,12 @@ export default function UpdateTask() {
           return;
         }
         
-        // First, validate the token using a raw SQL query since the table isn't in the TypeScript types yet
+        // First, validate the token - using raw SQL query since it's not in the types
         const { data: tokenData, error: tokenError } = await supabase
-          .from('action_tokens')
-          .select('*')
-          .eq('token', token)
-          .eq('action_id', id)
-          .single() as { data: ActionToken | null, error: any };
+          .rpc('get_action_token_by_id_and_token', { 
+            p_action_id: id, 
+            p_token: token 
+          });
         
         if (tokenError || !tokenData) {
           console.error("Invalid or expired token:", tokenError);
