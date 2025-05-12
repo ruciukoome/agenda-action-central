@@ -13,6 +13,7 @@ import { AuthGuard } from "@/components/auth/AuthGuard";
 import { AuthUserWrapper } from "@/components/auth/AuthUserWrapper";
 import UpdateTask from "@/pages/UpdateTask";
 import UpdateSuccess from "@/pages/UpdateSuccess";
+import Home from "@/pages/Home";
 
 const queryClient = new QueryClient();
 
@@ -21,7 +22,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthUserWrapper>
         <Routes>
-          <Route path="/" element={<div>Home Page</div>} />
+          <Route path="/" element={<Home />} />
           <Route path="/auth" element={<Auth />} />
           
           {/* Public routes that don't require authentication */}

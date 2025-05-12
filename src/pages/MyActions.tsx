@@ -9,11 +9,7 @@ import { PasswordChangeForm } from '@/components/PasswordChangeForm';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuth } from '@/lib/auth';
 
-interface MyActionsProps {
-  onEditAction?: (action: ActionItem) => void;
-}
-
-export default function MyActions({ onEditAction }: MyActionsProps) {
+export default function MyActions() {
   const [actions, setActions] = useState<ActionItem[]>([]);
   const navigate = useNavigate();
   const isMobile = useIsMobile();
@@ -78,7 +74,7 @@ export default function MyActions({ onEditAction }: MyActionsProps) {
                 <ActionCard
                   key={action.id}
                   action={action}
-                  onEdit={onEditAction ? () => onEditAction(action) : undefined}
+                  onEdit={() => navigate(`/edit-action/${action.id}`)}
                 />
               ))
             ) : (

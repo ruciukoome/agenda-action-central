@@ -1,28 +1,23 @@
 
-import { ReactNode } from 'react';
-import { useAuth } from '@/lib/auth';
-import { Skeleton } from '@/components/ui/skeleton';
+import { ReactNode, useEffect } from "react";
+import { useAuth } from "@/lib/auth";
+import { useNavigate, useLocation } from "react-router-dom";
 
 interface AuthUserWrapperProps {
   children: ReactNode;
 }
 
-export function AuthUserWrapper({ children }: AuthUserWrapperProps) {
-  const { user, isLoading } = useAuth();
-  
-  // Show loading state while auth is initializing
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="w-[300px] space-y-4">
-          <Skeleton className="h-4 w-3/4" />
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-4 w-1/2" />
-        </div>
-      </div>
-    );
-  }
-  
+export const AuthUserWrapper = ({ children }: AuthUserWrapperProps) => {
+  const { session, isLoading } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    // Auto-redirect logged-in users away from auth page
+    if (session && location.pathname === "/auth") {
+      navigate("/dashboard");
+    }
+  }, [session, navigate, location.pathname]);
+
   return <>{children}</>;
-}
+};

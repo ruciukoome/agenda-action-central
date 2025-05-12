@@ -10,8 +10,7 @@ BEGIN
   FROM public.action_tokens
   WHERE action_id = p_action_id 
   AND token = p_token
-  AND used = FALSE
-  LIMIT 1;
+  AND used = FALSE;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
@@ -19,3 +18,4 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 GRANT EXECUTE ON FUNCTION public.get_action_token_by_id_and_token TO anon;
 GRANT EXECUTE ON FUNCTION public.get_action_token_by_id_and_token TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_action_token_by_id_and_token TO service_role;
+

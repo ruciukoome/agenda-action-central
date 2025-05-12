@@ -56,20 +56,22 @@ export default function UpdateTask() {
           return;
         }
         
-        // First, validate the token - using raw SQL query since it's not in the types
+        // Call the function to validate token and get action data
         const { data: tokenData, error: tokenError } = await supabase
           .rpc('get_action_token_by_id_and_token', { 
             p_action_id: id, 
             p_token: token 
           });
         
-        if (tokenError || !tokenData) {
+        if (tokenError || !tokenData || tokenData.length === 0) {
           console.error("Invalid or expired token:", tokenError);
           return;
         }
         
+        const actionToken = tokenData[0] as ActionToken;
+        
         // Check if token is expired
-        if (new Date(tokenData.expires_at) < new Date()) {
+        if (new Date(actionToken.expires_at) < new Date()) {
           console.error("Token has expired");
           return;
         }
