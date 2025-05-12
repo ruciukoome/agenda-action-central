@@ -61,7 +61,7 @@ export const createActionToken = async (actionId: string): Promise<string | null
 
 // Get the base URL for the application
 export const getBaseUrl = (): string => {
-  // In production, this would be your actual domain
+  // Use window.location.origin for development and production environments
   return window.location.origin;
 };
 
@@ -69,7 +69,7 @@ export const generateActionAssignedEmailContent = async (action: ActionItem): Pr
   // Create a token for this action
   const token = await createActionToken(action.id);
   
-  // Generate the update link
+  // Generate the update link using the current app URL
   const updateLink = token 
     ? `${getBaseUrl()}/update-task/${action.id}?token=${token}` 
     : `${getBaseUrl()}/my-actions`; // Fallback to login page
@@ -99,7 +99,7 @@ export const generateActionDueEmailContent = async (action: ActionItem): Promise
   // Create a token for this action
   const token = await createActionToken(action.id);
   
-  // Generate the update link
+  // Generate the update link using the current app URL
   const updateLink = token 
     ? `${getBaseUrl()}/update-task/${action.id}?token=${token}` 
     : `${getBaseUrl()}/my-actions`; // Fallback to login page

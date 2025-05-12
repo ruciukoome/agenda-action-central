@@ -1,4 +1,3 @@
-
 /**
  * EDGE FUNCTION: ACTION NOTIFICATION SENDER
  * ----------------------------------------
@@ -106,7 +105,7 @@ serve(async (req) => {
     console.log("Generated token for action:", token ? "Success" : "Failed");
     
     // App URL for links - would be configured in production
-    const appUrl = "https://actioncentral.platinumcredit.co.ke";
+    const appUrl = req.headers.get('origin') || "http://localhost:5173";
     
     // Action update link with token
     const updateLink = token 
