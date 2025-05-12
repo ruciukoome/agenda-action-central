@@ -1,14 +1,14 @@
+
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Routes, Route } from "react-router-dom";
-import { Auth } from "@/pages/Auth";
-import { Index } from "@/pages";
-import { Dashboard } from "@/pages/Dashboard";
-import { MyActions } from "@/pages/MyActions";
-import { AddAction } from "@/pages/AddAction";
-import { ManagedActions } from "@/pages/ManagedActions";
-import { EditAction } from "@/pages/EditAction";
-import { NotFound } from "@/pages/NotFound";
-import { DatabaseSetup } from "@/pages/DatabaseSetup";
+import Auth from "@/pages/Auth";
+import Dashboard from "@/pages/Dashboard";
+import MyActions from "@/pages/MyActions";
+import AddAction from "@/pages/AddAction";
+import ManagedActions from "@/pages/ManagedActions";
+import EditAction from "@/pages/EditAction";
+import NotFound from "@/pages/NotFound";
+import DatabaseSetup from "@/pages/DatabaseSetup";
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import { AuthUserWrapper } from "@/components/auth/AuthUserWrapper";
 import UpdateTask from "@/pages/UpdateTask";
@@ -21,7 +21,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthUserWrapper>
         <Routes>
-          <Route path="/" element={<Index />} />
+          <Route path="/" element={<div>Home Page</div>} />
           <Route path="/auth" element={<Auth />} />
           
           {/* Public routes that don't require authentication */}

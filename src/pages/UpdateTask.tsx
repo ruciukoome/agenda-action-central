@@ -1,7 +1,6 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
-import { ActionItem } from "@/types/action";
+import { ActionItem, ProgressStatus } from "@/types/action";
 import { Header } from "@/components/Header";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,6 +14,17 @@ import { Loader2, CheckCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 import { useAuth } from "@/lib/auth";
+
+// Define the ActionToken type to match the database table
+interface ActionToken {
+  id: string;
+  token: string;
+  action_id: string;
+  owner_email: string;
+  created_at: string;
+  expires_at: string; 
+  used: boolean;
+}
 
 export default function UpdateTask() {
   const { id } = useParams<{ id: string }>();
@@ -30,7 +40,7 @@ export default function UpdateTask() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   
   // Form state
-  const [progress, setProgress] = useState<string>("Not Started");
+  const [progress, setProgress] = useState<ProgressStatus>("Not Started");
   const [completed, setCompleted] = useState(false);
   const [notes, setNotes] = useState("");
   
@@ -45,13 +55,13 @@ export default function UpdateTask() {
           return;
         }
         
-        // First, validate the token
+        // First, validate the token using a raw SQL query since the table isn't in the TypeScript types yet
         const { data: tokenData, error: tokenError } = await supabase
           .from('action_tokens')
           .select('*')
           .eq('token', token)
           .eq('action_id', id)
-          .single();
+          .single() as { data: ActionToken | null, error: any };
         
         if (tokenError || !tokenData) {
           console.error("Invalid or expired token:", tokenError);
@@ -59,8 +69,7 @@ export default function UpdateTask() {
         }
         
         // Check if token is expired
-        const expiryDate = new Date(tokenData.expires_at);
-        if (expiryDate < new Date()) {
+        if (new Date(tokenData.expires_at) < new Date()) {
           console.error("Token has expired");
           return;
         }
@@ -118,9 +127,9 @@ export default function UpdateTask() {
     try {
       setIsSubmitting(true);
       
-      // Prepare the update payload
+      // Prepare the update payload - ensure progress is one of the allowed values
       const updatePayload = {
-        progress_status: progress,
+        progress_status: progress as ProgressStatus,
         completed: completed,
         notes: notes,
         updated_at: new Date().toISOString()
@@ -143,7 +152,7 @@ export default function UpdateTask() {
         description: "The action has been updated successfully.",
       });
       
-      // After 3 seconds, redirect to a thank you page or close the window
+      // After 3 seconds, redirect to a thank you page
       setTimeout(() => {
         navigate("/update-success");
       }, 3000);
@@ -257,7 +266,7 @@ export default function UpdateTask() {
                       <Label htmlFor="progress" className="text-base">Current Progress</Label>
                       <Select 
                         value={progress} 
-                        onValueChange={setProgress}
+                        onValueChange={(value) => setProgress(value as ProgressStatus)}
                       >
                         <SelectTrigger id="progress" className="mt-1.5">
                           <SelectValue placeholder="Select progress" />

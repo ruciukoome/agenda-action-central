@@ -23,15 +23,19 @@ export const getDueStatus = (dueDate?: string): "overdue" | "upcoming" | "future
   return "future";
 };
 
-// Generate action direct update URL (used for previews and testing)
-export const getActionUpdateUrl = (action: ActionItem): string => {
-  // This is a placeholder URL - the actual URL will come from the backend
-  // with a secure token
-  return `https://actioncentral.platinumcredit.co.ke/update-task/${action.id}`;
+// Generate action direct update URL with token
+export const getActionUpdateUrl = (action: ActionItem, token?: string): string => {
+  // If token is provided, use it in the URL
+  if (token) {
+    return `${window.location.origin}/update-task/${action.id}?token=${token}`;
+  }
+  
+  // Fallback for preview or when token is not available
+  return `${window.location.origin}/update-task/${action.id}`;
 };
 
-export const generateActionAssignedEmailContent = (action: ActionItem): string => {
-  const updateUrl = getActionUpdateUrl(action);
+export const generateActionAssignedEmailContent = (action: ActionItem, token?: string): string => {
+  const updateUrl = getActionUpdateUrl(action, token);
 
   return `
     <h2>You've been assigned a new action item</h2>
@@ -48,9 +52,9 @@ export const generateActionAssignedEmailContent = (action: ActionItem): string =
   `;
 };
 
-export const generateActionDueEmailContent = (action: ActionItem): string => {
+export const generateActionDueEmailContent = (action: ActionItem, token?: string): string => {
   const dueStatus = getDueStatus(action.dueDate);
-  const updateUrl = getActionUpdateUrl(action);
+  const updateUrl = getActionUpdateUrl(action, token);
   
   return `
     <h2>${dueStatus === "overdue" ? "OVERDUE ACTION ITEM" : "Action Item Due Soon"}</h2>
@@ -68,9 +72,14 @@ export const generateActionDueEmailContent = (action: ActionItem): string => {
 };
 
 // In a real implementation, this would connect to an email service
-export const sendEmail = async (to: string, subject: string, htmlContent: string): Promise<boolean> => {
+export const sendEmail = async (to: string, subject: string, htmlContent: string, options?: {
+  replyTo?: string
+}): Promise<boolean> => {
+  const replyTo = options?.replyTo || "joseph.odhiambo@platinumcredit.co.ke";
+  
   console.log(`[Email Service] Sending email to: ${to}`);
   console.log(`[Email Service] Subject: ${subject}`);
+  console.log(`[Email Service] Reply-To: ${replyTo}`);
   console.log(`[Email Service] Content: ${htmlContent}`);
   
   // This would be replaced with actual email service API call
