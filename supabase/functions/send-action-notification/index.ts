@@ -1,3 +1,4 @@
+
 /**
  * EDGE FUNCTION: ACTION NOTIFICATION SENDER
  * ----------------------------------------
@@ -33,9 +34,9 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 // Generate a secure token for action access
 async function createActionToken(actionId: string): Promise<string | null> {
   try {
-    // Create expiration date (7 days from now)
+    // Create expiration date (14 days from now for better user experience)
     const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7);
+    expiresAt.setDate(expiresAt.getDate() + 14);
     
     // Generate a random token (using crypto API for better security)
     const tokenBuffer = new Uint8Array(32); // 256 bits
@@ -104,13 +105,16 @@ serve(async (req) => {
     const token = await createActionToken(action.id);
     console.log("Generated token for action:", token ? "Success" : "Failed");
     
-    // App URL for links - would be configured in production
+    // Get app URL from request origin or fall back to a default
     const appUrl = req.headers.get('origin') || "http://localhost:5173";
+    console.log("Using app URL for links:", appUrl);
     
     // Action update link with token
     const updateLink = token 
       ? `${appUrl}/update-task/${action.id}?token=${token}` 
       : `${appUrl}/my-actions`;
+
+    console.log("Generated action update link:", updateLink);
 
     // Generate email content based on notification type
     const { subject, htmlContent, textContent } = generateEmailContent(action, type, updateLink);
@@ -293,10 +297,10 @@ function generateEmailContent(action: any, type: NotificationType, updateLink: s
         <p>You can update your progress by clicking the button below:</p>
         <div style="text-align: center; margin: 30px 0;">
           <a href="${updateLink}" style="background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">
-            Access Action Central
+            Update Action Progress
           </a>
         </div>
-        <p style="font-size: 12px; color: #666;">This link will expire in 7 days. If you need assistance, please contact your administrator.</p>
+        <p style="font-size: 12px; color: #666;">This link will expire in 14 days. If you need assistance, please contact your administrator.</p>
       `;
       plainTextContent = `
 Hello,
@@ -310,7 +314,7 @@ Priority: ${action.priority}
 Due Date: ${formatDate(action.dueDate)}
 ${action.notes ? `Notes: ${action.notes}` : ''}
 
-You can update your progress by clicking this link (valid for 7 days):
+You can update your progress by clicking this link (valid for 14 days):
 ${updateLink}
 
 This is an automated message from the Action Central system.
@@ -336,10 +340,10 @@ To unsubscribe: https://actioncentral.platinumcredit.co.ke/unsubscribe
         <p>You can update your progress by clicking the button below:</p>
         <div style="text-align: center; margin: 30px 0;">
           <a href="${updateLink}" style="background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">
-            Access Action Central
+            Update Action Progress
           </a>
         </div>
-        <p style="font-size: 12px; color: #666;">This link will expire in 7 days. If you need assistance, please contact your administrator.</p>
+        <p style="font-size: 12px; color: #666;">This link will expire in 14 days. If you need assistance, please contact your administrator.</p>
       `;
       plainTextContent = `
 Hello,
@@ -354,7 +358,7 @@ Due Date: ${formatDate(action.dueDate)}
 Current Progress: ${action.progressStatus}
 ${action.notes ? `Notes: ${action.notes}` : ''}
 
-You can update your progress by clicking this link (valid for 7 days):
+You can update your progress by clicking this link (valid for 14 days):
 ${updateLink}
 
 This is an automated message from the Action Central system.
@@ -380,10 +384,10 @@ To unsubscribe: https://actioncentral.platinumcredit.co.ke/unsubscribe
         <p>You can update your progress by clicking the button below:</p>
         <div style="text-align: center; margin: 30px 0;">
           <a href="${updateLink}" style="background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">
-            Access Action Central
+            Update Action Progress
           </a>
         </div>
-        <p style="font-size: 12px; color: #666;">This link will expire in 7 days. If you need assistance, please contact your administrator.</p>
+        <p style="font-size: 12px; color: #666;">This link will expire in 14 days. If you need assistance, please contact your administrator.</p>
       `;
       plainTextContent = `
 Hello,
@@ -398,7 +402,7 @@ Priority: ${action.priority}
 Current Progress: ${action.progressStatus}
 ${action.notes ? `Notes: ${action.notes}` : ''}
 
-You can update your progress by clicking this link (valid for 7 days):
+You can update your progress by clicking this link (valid for 14 days):
 ${updateLink}
 
 This is an automated message from the Action Central system.
@@ -424,10 +428,10 @@ To unsubscribe: https://actioncentral.platinumcredit.co.ke/unsubscribe
         <p>You can update your progress by clicking the button below:</p>
         <div style="text-align: center; margin: 30px 0;">
           <a href="${updateLink}" style="background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">
-            Access Action Central
+            Update Action Progress
           </a>
         </div>
-        <p style="font-size: 12px; color: #666;">This link will expire in 7 days. If you need assistance, please contact your administrator.</p>
+        <p style="font-size: 12px; color: #666;">This link will expire in 14 days. If you need assistance, please contact your administrator.</p>
       `;
       plainTextContent = `
 Hello,
@@ -442,7 +446,7 @@ Priority: ${action.priority}
 Current Progress: ${action.progressStatus}
 ${action.notes ? `Notes: ${action.notes}` : ''}
 
-You can update your progress by clicking this link (valid for 7 days):
+You can update your progress by clicking this link (valid for 14 days):
 ${updateLink}
 
 This is an automated message from the Action Central system.
@@ -467,10 +471,10 @@ To unsubscribe: https://actioncentral.platinumcredit.co.ke/unsubscribe
         <p>You can update your progress by clicking the button below:</p>
         <div style="text-align: center; margin: 30px 0;">
           <a href="${updateLink}" style="background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">
-            Access Action Central
+            Update Action Progress
           </a>
         </div>
-        <p style="font-size: 12px; color: #666;">This link will expire in 7 days. If you need assistance, please contact your administrator.</p>
+        <p style="font-size: 12px; color: #666;">This link will expire in 14 days. If you need assistance, please contact your administrator.</p>
       `;
       plainTextContent = `
 Hello,
@@ -484,7 +488,7 @@ Priority: ${action.priority}
 Due Date: ${formatDate(action.dueDate)}
 ${action.notes ? `Notes: ${action.notes}` : ''}
 
-You can update your progress by clicking this link (valid for 7 days):
+You can update your progress by clicking this link (valid for 14 days):
 ${updateLink}
 
 This is an automated message from the Action Central system.

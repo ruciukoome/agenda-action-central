@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { ActionItem, ProgressStatus } from "@/types/action";
+import { AlertTriangle } from "lucide-react";
 
 // Define the interface for tokens from the database
 interface ActionToken {
@@ -34,6 +35,7 @@ export default function UpdateTask() {
   const [notes, setNotes] = useState('');
   const [progress, setProgress] = useState<ProgressStatus>('Not Started');
   const [isComplete, setIsComplete] = useState(false);
+  const [tokenIsValid, setTokenIsValid] = useState(false);
   
   // Form submission state
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -46,6 +48,7 @@ export default function UpdateTask() {
         }
         
         setIsLoading(true);
+        console.log("Fetching action with token validation...");
         
         // Use the database function to validate the token and get the action in one call
         const { data, error } = await supabase
@@ -54,14 +57,22 @@ export default function UpdateTask() {
             p_token: token
           });
         
-        if (error || !data || data.length === 0) {
+        if (error) {
           console.error("Token validation error:", error);
+          throw new Error("Invalid or expired token");
+        }
+        
+        if (!data || data.length === 0) {
+          console.error("No data returned for token");
           throw new Error("Invalid or expired token");
         }
         
         // Get the token and action data
         const tokenData = data[0] as ActionToken;
         const actionData = tokenData.action_data;
+        
+        console.log("Token validated successfully:", tokenData);
+        setTokenIsValid(true);
         
         // Map the action data to our ActionItem format
         const mappedAction: ActionItem = {
@@ -88,6 +99,7 @@ export default function UpdateTask() {
       } catch (err: any) {
         console.error("Error loading action:", err);
         setError(err.message || "An unexpected error occurred");
+        setTokenIsValid(false);
       } finally {
         setIsLoading(false);
       }
@@ -153,19 +165,23 @@ export default function UpdateTask() {
     );
   }
 
-  if (error) {
+  if (error || !tokenIsValid) {
     return (
       <div className="container py-8">
         <Card className="w-full max-w-lg mx-auto">
-          <CardHeader>
-            <CardTitle className="text-red-500">Error</CardTitle>
+          <CardHeader className="text-center">
+            <AlertTriangle className="h-10 w-10 text-amber-500 mx-auto mb-2" />
+            <CardTitle className="text-red-500">Access Error</CardTitle>
           </CardHeader>
           <CardContent>
-            <p>{error}</p>
-            <p className="mt-4 text-sm text-muted-foreground">
+            <p className="text-center mb-4">{error || "Invalid or expired link"}</p>
+            <p className="mt-4 text-sm text-muted-foreground text-center">
               This link may have expired or already been used. Please contact your administrator to get a new link.
             </p>
           </CardContent>
+          <CardFooter className="flex justify-center">
+            <Button variant="outline" onClick={() => window.close()}>Close Window</Button>
+          </CardFooter>
         </Card>
       </div>
     );

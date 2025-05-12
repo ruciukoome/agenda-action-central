@@ -28,9 +28,9 @@ export const getDueStatus = (dueDate?: string): "overdue" | "upcoming" | "future
 // Function to create a secure token for action updates
 export const createActionToken = async (actionId: string): Promise<string | null> => {
   try {
-    // Create expiration date (7 days from now)
+    // Create expiration date (14 days from now for better user experience)
     const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7);
+    expiresAt.setDate(expiresAt.getDate() + 14);
     
     // Generate a secure random token
     const token = uuidv4();
@@ -86,10 +86,10 @@ export const generateActionAssignedEmailContent = async (action: ActionItem): Pr
     <p>You can update your progress by clicking the button below:</p>
     <div style="text-align: center; margin: 30px 0;">
       <a href="${updateLink}" style="background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">
-        Access Action Central
+        Update Action Progress
       </a>
     </div>
-    <p style="font-size: 12px; color: #666;">This link will expire in 7 days. If you need a new link, please contact your administrator.</p>
+    <p style="font-size: 12px; color: #666;">This link will expire in 14 days. If you need a new link, please contact your administrator.</p>
   `;
 };
 
@@ -114,10 +114,10 @@ export const generateActionDueEmailContent = async (action: ActionItem): Promise
     <p>You can update your progress by clicking the button below:</p>
     <div style="text-align: center; margin: 30px 0;">
       <a href="${updateLink}" style="background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">
-        Access Action Central
+        Update Action Progress
       </a>
     </div>
-    <p style="font-size: 12px; color: #666;">This link will expire in 7 days. If you need a new link, please contact your administrator.</p>
+    <p style="font-size: 12px; color: #666;">This link will expire in 14 days. If you need a new link, please contact your administrator.</p>
   `;
 };
 
