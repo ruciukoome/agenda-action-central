@@ -28,10 +28,8 @@ export default function ManagedActions() {
       setActions(data);
     } catch (error) {
       console.error("Failed to fetch actions:", error);
-      toast({
-        title: "Error fetching actions",
+      toast.error("Error fetching actions", {
         description: "Please try again or contact support.",
-        variant: "destructive",
       });
     } finally {
       setIsLoading(false);

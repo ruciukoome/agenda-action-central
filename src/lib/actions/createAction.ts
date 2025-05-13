@@ -19,10 +19,8 @@ export async function createAction(action: Omit<ActionItem, 'id' | 'createdAt' |
 
   // Ensure we have a valid owner email
   if (!action.ownerEmail || typeof action.ownerEmail !== 'string' || !action.ownerEmail.includes('@')) {
-    toast({
-      title: "Invalid Email",
+    toast.error("Invalid Email", {
       description: "Please provide a valid email for the action owner.",
-      variant: "destructive"
     });
     throw new Error('Owner email is required and must be valid');
   }
@@ -69,24 +67,18 @@ export async function createAction(action: Omit<ActionItem, 'id' | 'createdAt' |
   try {
     const notificationResult = await sendActionNotification(createdAction, "assigned");
     if (notificationResult && notificationResult.error) {
-      toast({
-        title: "Action Created",
+      toast.warning("Action Created", {
         description: `Action was created but email notification failed: ${notificationResult.error}`,
-        variant: "default",
       });
     } else {
-      toast({
-        title: "Action Created",
+      toast.success("Action Created", {
         description: `Action was created and notification was sent to ${createdAction.ownerEmail}.`,
-        variant: "default",
       });
     }
   } catch (emailError) {
     console.error('Error sending notification:', emailError);
-    toast({
-      title: "Action created",
+    toast.info("Action created", {
       description: "Action was created but email notification failed to send.",
-      variant: "default",
     });
   }
 

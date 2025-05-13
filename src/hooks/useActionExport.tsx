@@ -21,8 +21,7 @@ export function useActionExport() {
     link.click();
     document.body.removeChild(link);
     
-    toast({
-      title: "Actions exported",
+    toast.success("Actions exported", {
       description: `Successfully exported ${actionsToExport.length} action${actionsToExport.length > 1 ? 's' : ''} as CSV.`,
     });
   };
@@ -101,8 +100,7 @@ export function useActionExport() {
     link.click();
     document.body.removeChild(link);
     
-    toast({
-      title: "Actions exported",
+    toast.success("Actions exported", {
       description: `Successfully exported ${actionsToExport.length} action${actionsToExport.length > 1 ? 's' : ''} as Excel.`,
     });
   };

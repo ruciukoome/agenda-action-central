@@ -2,7 +2,7 @@
 import axios from 'axios';
 import { DbAction, mapDbActionToActionItem } from '@/integrations/postgres/types';
 import { ActionItem } from '@/types/action';
-import { toast } from 'sonner';
+import { toast } from "@/components/ui/use-toast";
 import { createAction as createSupabaseAction } from '@/lib/actions';
 
 export async function createAction(
@@ -54,7 +54,7 @@ export async function createAction(
       console.error('PostgreSQL creation failed, falling back to Supabase:', postgresError);
       
       // If the PostgreSQL server is not running, fall back to Supabase
-      const createdAction = await createSupabaseAction(actionWithFormattedDate as ActionItem);
+      const createdAction = await createSupabaseAction(actionWithFormattedDate);
       
       console.log('Action created successfully via Supabase fallback:', createdAction);
       console.log('Due date in created action (Supabase fallback):', createdAction.dueDate || "Not set");

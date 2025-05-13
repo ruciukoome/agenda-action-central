@@ -19,10 +19,8 @@ export async function sendActionNotification(action: ActionItem, type: "assigned
     
     if (!session || !session.user) {
       console.error("No active session found. User must be authenticated to send notifications.");
-      toast({
-        title: "Authentication Error",
+      toast.error("Authentication Error", {
         description: "You must be logged in to send notifications.",
-        variant: "destructive"
       });
       return { error: "Authentication required" };
     }
@@ -33,10 +31,8 @@ export async function sendActionNotification(action: ActionItem, type: "assigned
     // Ensure we have a valid recipient email
     if (!action.ownerEmail || typeof action.ownerEmail !== 'string' || !action.ownerEmail.includes('@')) {
       console.error("Invalid recipient email:", action.ownerEmail);
-      toast({
-        title: "Invalid Email",
+      toast.error("Invalid Email", {
         description: "The action owner email is invalid.",
-        variant: "destructive"
       });
       return { error: "Invalid recipient email address" };
     }
@@ -91,8 +87,7 @@ export async function sendActionNotification(action: ActionItem, type: "assigned
     console.log("Notification sent successfully:", responseData);
     
     // Show a success toast
-    toast({
-      title: "Notification Sent",
+    toast.success("Notification Sent", {
       description: `Email sent to ${action.ownerEmail}`,
     });
     
@@ -105,10 +100,8 @@ export async function sendActionNotification(action: ActionItem, type: "assigned
       errorMessage = error.message;
     }
     
-    toast({
-      title: "Notification Error",
+    toast.error("Notification Error", {
       description: `Failed to send email: ${errorMessage}`,
-      variant: "destructive"
     });
     
     return { error: errorMessage };

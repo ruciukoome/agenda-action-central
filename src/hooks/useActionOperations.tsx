@@ -34,8 +34,7 @@ export function useActionOperations(actions: ActionItem[], onActionDeleted: () =
       }
       
       if (deletedCount > 0) {
-        toast({
-          title: "Actions deleted",
+        toast.success("Actions deleted", {
           description: `Successfully deleted ${deletedCount} action${deletedCount > 1 ? 's' : ''}.`,
         });
         
@@ -44,18 +43,14 @@ export function useActionOperations(actions: ActionItem[], onActionDeleted: () =
       }
       
       if (deletedCount < selectedActions.length) {
-        toast({
-          title: "Partial success",
+        toast.error("Partial success", {
           description: `${selectedActions.length - deletedCount} action(s) could not be deleted.`,
-          variant: "destructive",
         });
       }
     } catch (error) {
       console.error("Failed to delete actions:", error);
-      toast({
-        title: "Error deleting actions",
+      toast.error("Error deleting actions", {
         description: "Some actions could not be deleted. Please try again.",
-        variant: "destructive",
       });
     } finally {
       setIsDeleting(false);

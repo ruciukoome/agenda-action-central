@@ -11,7 +11,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from '@/components/ui/use-toast';
 import { ActionItem, Department, ProgressStatus } from '@/types/action';
 import { sendActionNotification } from '@/lib/notifications';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,7 +20,6 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Send } from 'lucide-react';
 
 export function TestEmailNotification() {
-  const { toast } = useToast();
   const [isSending, setIsSending] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
@@ -65,14 +64,11 @@ export function TestEmailNotification() {
       
       if (response?.error) {
         setError(response.error);
-        toast({
-          title: "Test Failed",
+        toast.error("Test Failed", {
           description: response.error,
-          variant: "destructive",
         });
       } else {
-        toast({
-          title: "Test Email Sent",
+        toast.success("Test Email Sent", {
           description: `Notification sent to ${userEmail}`,
         });
       }
@@ -85,10 +81,8 @@ export function TestEmailNotification() {
       }
       
       setError(errorMessage);
-      toast({
-        title: "Test Failed",
+      toast.error("Test Failed", {
         description: errorMessage,
-        variant: "destructive",
       });
       
       setResult({ error: errorMessage });
