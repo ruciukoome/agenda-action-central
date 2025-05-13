@@ -1,10 +1,10 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, CheckCircle, Database, RefreshCw, Save } from 'lucide-react';
-import { testConnection } from '@/integrations/postgres/client';
+import { AlertCircle, CheckCircle, Database, RefreshCw, Save, ServerOff } from 'lucide-react';
+import { testConnection, isApiServerRunning } from '@/integrations/postgres/api';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,6 +13,7 @@ export function PostgresConnectionTest() {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [serverRunning, setServerRunning] = useState<boolean | null>(null);
   
   // Connection parameters with default values updated to match user's database
   const [host, setHost] = useState(() => localStorage.getItem('POSTGRES_HOST') || 'localhost');
@@ -21,6 +22,23 @@ export function PostgresConnectionTest() {
   const [username, setUsername] = useState(() => localStorage.getItem('POSTGRES_USER') || 'postgres');
   const [password, setPassword] = useState(() => localStorage.getItem('POSTGRES_PASSWORD') || 'Qwerty&00Asdfgh');
   const [isConfigChanged, setIsConfigChanged] = useState(false);
+
+  // Check if the API server is running on component mount
+  useEffect(() => {
+    const checkServer = async () => {
+      const running = await isApiServerRunning();
+      setServerRunning(running);
+      
+      if (!running) {
+        setError("API server is not running. Make sure the backend server is started.");
+        toast.error("Backend server not running", {
+          description: "The Node.js server is not accessible. Run 'node server/index.js' to start it."
+        });
+      }
+    };
+    
+    checkServer();
+  }, []);
 
   const saveConnectionSettings = () => {
     try {
@@ -54,10 +72,30 @@ export function PostgresConnectionTest() {
       saveConnectionSettings();
     }
     
+    // First check if the server is running
+    const running = await isApiServerRunning();
+    setServerRunning(running);
+    
+    if (!running) {
+      setError("API server is not running. Make sure the backend server is started.");
+      toast.error("Backend server not running", {
+        description: "The Node.js server is not accessible. Run 'node server/index.js' to start it."
+      });
+      return;
+    }
+    
     setIsLoading(true);
     setError(null);
+    
     try {
-      const diagnostics = await testConnection();
+      const diagnostics = await testConnection({
+        host,
+        port: Number(port),
+        database,
+        user: username,
+        password
+      });
+      
       console.log("Connection test result:", diagnostics);
       setResult(diagnostics);
       
@@ -67,7 +105,7 @@ export function PostgresConnectionTest() {
         });
       } else {
         toast.error("Connection failed", {
-          description: diagnostics.message
+          description: diagnostics.message || "Unknown error occurred"
         });
       }
     } catch (err) {
@@ -97,6 +135,18 @@ export function PostgresConnectionTest() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        {serverRunning === false && (
+          <Alert variant="destructive" className="mb-4">
+            <ServerOff className="h-4 w-4" />
+            <AlertTitle>Server Not Running</AlertTitle>
+            <AlertDescription>
+              The backend server is not running. Start it by running:<br />
+              <code className="bg-muted p-1 rounded text-sm">node server/index.js</code><br />
+              in your project directory.
+            </AlertDescription>
+          </Alert>
+        )}
+      
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="host">Host</Label>
@@ -173,7 +223,7 @@ export function PostgresConnectionTest() {
               <AlertDescription>
                 {result.success 
                   ? `Successfully connected to PostgreSQL server v${result.diagnostics.serverVersion || 'Unknown'}`
-                  : 'Failed to connect to PostgreSQL server. See details below.'}
+                  : result.diagnostics?.friendlyMessage || 'Failed to connect to PostgreSQL server. See details below.'}
               </AlertDescription>
             </Alert>
             
@@ -196,7 +246,7 @@ export function PostgresConnectionTest() {
         </Button>
         <Button 
           onClick={runConnectionTest} 
-          disabled={isLoading} 
+          disabled={isLoading || serverRunning === false} 
           className="w-full sm:w-auto"
         >
           {isLoading ? (

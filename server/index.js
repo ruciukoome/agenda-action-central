@@ -1,4 +1,3 @@
-
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
@@ -19,6 +18,11 @@ app.use(bodyParser.json());
 // Database connection pool
 let pool = null;
 
+// Health check endpoint to verify the API server is running
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', serverTime: new Date().toISOString() });
+});
+
 // Function to initialize the database pool with provided credentials
 function initializePool(credentials) {
   if (pool) {
@@ -26,19 +30,30 @@ function initializePool(credentials) {
     pool.end().catch(err => console.error('Error closing pool:', err));
   }
 
+  // Log connection attempt
+  console.log('Attempting to connect to PostgreSQL with:', {
+    host: credentials.host,
+    port: credentials.port,
+    database: credentials.database,
+    user: credentials.user,
+    ssl: credentials.ssl ? 'enabled' : 'disabled'
+  });
+
   pool = new Pool({
     host: credentials.host,
     port: credentials.port,
     database: credentials.database,
     user: credentials.user,
     password: credentials.password,
-    ssl: credentials.ssl ? { rejectUnauthorized: false } : false
+    ssl: credentials.ssl ? { rejectUnauthorized: false } : false,
+    // Add connection timeout
+    connectionTimeoutMillis: 5000
   });
 
   // Test connection
   return pool.query('SELECT NOW()')
-    .then(() => {
-      console.log('Successfully connected to PostgreSQL database');
+    .then(result => {
+      console.log('Successfully connected to PostgreSQL database', result.rows[0]);
       return true;
     })
     .catch(err => {
@@ -63,6 +78,8 @@ app.post('/api/db/test-connection', async (req, res) => {
       });
     }
 
+    console.log(`Testing connection to PostgreSQL: ${credentials.host}:${credentials.port}/${credentials.database}`);
+
     const testPool = new Pool({
       host: credentials.host,
       port: credentials.port,
@@ -76,6 +93,8 @@ app.post('/api/db/test-connection', async (req, res) => {
     // Test the connection
     const result = await testPool.query('SELECT version() as version, current_timestamp, current_user');
     await testPool.end();
+
+    console.log('Connection test successful:', result.rows[0]);
 
     return res.json({
       success: true,
@@ -92,17 +111,53 @@ app.post('/api/db/test-connection', async (req, res) => {
     });
   } catch (error) {
     console.error('Connection test error:', error);
+    
+    // Provide more detailed error information
+    let errorDetails = {
+      errorMessage: error.message,
+      errorName: error.name,
+      host: req.body.host,
+      port: req.body.port,
+      database: req.body.database,
+      user: req.body.user
+    };
+    
+    // Specific error handling for common PostgreSQL errors
+    if (error.code) {
+      errorDetails.code = error.code;
+      
+      // Add friendly message based on error code
+      switch (error.code) {
+        case 'ECONNREFUSED':
+          errorDetails.friendlyMessage = 'Connection refused. Check if PostgreSQL server is running';
+          break;
+        case '28P01':
+          errorDetails.friendlyMessage = 'Invalid password for user';
+          break;
+        case '3D000':
+          errorDetails.friendlyMessage = `Database "${req.body.database}" does not exist`;
+          break;
+        case '28000':
+          errorDetails.friendlyMessage = 'Authentication failed';
+          break;
+        case '42P01':
+          errorDetails.friendlyMessage = 'Relation does not exist';
+          break;
+        case 'EHOSTUNREACH':
+          errorDetails.friendlyMessage = 'Host unreachable. Check hostname and network connection';
+          break;
+        case 'ETIMEDOUT':
+          errorDetails.friendlyMessage = 'Connection timed out. Server might be down or blocking connections';
+          break;
+        default:
+          errorDetails.friendlyMessage = `Database connection error: ${error.code}`;
+      }
+    }
+
     return res.status(500).json({
       success: false,
       message: `Failed to connect: ${error.message}`,
-      diagnostics: {
-        errorMessage: error.message,
-        errorName: error.name,
-        host: req.body.host,
-        port: req.body.port,
-        database: req.body.database,
-        user: req.body.user
-      }
+      diagnostics: errorDetails
     });
   }
 });
@@ -331,8 +386,50 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // Start server
-app.listen(port, () => {
+const server = app.listen(port, () => {
   console.log(`Server running on port ${port}`);
+  
+  // Initialize connection using .env variables on startup
+  const envCredentials = {
+    host: process.env.PGHOST,
+    port: Number(process.env.PGPORT),
+    database: process.env.PGDATABASE,
+    user: process.env.PGUSER,
+    password: process.env.PGPASSWORD,
+    ssl: process.env.PGSSL === 'true'
+  };
+  
+  console.log('Attempting initial database connection with .env credentials...');
+  initializePool(envCredentials)
+    .then(success => {
+      if (success) {
+        console.log('Initial database connection successful');
+      } else {
+        console.warn('Initial database connection failed. Will retry when explicitly requested');
+      }
+    })
+    .catch(err => {
+      console.error('Error during initial database connection:', err);
+    });
+});
+
+// Add proper server shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down gracefully');
+  server.close(() => {
+    console.log('Server closed');
+    if (pool) {
+      pool.end().then(() => {
+        console.log('Database pool closed');
+        process.exit(0);
+      }).catch(err => {
+        console.error('Error closing pool:', err);
+        process.exit(1);
+      });
+    } else {
+      process.exit(0);
+    }
+  });
 });
 
 module.exports = app;

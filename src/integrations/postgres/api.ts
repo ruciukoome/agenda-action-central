@@ -11,6 +11,8 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  // Add timeout to avoid hanging requests
+  timeout: 10000,
 });
 
 // Test the PostgreSQL connection
@@ -23,6 +25,14 @@ export async function testConnection(credentials: {
   ssl?: boolean;
 }) {
   try {
+    console.log('Testing PostgreSQL connection with credentials:', {
+      host: credentials.host,
+      port: credentials.port,
+      database: credentials.database,
+      user: credentials.user,
+      // Password is omitted for security reasons
+    });
+
     // Ensure port is a number
     const formattedCredentials = {
       ...credentials,
@@ -30,6 +40,7 @@ export async function testConnection(credentials: {
     };
 
     const response = await api.post('/db/test-connection', formattedCredentials);
+    console.log('Connection test response:', response.data);
     return response.data;
   } catch (error) {
     console.error('API error testing connection:', error);
@@ -37,7 +48,9 @@ export async function testConnection(credentials: {
     // Extract meaningful error message
     let errorMessage = 'Unknown error occurred';
     if (axios.isAxiosError(error)) {
-      if (error.response?.data?.message) {
+      if (error.code === 'ECONNREFUSED') {
+        errorMessage = 'Connection refused. Make sure the API server is running on port 5000';
+      } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       } else if (error.message) {
         errorMessage = error.message;
@@ -55,6 +68,8 @@ export async function testConnection(credentials: {
         port: credentials.port,
         database: credentials.database,
         user: credentials.user,
+        serverRunning: false,
+        error: error instanceof Error ? error.toString() : 'Unknown error'
       }
     };
   }
@@ -83,7 +98,9 @@ export async function initializeDatabase(credentials: {
     let errorMessage = 'Unknown error occurred';
     
     if (axios.isAxiosError(error)) {
-      if (error.response?.data?.message) {
+      if (error.code === 'ECONNREFUSED') {
+        errorMessage = 'Connection refused. Make sure the API server is running on port 5000';
+      } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       } else if (error.message) {
         errorMessage = error.message;
@@ -110,7 +127,9 @@ export async function setupDatabaseSchema() {
     let errorMessage = 'Unknown error occurred';
     
     if (axios.isAxiosError(error)) {
-      if (error.response?.data?.message) {
+      if (error.code === 'ECONNREFUSED') {
+        errorMessage = 'Connection refused. Make sure the API server is running on port 5000';
+      } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       } else if (error.message) {
         errorMessage = error.message;
@@ -124,5 +143,16 @@ export async function setupDatabaseSchema() {
     });
     
     throw new Error(`Schema setup failed: ${errorMessage}`);
+  }
+}
+
+// Helper function to check if the API server is running
+export async function isApiServerRunning(): Promise<boolean> {
+  try {
+    await axios.get(`${API_URL}/health`, { timeout: 2000 });
+    return true;
+  } catch (error) {
+    console.warn('API server check failed:', error);
+    return false;
   }
 }
