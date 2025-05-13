@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, CheckCircle, Database, RefreshCw, Save, ServerOff } from 'lucide-react';
+import { AlertCircle, CheckCircle, Database, RefreshCw, Save, ServerOff, Terminal } from 'lucide-react';
 import { testConnection, isApiServerRunning } from '@/integrations/postgres/api';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
@@ -20,7 +20,7 @@ export function PostgresConnectionTest() {
   const [port, setPort] = useState(() => localStorage.getItem('POSTGRES_PORT') || '5432');
   const [database, setDatabase] = useState(() => localStorage.getItem('POSTGRES_DATABASE') || 'actionpoint');
   const [username, setUsername] = useState(() => localStorage.getItem('POSTGRES_USER') || 'postgres');
-  const [password, setPassword] = useState(() => localStorage.getItem('POSTGRES_PASSWORD') || 'Qwerty&00Asdfgh');
+  const [password, setPassword] = useState(() => localStorage.getItem('POSTGRES_PASSWORD') || 'Qwerty&&00Asdfgh');
   const [isConfigChanged, setIsConfigChanged] = useState(false);
 
   // Check if the API server is running on component mount
@@ -139,10 +139,17 @@ export function PostgresConnectionTest() {
           <Alert variant="destructive" className="mb-4">
             <ServerOff className="h-4 w-4" />
             <AlertTitle>Server Not Running</AlertTitle>
-            <AlertDescription>
-              The backend server is not running. Start it by running:<br />
-              <code className="bg-muted p-1 rounded text-sm">node server/index.js</code><br />
-              in your project directory.
+            <AlertDescription className="space-y-2">
+              <p>The backend server is not running. Start it by running:</p>
+              <div className="bg-slate-800 text-white p-2 rounded flex items-center space-x-2 my-2 overflow-x-auto">
+                <Terminal className="h-4 w-4" />
+                <code>cd server && node index.js</code>
+              </div>
+              <p className="text-sm mt-2">Make sure you have all required Node.js packages installed:</p>
+              <div className="bg-slate-800 text-white p-2 rounded flex items-center space-x-2 my-2 overflow-x-auto">
+                <Terminal className="h-4 w-4" />
+                <code>cd server && npm install</code>
+              </div>
             </AlertDescription>
           </Alert>
         )}
