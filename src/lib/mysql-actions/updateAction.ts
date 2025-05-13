@@ -1,14 +1,19 @@
 
 import { executeQuery } from '@/integrations/mysql/client';
 import { DbAction, mapDbActionToActionItem } from '@/integrations/mysql/types';
+import { ActionItem } from '@/types/action';
 
 /**
  * Updates an existing action in the MySQL database
  * Table: actions
  */
-export async function updateAction(action: any, userId: string) {
+export async function updateAction(action: Partial<ActionItem> & { id: string }, userId: string) {
   if (!userId) {
     throw new Error('User not authenticated');
+  }
+
+  if (!action.id) {
+    throw new Error('Action ID is required');
   }
 
   const now = new Date().toISOString();
@@ -76,8 +81,8 @@ export async function updateAction(action: any, userId: string) {
     }
     
     // Fetch the updated record
-    const fetchQuery = 'SELECT * FROM actions WHERE id = ?';
-    const actions = await executeQuery<DbAction>(fetchQuery, [action.id]);
+    const fetchQuery = 'SELECT * FROM actions WHERE id = ? AND user_id = ?';
+    const actions = await executeQuery<DbAction>(fetchQuery, [action.id, userId]);
     
     if (actions.length === 0) {
       throw new Error('Failed to retrieve updated action');

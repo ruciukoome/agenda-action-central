@@ -61,16 +61,25 @@ export async function updateAction(
             ...actionData 
           };
           
-          updatedAction = await updateSupabaseAction(fullActionData);
-          
-          console.log('Action updated successfully via Supabase fallback:', updatedAction);
-          
-          // Show success toast
-          toast.success("Action Updated", {
-            description: `Successfully updated action using Supabase (fallback): ${updatedAction.description.substring(0, 30)}...`
-          });
-          
-          return updatedAction;
+          // Use the update function from Supabase actions
+          try {
+            updatedAction = await updateSupabaseAction(fullActionData);
+            
+            console.log('Action updated successfully via Supabase fallback:', updatedAction);
+            
+            // Show success toast
+            toast.success("Action Updated", {
+              description: `Successfully updated action using Supabase (fallback): ${updatedAction.description.substring(0, 30)}...`
+            });
+            
+            return updatedAction;
+          } catch (supabaseUpdateError: any) {
+            console.error('Supabase update error:', supabaseUpdateError);
+            if (supabaseUpdateError.message && supabaseUpdateError.message.includes('JSON object requested, multiple (or no) rows returned')) {
+              throw new Error('Could not update action: Action not found or database constraint error.');
+            }
+            throw supabaseUpdateError;
+          }
         } else {
           throw new Error('Could not find existing action in Supabase');
         }

@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ActionForm } from "@/components/ActionForm";
 import { ActionItem } from "@/types/action";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { fetchActions } from "@/lib/postgres-actions";
 import { updateAction } from "@/lib/postgres-actions";
 import { Header } from "@/components/Header";
@@ -11,14 +11,15 @@ import { Header } from "@/components/Header";
 export default function EditAction() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [action, setAction] = useState<ActionItem | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   useEffect(() => {
     const loadAction = async () => {
       try {
         setIsLoading(true);
+        setError(null);
         // Get a user ID for PostgreSQL - in a real app, get this from auth context
         const userId = localStorage.getItem("USER_ID") || "test-user-id";
         
@@ -28,19 +29,19 @@ export default function EditAction() {
         if (foundAction) {
           setAction(foundAction);
         } else {
-          toast({
-            title: "Action not found",
+          setError("The action you're trying to edit could not be found.");
+          toast.error("Action not found", {
             description: "The action you're trying to edit could not be found.",
-            variant: "destructive",
           });
-          navigate("/managed-actions");
+          setTimeout(() => {
+            navigate("/managed-actions");
+          }, 3000);
         }
       } catch (error) {
         console.error("Failed to load action:", error);
-        toast({
-          title: "Error",
+        setError("Failed to load action details. Please try again.");
+        toast.error("Error", {
           description: "Failed to load action details. Please try again.",
-          variant: "destructive",
         });
       } finally {
         setIsLoading(false);
@@ -50,7 +51,7 @@ export default function EditAction() {
     if (id) {
       loadAction();
     }
-  }, [id, navigate, toast]);
+  }, [id, navigate]);
   
   const handleSave = async (updatedAction: ActionItem) => {
     try {
@@ -61,8 +62,7 @@ export default function EditAction() {
       await updateAction(updatedAction.id, updatedAction, userId);
       console.log("Action updated successfully");
       
-      toast({
-        title: "Action Updated",
+      toast.success("Action Updated", {
         description: "The action has been updated successfully.",
       });
       
@@ -72,10 +72,10 @@ export default function EditAction() {
       navigate(returnTo);
     } catch (error) {
       console.error("Failed to update action:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update action. Please try again.",
-        variant: "destructive",
+      toast.error("Error", {
+        description: error instanceof Error 
+          ? `Failed to update action: ${error.message}` 
+          : "Failed to update action. Please try again.",
       });
     }
   };
@@ -91,13 +91,13 @@ export default function EditAction() {
     );
   }
   
-  if (!action) {
+  if (error || !action) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
         <div className="container max-w-3xl py-10">
           <h1 className="text-3xl font-bold tracking-tight mb-6">Action Not Found</h1>
-          <p>The action you're looking for could not be found.</p>
+          <p>{error || "The action you're looking for could not be found."}</p>
         </div>
       </div>
     );
