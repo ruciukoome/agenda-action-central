@@ -32,6 +32,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 5000, // Added default timeout of 5 seconds
 });
 
 // Try to get credentials from localStorage
@@ -62,6 +63,15 @@ export function loadCredentialsFromStorage() {
         duration: 3000
       });
     }
+    
+    // Try to initialize connection after loading credentials
+    initializeConnection().then(success => {
+      if (success) {
+        console.log('PostgreSQL connection initialized successfully after loading credentials');
+      }
+    }).catch(err => {
+      console.error('Failed to initialize PostgreSQL connection after loading credentials:', err);
+    });
   }
 }
 
@@ -142,7 +152,13 @@ export async function testConnection(): Promise<{
 export async function initializeConnection(): Promise<boolean> {
   try {
     // Reload credentials
-    loadCredentialsFromStorage();
+    if (typeof window !== 'undefined' && window.localStorage) {
+      POSTGRES_HOST = localStorage.getItem('POSTGRES_HOST') || POSTGRES_HOST;
+      POSTGRES_PORT = parseInt(localStorage.getItem('POSTGRES_PORT') || `${POSTGRES_PORT}`);
+      POSTGRES_DATABASE = localStorage.getItem('POSTGRES_DATABASE') || POSTGRES_DATABASE;
+      POSTGRES_USER = localStorage.getItem('POSTGRES_USER') || POSTGRES_USER;
+      POSTGRES_PASSWORD = localStorage.getItem('POSTGRES_PASSWORD') || POSTGRES_PASSWORD;
+    }
     
     // Initialize the database connection via API
     await initializeDatabase({

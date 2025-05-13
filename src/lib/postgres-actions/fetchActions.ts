@@ -27,7 +27,7 @@ export async function fetchActions(userId?: string): Promise<ActionItem[]> {
       console.log("Attempting to fetch actions from PostgreSQL API");
       const response = await axios.get(`http://localhost:5000/api/actions`, {
         params: { userId },
-        timeout: 3000 // Add timeout to fail faster if server not running
+        timeout: 5000 // Increased timeout to give server more time to respond
       });
       
       const actions = response.data;
@@ -51,25 +51,45 @@ export async function fetchActions(userId?: string): Promise<ActionItem[]> {
     } catch (error) {
       console.error("PostgreSQL API fetchActions error:", error);
       
-      // If we failed to fetch from PostgreSQL API, try to fetch from Supabase as fallback
-      console.log("Falling back to Supabase for fetching actions");
-      
-      // Check if we already showed the fallback toast recently
-      const lastShownTime = localStorage.getItem('postgres_fallback_toast_time');
-      const currentTime = new Date().getTime();
-      
-      // Only show toast if it hasn't been shown in the last 30 seconds
-      if (!lastShownTime || (currentTime - parseInt(lastShownTime)) > 30000) {
-        // Show a toast notification about using Supabase as fallback
-        toast.info("Using Supabase Data", {
-          id: "postgres-fallback-toast", // Use a unique ID to prevent duplicate toasts
-          description: "Could not connect to PostgreSQL. Showing actions from Supabase instead.",
-          duration: 3000, // Shorter duration to minimize disruption
+      // Check if the server is actually running before showing fallback toast
+      try {
+        // Test if the server is running by making a health check request
+        await axios.get('http://localhost:5000/api/health', { timeout: 2000 });
+        
+        // If we get here, the server is running but there's another issue
+        console.error("Server is running but request failed. Details:", error);
+        
+        const errorMessage = axios.isAxiosError(error) && error.response ? 
+          `Error ${error.response.status}: ${error.response.data?.message || error.message}` : 
+          'Unknown connection error';
+        
+        toast.error("Database Error", {
+          id: "postgres-error-toast",
+          description: `Error connecting to PostgreSQL database: ${errorMessage}`,
+          duration: 5000,
           position: "top-right"
         });
+      } catch (healthCheckError) {
+        // Server is not running, show fallback toast
+        console.error("PostgreSQL server not running:", healthCheckError);
         
-        // Store the time we showed this toast
-        localStorage.setItem('postgres_fallback_toast_time', currentTime.toString());
+        // Check if we already showed the fallback toast recently
+        const lastShownTime = localStorage.getItem('postgres_fallback_toast_time');
+        const currentTime = new Date().getTime();
+        
+        // Only show toast if it hasn't been shown in the last 30 seconds
+        if (!lastShownTime || (currentTime - parseInt(lastShownTime)) > 30000) {
+          // Show a toast notification about using Supabase as fallback
+          toast.info("Using Supabase Data", {
+            id: "postgres-fallback-toast", // Use a unique ID to prevent duplicate toasts
+            description: "Could not connect to PostgreSQL server. Run 'node server/index.js' to start it. Showing actions from Supabase instead.",
+            duration: 5000, // Longer duration to make sure user sees it
+            position: "top-right"
+          });
+          
+          // Store the time we showed this toast
+          localStorage.setItem('postgres_fallback_toast_time', currentTime.toString());
+        }
       }
       
       // Import the Supabase fetchActions function
