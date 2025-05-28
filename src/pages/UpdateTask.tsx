@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
@@ -114,9 +113,9 @@ export default function UpdateTask() {
     try {
       setIsSubmitting(true);
       
-      // Update the action
+      // Update the action with type assertion for progress_status
       const updates = {
-        progress_status: progress,
+        progress_status: progress as any, // Type assertion to handle Continuous
         completed: isComplete,
         notes: notes,
         updated_at: new Date().toISOString()
@@ -245,6 +244,10 @@ export default function UpdateTask() {
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="100%" id="progress-100" />
                 <Label htmlFor="progress-100">100%</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="Continuous" id="progress-continuous" />
+                <Label htmlFor="progress-continuous">Continuous</Label>
               </div>
             </RadioGroup>
           </div>

@@ -159,7 +159,13 @@ export type Database = {
         | "Asset Finance"
         | "Checkoff & Personal Loans"
       action_priority: "high" | "medium" | "low"
-      action_progress: "Not Started" | "25%" | "50%" | "75%" | "100%"
+      action_progress:
+        | "Not Started"
+        | "25%"
+        | "50%"
+        | "75%"
+        | "100%"
+        | "Continuous"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -296,7 +302,14 @@ export const Constants = {
         "Checkoff & Personal Loans",
       ],
       action_priority: ["high", "medium", "low"],
-      action_progress: ["Not Started", "25%", "50%", "75%", "100%"],
+      action_progress: [
+        "Not Started",
+        "25%",
+        "50%",
+        "75%",
+        "100%",
+        "Continuous",
+      ],
     },
   },
 } as const

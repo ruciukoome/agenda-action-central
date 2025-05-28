@@ -36,7 +36,7 @@ export async function createAction(action: Omit<ActionItem, 'id' | 'createdAt' |
     priority: action.priority,
     owner_email: action.ownerEmail,
     completed: action.completed,
-    progress_status: action.progressStatus,
+    progress_status: action.progressStatus as any, // Type assertion to handle Continuous
     notes: action.notes || '',
     user_id: userData.user.id,
     // Make sure due_date is explicitly included
