@@ -323,9 +323,12 @@ export function ActionForm({ actionToEdit, onSave }: ActionFormProps) {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {getProgressStatuses().map((status) => (
-                          <SelectItem key={status} value={status}>{status}</SelectItem>
-                        ))}
+                        <SelectItem value="Not Started">Not Started</SelectItem>
+                        <SelectItem value="25%">25%</SelectItem>
+                        <SelectItem value="50%">50%</SelectItem>
+                        <SelectItem value="75%">75%</SelectItem>
+                        <SelectItem value="100%">100%</SelectItem>
+                        <SelectItem value="Continuous">Continuous</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
