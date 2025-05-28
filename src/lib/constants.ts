@@ -1,4 +1,3 @@
-
 export const priorityOptions = [
   { value: "high", label: "High" },
   { value: "medium", label: "Medium" },
@@ -11,6 +10,7 @@ export const progressStatusOptions = [
   { value: "50%", label: "50%" },
   { value: "75%", label: "75%" },
   { value: "100%", label: "100%" },
+  { value: "Continuous", label: "Continuous" },
 ];
 
 export const departmentOptions = [

@@ -53,6 +53,9 @@ export function ActionStatusBadge({ type, value, className }: ActionStatusBadgeP
       case "100%":
         variant = "default";
         break;
+      case "Continuous":
+        variant = "default";
+        break;
     }
   }
   
@@ -73,6 +76,7 @@ export function ActionStatusBadge({ type, value, className }: ActionStatusBadgeP
       className={cn(
         type === "priority" && value === "high" && "bg-red-500 hover:bg-red-600",
         type === "progress" && value === "100%" && "bg-green-500 hover:bg-green-600",
+        type === "progress" && value === "Continuous" && "bg-blue-500 hover:bg-blue-600",
         type === "completion" && value === "true" && "bg-green-500 hover:bg-green-600",
         className
       )}

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
@@ -28,7 +27,7 @@ const formSchema = z.object({
   priority: z.enum(["high", "medium", "low"]),
   ownerEmail: z.string().email("Please enter a valid email address"),
   completed: z.boolean().default(false),
-  progressStatus: z.enum(["Not Started", "25%", "50%", "75%", "100%"]).default("Not Started"),
+  progressStatus: z.enum(["Not Started", "25%", "50%", "75%", "100%", "Continuous"]).default("Not Started"),
   notes: z.string().optional(),
   dueDate: z.date().optional(),
 });
@@ -70,6 +69,7 @@ export function ActionForm({ actionToEdit, onSave }: ActionFormProps) {
     const now = new Date().toISOString();
     
     // Check if the progress status is "100%", and if so, set completed to true
+    // Note: "Continuous" actions should not be marked as completed automatically
     if (values.progressStatus === "100%") {
       values.completed = true;
     }
@@ -310,6 +310,7 @@ export function ActionForm({ actionToEdit, onSave }: ActionFormProps) {
                       onValueChange={(value) => {
                         field.onChange(value);
                         // Update completed status if progress is 100%
+                        // Don't auto-complete "Continuous" actions
                         if (value === "100%") {
                           form.setValue("completed", true);
                         }
@@ -349,7 +350,8 @@ export function ActionForm({ actionToEdit, onSave }: ActionFormProps) {
                         onCheckedChange={(checked) => {
                           field.onChange(checked);
                           // Update progress status if completed is checked
-                          if (checked) {
+                          // Don't change "Continuous" to "100%" when completed
+                          if (checked && form.getValues("progressStatus") !== "Continuous") {
                             form.setValue("progressStatus", "100%");
                           }
                         }}

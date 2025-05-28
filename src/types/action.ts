@@ -1,7 +1,7 @@
 
 export type Priority = "high" | "medium" | "low";
 
-export type ProgressStatus = "Not Started" | "25%" | "50%" | "75%" | "100%";
+export type ProgressStatus = "Not Started" | "25%" | "50%" | "75%" | "100%" | "Continuous";
 
 export type Department = 
   | "NTSA/KRA" 
