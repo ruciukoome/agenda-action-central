@@ -10,7 +10,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { ActionItem } from "@/types/action";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/lib/toast-wrapper";
 
 export async function sendActionNotification(action: ActionItem, type: "assigned" | "updated") {
   try {

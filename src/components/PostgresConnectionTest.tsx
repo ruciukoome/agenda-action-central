@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, CheckCircle, Database, RefreshCw, Save, ServerOff, Terminal } from 'lucide-react';
 import { testConnection, isApiServerRunning } from '@/integrations/postgres/api';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast-wrapper';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 

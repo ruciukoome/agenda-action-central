@@ -1,5 +1,5 @@
 
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast-wrapper';
 import { initializeConnection } from '@/integrations/postgres/client';
 import axios from 'axios';
 

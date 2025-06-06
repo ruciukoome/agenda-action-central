@@ -11,7 +11,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/lib/toast-wrapper';
 import { ActionItem, Department, ProgressStatus } from '@/types/action';
 import { sendActionNotification } from '@/lib/notifications';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';

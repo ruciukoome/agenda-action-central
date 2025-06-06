@@ -16,6 +16,7 @@ import DatabaseSetup from './pages/DatabaseSetup';
 import { useIdleTimeout } from './hooks/useIdleTimeout';
 import { useAuth } from '@/lib/auth';
 import { AuthGuard } from '@/components/AuthGuard';
+import { ToastSettingsProvider } from '@/contexts/ToastSettingsContext';
 
 function App() {
   // Set up idle timeout - will only be active when user is logged in
@@ -23,7 +24,7 @@ function App() {
   useIdleTimeout(user ? 10 * 60 * 1000 : undefined); // 10 minutes
   
   return (
-    <>
+    <ToastSettingsProvider>
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/auth" element={<Auth />} />
@@ -69,7 +70,7 @@ function App() {
           }
         }}
       />
-    </>
+    </ToastSettingsProvider>
   );
 }
 
