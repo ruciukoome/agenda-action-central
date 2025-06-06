@@ -52,11 +52,18 @@ export const toast = {
   shadcn: {
     success: (title: string, options?: { description?: string }) => {
       if (!getToastSettings()) return;
-      shadcnToast.success(title, options);
+      shadcnToast({
+        title,
+        description: options?.description,
+      });
     },
     error: (title: string, options?: { description?: string }) => {
       if (!getToastSettings()) return;
-      shadcnToast.error(title, options);
+      shadcnToast({
+        variant: "destructive",
+        title,
+        description: options?.description,
+      });
     }
   }
 };
