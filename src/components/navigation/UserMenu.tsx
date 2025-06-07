@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
+import { Settings } from "lucide-react";
 
 export function UserMenu() {
   const { signOut, session } = useAuth();
@@ -61,6 +62,13 @@ export function UserMenu() {
             My Profile
           </Link>
         </DropdownMenuItem>
+        <DropdownMenuItem>
+          <Link to="/settings" className="w-full flex items-center gap-2">
+            <Settings className="h-4 w-4" />
+            Settings
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut}>Sign out</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

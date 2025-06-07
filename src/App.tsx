@@ -13,6 +13,7 @@ import MyActions from './pages/MyActions';
 import UpdateTask from './pages/UpdateTask';
 import UpdateSuccess from './pages/UpdateSuccess';
 import DatabaseSetup from './pages/DatabaseSetup';
+import Settings from './pages/Settings';
 import { useIdleTimeout } from './hooks/useIdleTimeout';
 import { useAuth } from '@/lib/auth';
 import { AuthGuard } from '@/components/AuthGuard';
@@ -43,6 +44,7 @@ function App() {
         <Route path="/edit-action/:id" element={<AuthGuard><EditAction /></AuthGuard>} />
         <Route path="/edit/:id" element={<AuthGuard><EditAction /></AuthGuard>} />
         <Route path="/my-actions" element={<AuthGuard><MyActions /></AuthGuard>} />
+        <Route path="/settings" element={<AuthGuard><Settings /></AuthGuard>} />
         <Route path="/database-setup" element={<AuthGuard><DatabaseSetup /></AuthGuard>} />
         <Route path="*" element={<NotFound />} />
       </Routes>

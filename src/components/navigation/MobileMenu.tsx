@@ -2,7 +2,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
-import { X, Home, ClipboardList, PlusCircle, Database, LogOut } from "lucide-react";
+import { X, Home, ClipboardList, PlusCircle, Database, LogOut, Settings } from "lucide-react";
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -59,6 +59,15 @@ export function MobileMenu({ isOpen, onClose, onSignOut }: MobileMenuProps) {
               onClick={onClose}
             >
               <ClipboardList className="h-4 w-4" /> Actions
+            </Link>
+          </li>
+          <li>
+            <Link 
+              to="/settings" 
+              className={`flex items-center gap-2 px-4 py-2 rounded ${location.pathname === '/settings' ? 'bg-primary/10 text-primary' : 'bg-card hover:bg-accent hover:text-accent-foreground'}`}
+              onClick={onClose}
+            >
+              <Settings className="h-4 w-4" /> Settings
             </Link>
           </li>
           <li>
