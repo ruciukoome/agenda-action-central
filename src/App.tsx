@@ -17,15 +17,16 @@ import Settings from './pages/Settings';
 import { useIdleTimeout } from './hooks/useIdleTimeout';
 import { useAuth } from '@/lib/auth';
 import { AuthGuard } from '@/components/AuthGuard';
-import { ToastSettingsProvider } from '@/contexts/ToastSettingsContext';
+import { ToastSettingsProvider, useToastSettings } from '@/contexts/ToastSettingsContext';
 
-function App() {
+function AppContent() {
   // Set up idle timeout - will only be active when user is logged in
   const { user } = useAuth();
+  const { toastsEnabled } = useToastSettings();
   useIdleTimeout(user ? 10 * 60 * 1000 : undefined); // 10 minutes
   
   return (
-    <ToastSettingsProvider>
+    <>
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/auth" element={<Auth />} />
@@ -48,30 +49,40 @@ function App() {
         <Route path="/database-setup" element={<AuthGuard><DatabaseSetup /></AuthGuard>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
-      <Toaster 
-        position="top-right"
-        expand={false}
-        closeButton
-        richColors
-        duration={3000}
-        style={{
-          position: 'fixed',
-          zIndex: 9999,
-          top: 16,
-          right: 16,
-          margin: 0,
-          padding: 0,
-          transform: 'none'
-        }}
-        className="fixed-toast"
-        toastOptions={{
-          style: {
-            position: 'relative',
-            transform: 'none',
-            transition: 'opacity 0.2s ease-out'
-          }
-        }}
-      />
+      {toastsEnabled && (
+        <Toaster 
+          position="top-right"
+          expand={false}
+          closeButton
+          richColors
+          duration={3000}
+          style={{
+            position: 'fixed',
+            zIndex: 9999,
+            top: 16,
+            right: 16,
+            margin: 0,
+            padding: 0,
+            transform: 'none'
+          }}
+          className="fixed-toast"
+          toastOptions={{
+            style: {
+              position: 'relative',
+              transform: 'none',
+              transition: 'opacity 0.2s ease-out'
+            }
+          }}
+        />
+      )}
+    </>
+  );
+}
+
+function App() {
+  return (
+    <ToastSettingsProvider>
+      <AppContent />
     </ToastSettingsProvider>
   );
 }
