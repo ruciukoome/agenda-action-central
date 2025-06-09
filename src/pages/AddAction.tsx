@@ -2,13 +2,12 @@
 import { useNavigate } from "react-router-dom";
 import { ActionForm } from "@/components/ActionForm";
 import { ActionItem } from "@/types/action";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "@/lib/toast-wrapper";
 import { createAction } from "@/lib/postgres-actions"; // Changed to use postgres-actions
 import { Header } from "@/components/Header";
 
 export default function AddAction() {
   const navigate = useNavigate();
-  const { toast } = useToast();
   
   const handleSave = async (action: ActionItem) => {
     try {
@@ -20,8 +19,7 @@ export default function AddAction() {
       // Use our createAction function to add the new action to our store
       await createAction(action, userId);
       
-      toast({
-        title: "Action created",
+      toast.success("Action created", {
         description: "Your new action item has been created successfully.",
       });
       
@@ -29,10 +27,8 @@ export default function AddAction() {
       navigate("/");
     } catch (error) {
       console.error("Failed to create action:", error);
-      toast({
-        title: "Error",
+      toast.error("Error", {
         description: "Failed to create action. Please try again.",
-        variant: "destructive",
       });
     }
   };

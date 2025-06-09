@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader2, Database } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast-wrapper';
 import { setupDatabaseSchema } from '@/integrations/postgres/api';
 
 export function SchemaSetupButton() {

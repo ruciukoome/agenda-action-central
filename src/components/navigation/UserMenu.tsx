@@ -11,25 +11,21 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/lib/auth";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/lib/toast-wrapper";
 import { Settings } from "lucide-react";
 
 export function UserMenu() {
   const { signOut, session } = useAuth();
-  const { toast } = useToast();
 
   const handleSignOut = async () => {
     try {
       await signOut();
-      toast({
-        title: "Signed out",
+      toast.success("Signed out", {
         description: "You have been signed out successfully.",
       });
     } catch (error) {
-      toast({
-        title: "Error signing out",
+      toast.error("Error signing out", {
         description: "There was an error signing you out. Please try again.",
-        variant: "destructive",
       });
     }
   };

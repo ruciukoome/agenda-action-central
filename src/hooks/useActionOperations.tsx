@@ -2,7 +2,7 @@
 import { useState, useCallback } from "react";
 import { ActionItem } from "@/types/action";
 import { deleteAction } from "@/lib/postgres-actions";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/lib/toast-wrapper";
 import { useActionExport } from "@/hooks/useActionExport";
 
 export function useActionOperations(actions: ActionItem[], onActionDeleted: () => void) {
