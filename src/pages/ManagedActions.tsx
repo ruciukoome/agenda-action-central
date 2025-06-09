@@ -12,7 +12,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Header } from "@/components/Header";
 import { fetchActions } from "@/lib/postgres-actions";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/lib/toast-wrapper";
 import { ManagedActionsContent } from "@/components/actions/ManagedActionsContent";
 
 export default function ManagedActions() {

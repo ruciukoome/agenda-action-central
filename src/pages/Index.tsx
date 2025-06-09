@@ -17,14 +17,13 @@ import { Header } from "@/components/Header";
 import { ActionItem } from "@/types/action";
 import { EmailIntegrationCard } from "@/components/EmailIntegrationCard";
 import { fetchActions } from "@/lib/postgres-actions";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/lib/toast-wrapper";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { ChartPieIcon } from "lucide-react";
 
 export default function Index() {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const { session } = useAuth();
   const [actions, setActions] = useState<ActionItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -44,10 +43,8 @@ export default function Index() {
         setActions(data);
       } catch (error) {
         console.error("Failed to fetch actions:", error);
-        toast({
-          title: "Error fetching actions",
+        toast.error("Error fetching actions", {
           description: "Please refresh the page to try again.",
-          variant: "destructive",
         });
       } finally {
         setIsLoading(false);
@@ -65,7 +62,7 @@ export default function Index() {
     return () => {
       clearInterval(intervalId);
     };
-  }, [session, navigate, toast]);
+  }, [session, navigate]);
   
   const handleEditAction = (action: ActionItem) => {
     navigate(`/edit/${action.id}`);

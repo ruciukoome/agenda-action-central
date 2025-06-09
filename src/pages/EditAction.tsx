@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ActionForm } from "@/components/ActionForm";
 import { ActionItem } from "@/types/action";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast-wrapper";
 import { fetchActions } from "@/lib/postgres-actions";
 import { updateAction } from "@/lib/postgres-actions";
 import { Header } from "@/components/Header";

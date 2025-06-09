@@ -2,7 +2,7 @@
 import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast-wrapper';
 
 // Default timeout is 10 minutes (600000 milliseconds)
 const DEFAULT_IDLE_TIMEOUT = 10 * 60 * 1000;
@@ -27,7 +27,6 @@ export function useIdleTimeout(idleTime = DEFAULT_IDLE_TIMEOUT) {
       // Set warning timeout to display toast notification before logout
       warningTimeoutRef.current = window.setTimeout(() => {
         toast.warning("Session timeout warning", {
-          id: "idle-warning-toast",
           description: "You'll be logged out in 1 minute due to inactivity.",
           duration: 10000, // Show for 10 seconds
         });
@@ -40,7 +39,6 @@ export function useIdleTimeout(idleTime = DEFAULT_IDLE_TIMEOUT) {
         // Sign out and redirect to login
         signOut().then(() => {
           toast.info("Session expired", {
-            id: "idle-logout-toast",
             description: "You were logged out due to inactivity.",
           });
           navigate('/auth');

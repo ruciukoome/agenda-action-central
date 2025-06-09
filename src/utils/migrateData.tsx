@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { executeQuery } from "@/integrations/postgres/client";
 import { DbAction } from "@/integrations/postgres/types";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast-wrapper";
 import { Button } from "@/components/ui/button";
 import { Loader2, Database } from "lucide-react";
 
