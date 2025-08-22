@@ -49,7 +49,7 @@ serve(async (req) => {
     console.log("Received request data:", JSON.stringify(payload));
 
     // Extract data from payload
-    const { action, type, senderEmail } = payload;
+    const { action, type, senderEmail, ccEmails = [], bccEmails = [] } = payload;
     
     if (!action || !action.ownerEmail) {
       throw new Error("Missing required data: action or owner email");
@@ -85,6 +85,8 @@ serve(async (req) => {
         personalizations: [
           {
             to: [{ email: action.ownerEmail }],
+            cc: ccEmails.length > 0 ? ccEmails.map((email: string) => ({ email })) : undefined,
+            bcc: bccEmails.length > 0 ? bccEmails.map((email: string) => ({ email })) : undefined,
             subject: subject,
             // Adding custom headers to improve deliverability
             headers: {

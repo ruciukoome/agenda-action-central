@@ -12,7 +12,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { ActionItem } from "@/types/action";
 import { toast } from "@/lib/toast-wrapper";
 
-export async function sendActionNotification(action: ActionItem, type: "assigned" | "updated") {
+export async function sendActionNotification(
+  action: ActionItem, 
+  type: "assigned" | "updated", 
+  ccEmails?: string[], 
+  bccEmails?: string[]
+) {
   try {
     // Get the current session token and user email
     const { data: { session } } = await supabase.auth.getSession();
@@ -54,7 +59,9 @@ export async function sendActionNotification(action: ActionItem, type: "assigned
         owner_email: action.ownerEmail // Ensure this field is explicitly set
       },
       type,
-      senderEmail
+      senderEmail,
+      ccEmails: ccEmails || action.ccEmails || [],
+      bccEmails: bccEmails || action.bccEmails || []
     };
     
     console.info("[Email Service] Payload:", JSON.stringify(payload));
@@ -87,8 +94,13 @@ export async function sendActionNotification(action: ActionItem, type: "assigned
     console.log("Notification sent successfully:", responseData);
     
     // Show a success toast
+    const totalRecipients = 1 + (ccEmails?.length || 0) + (bccEmails?.length || 0);
+    const recipientInfo = totalRecipients > 1 
+      ? `${action.ownerEmail} + ${totalRecipients - 1} additional recipient(s)`
+      : action.ownerEmail;
+    
     toast.success("Notification Sent", {
-      description: `Email sent to ${action.ownerEmail}`,
+      description: `Email sent to ${recipientInfo}`,
     });
     
     return responseData;

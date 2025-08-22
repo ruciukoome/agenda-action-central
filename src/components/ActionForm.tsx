@@ -16,9 +16,9 @@ import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { Calendar as CalendarIcon, Check, X } from "lucide-react";
 import { format } from "date-fns";
-import { ActionItem, Department, Priority, ProgressStatus } from "@/types/action";
+import { ActionItem, Department, Priority, ProgressStatus, parseEmailList, formatEmailList } from "@/types/action";
 import { getDepartments, getPriorities, getProgressStatuses } from "@/data/mockActions";
-import { generateActionAssignedEmailContent, sendEmail } from "@/utils/emailUtils";
+import { sendActionNotification } from "@/lib/notifications";
 
 const formSchema = z.object({
   description: z.string().min(5, "Description must be at least 5 characters"),
@@ -30,6 +30,8 @@ const formSchema = z.object({
   progressStatus: z.enum(["Not Started", "25%", "50%", "75%", "100%", "Continuous"]).default("Not Started"),
   notes: z.string().optional(),
   dueDate: z.date().optional(),
+  ccEmails: z.string().optional(),
+  bccEmails: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -53,11 +55,15 @@ export function ActionForm({ actionToEdit, onSave }: ActionFormProps) {
     progressStatus: actionToEdit.progressStatus as ProgressStatus,
     notes: actionToEdit.notes,
     dueDate: actionToEdit.dueDate ? new Date(actionToEdit.dueDate) : undefined,
+    ccEmails: actionToEdit.ccEmails ? formatEmailList(actionToEdit.ccEmails) : "",
+    bccEmails: actionToEdit.bccEmails ? formatEmailList(actionToEdit.bccEmails) : "",
   } : {
     meetingDate: new Date(),
     priority: "medium" as Priority,
     completed: false,
     progressStatus: "Not Started" as ProgressStatus,
+    ccEmails: "",
+    bccEmails: "",
   };
   
   const form = useForm<FormValues>({
@@ -87,27 +93,28 @@ export function ActionForm({ actionToEdit, onSave }: ActionFormProps) {
       createdAt: actionToEdit?.createdAt || now,
       updatedAt: now,
       dueDate: values.dueDate?.toISOString(),
+      ccEmails: values.ccEmails ? parseEmailList(values.ccEmails) : [],
+      bccEmails: values.bccEmails ? parseEmailList(values.bccEmails) : [],
     };
     
     // In a real implementation, this would save to a database
     onSave(actionData);
     
-    // If this is a new action, send an email notification
-    if (!actionToEdit) {
-      try {
-        // Generate email content - this returns a Promise so we need to await it
-        const emailContent = await generateActionAssignedEmailContent(actionData);
-        
-        // In a real implementation, this would connect to an email service
-        const sent = await sendEmail(
-          values.ownerEmail,
-          `New Action Item: ${values.description.substring(0, 50)}...`,
-          emailContent
-        );
-        setEmailSent(sent);
-      } catch (error) {
-        console.error("Failed to send email notification:", error);
+    // Send email notification
+    try {
+      const notificationType = actionToEdit ? "updated" : "assigned";
+      const result = await sendActionNotification(
+        actionData, 
+        notificationType, 
+        actionData.ccEmails,
+        actionData.bccEmails
+      );
+      
+      if (result && !result.error) {
+        setEmailSent(true);
       }
+    } catch (error) {
+      console.error("Failed to send email notification:", error);
     }
     
     navigate("/");
@@ -296,6 +303,42 @@ export function ActionForm({ actionToEdit, onSave }: ActionFormProps) {
                 </FormItem>
               )}
             />
+            
+            <div className="grid gap-4 sm:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="ccEmails"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>CC Recipients (Optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="email1@example.com, email2@example.com" {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      Additional recipients who will receive a copy (visible to all)
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="bccEmails"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>BCC Recipients (Optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="email1@example.com, email2@example.com" {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      Hidden recipients (only visible to sender)
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
             
             <Separator className="my-4" />
             
