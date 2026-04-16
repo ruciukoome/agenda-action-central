@@ -12,8 +12,21 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 // Middleware
-app.use(cors());
+const allowedOrigins = process.env.ALLOWED_ORIGINS 
+  ? process.env.ALLOWED_ORIGINS.split(',') 
+  : ['https://agenda-action-central.lovable.app', 'https://id-preview--ef25ae9f-2e88-4001-bda3-6f8571924790.lovable.app'];
+app.use(cors({ origin: allowedOrigins }));
 app.use(bodyParser.json());
+
+// Simple API key authentication middleware for sensitive routes
+const API_KEY = process.env.API_SECRET_KEY || '';
+function requireApiKey(req, res, next) {
+  const provided = req.headers['x-api-key'];
+  if (!API_KEY || provided !== API_KEY) {
+    return res.status(401).json({ error: 'Unauthorized: invalid or missing API key' });
+  }
+  next();
+}
 
 // Database connection pool
 let pool = null;
