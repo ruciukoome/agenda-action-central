@@ -216,7 +216,7 @@ app.post('/api/db/setup-schema', requireApiKey, async (req, res) => {
 });
 
 // Actions API endpoints
-app.get('/api/actions', async (req, res) => {
+app.get('/api/actions', requireApiKey, async (req, res) => {
   try {
     if (!pool) {
       return res.status(400).json({ success: false, message: 'Database connection not initialized' });
@@ -238,7 +238,7 @@ app.get('/api/actions', async (req, res) => {
   }
 });
 
-app.post('/api/actions', async (req, res) => {
+app.post('/api/actions', requireApiKey, async (req, res) => {
   try {
     if (!pool) {
       return res.status(400).json({ success: false, message: 'Database connection not initialized' });
@@ -286,7 +286,7 @@ app.post('/api/actions', async (req, res) => {
   }
 });
 
-app.put('/api/actions/:id', async (req, res) => {
+app.put('/api/actions/:id', requireApiKey, async (req, res) => {
   try {
     if (!pool) {
       return res.status(400).json({ success: false, message: 'Database connection not initialized' });
@@ -355,7 +355,7 @@ app.put('/api/actions/:id', async (req, res) => {
   }
 });
 
-app.delete('/api/actions/:id', async (req, res) => {
+app.delete('/api/actions/:id', requireApiKey, async (req, res) => {
   try {
     if (!pool) {
       return res.status(400).json({ success: false, message: 'Database connection not initialized' });
