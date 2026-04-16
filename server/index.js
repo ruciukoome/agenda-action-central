@@ -176,7 +176,7 @@ app.post('/api/db/test-connection', requireApiKey, async (req, res) => {
 });
 
 // Initialize database with credentials
-app.post('/api/db/initialize', async (req, res) => {
+app.post('/api/db/initialize', requireApiKey, async (req, res) => {
   try {
     const success = await initializePool(req.body);
     if (success) {
@@ -195,7 +195,7 @@ app.post('/api/db/initialize', async (req, res) => {
 });
 
 // Run database schema setup
-app.post('/api/db/setup-schema', async (req, res) => {
+app.post('/api/db/setup-schema', requireApiKey, async (req, res) => {
   try {
     if (!pool) {
       return res.status(400).json({ success: false, message: 'Database connection not initialized' });
