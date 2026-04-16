@@ -59,6 +59,7 @@ export type Database = {
           id: string
           meeting_date: string
           notes: string | null
+          organization_id: string | null
           owner_email: string
           priority: Database["public"]["Enums"]["action_priority"]
           progress_status: Database["public"]["Enums"]["action_progress"]
@@ -74,6 +75,7 @@ export type Database = {
           id?: string
           meeting_date: string
           notes?: string | null
+          organization_id?: string | null
           owner_email: string
           priority: Database["public"]["Enums"]["action_priority"]
           progress_status?: Database["public"]["Enums"]["action_progress"]
@@ -89,11 +91,82 @@ export type Database = {
           id?: string
           meeting_date?: string
           notes?: string | null
+          organization_id?: string | null
           owner_email?: string
           priority?: Database["public"]["Enums"]["action_priority"]
           progress_status?: Database["public"]["Enums"]["action_progress"]
           updated_at?: string
           user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "actions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organization_members: {
+        Row: {
+          created_at: string
+          id: string
+          organization_id: string
+          role: Database["public"]["Enums"]["org_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          organization_id: string
+          role?: Database["public"]["Enums"]["org_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          organization_id?: string
+          role?: Database["public"]["Enums"]["org_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_members_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          logo_url: string | null
+          name: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          logo_url?: string | null
+          name: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          logo_url?: string | null
+          name?: string
+          slug?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -121,6 +194,68 @@ export type Database = {
         }
         Relationships: []
       }
+      subscriptions: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          organization_id: string
+          plan: Database["public"]["Enums"]["subscription_plan"]
+          started_at: string
+          status: Database["public"]["Enums"]["subscription_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          organization_id: string
+          plan?: Database["public"]["Enums"]["subscription_plan"]
+          started_at?: string
+          status?: Database["public"]["Enums"]["subscription_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          organization_id?: string
+          plan?: Database["public"]["Enums"]["subscription_plan"]
+          started_at?: string
+          status?: Database["public"]["Enums"]["subscription_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -143,6 +278,16 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      get_user_org_id: { Args: { _user_id: string }; Returns: string }
+      get_user_org_role: {
+        Args: { _org_id: string; _user_id: string }
+        Returns: Database["public"]["Enums"]["org_role"]
+      }
+      is_org_member: {
+        Args: { _org_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_super_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       action_department:
@@ -166,6 +311,10 @@ export type Database = {
         | "Checkoff & Personal Loans"
       action_priority: "high" | "medium" | "low"
       action_progress: "Not Started" | "25%" | "50%" | "75%" | "100%"
+      app_role: "super_admin"
+      org_role: "admin" | "member"
+      subscription_plan: "free" | "basic" | "premium"
+      subscription_status: "active" | "expired" | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -315,6 +464,10 @@ export const Constants = {
       ],
       action_priority: ["high", "medium", "low"],
       action_progress: ["Not Started", "25%", "50%", "75%", "100%"],
+      app_role: ["super_admin"],
+      org_role: ["admin", "member"],
+      subscription_plan: ["free", "basic", "premium"],
+      subscription_status: ["active", "expired", "cancelled"],
     },
   },
 } as const
