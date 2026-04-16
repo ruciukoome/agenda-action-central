@@ -14,16 +14,158 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      action_tokens: {
+        Row: {
+          action_id: string
+          created_at: string
+          expires_at: string
+          id: string
+          token: string
+          used: boolean
+        }
+        Insert: {
+          action_id: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          token: string
+          used?: boolean
+        }
+        Update: {
+          action_id?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          token?: string
+          used?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "action_tokens_action_id_fkey"
+            columns: ["action_id"]
+            isOneToOne: false
+            referencedRelation: "actions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      actions: {
+        Row: {
+          completed: boolean
+          created_at: string
+          department: Database["public"]["Enums"]["action_department"]
+          description: string
+          due_date: string | null
+          id: string
+          meeting_date: string
+          notes: string | null
+          owner_email: string
+          priority: Database["public"]["Enums"]["action_priority"]
+          progress_status: Database["public"]["Enums"]["action_progress"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean
+          created_at?: string
+          department: Database["public"]["Enums"]["action_department"]
+          description: string
+          due_date?: string | null
+          id?: string
+          meeting_date: string
+          notes?: string | null
+          owner_email: string
+          priority: Database["public"]["Enums"]["action_priority"]
+          progress_status?: Database["public"]["Enums"]["action_progress"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed?: boolean
+          created_at?: string
+          department?: Database["public"]["Enums"]["action_department"]
+          description?: string
+          due_date?: string | null
+          id?: string
+          meeting_date?: string
+          notes?: string | null
+          owner_email?: string
+          priority?: Database["public"]["Enums"]["action_priority"]
+          progress_status?: Database["public"]["Enums"]["action_progress"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_action_token_by_id_and_token: {
+        Args: { p_action_id: string; p_token: string }
+        Returns: {
+          action_id: string
+          created_at: string
+          expires_at: string
+          id: string
+          token: string
+          used: boolean
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "action_tokens"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
     }
     Enums: {
-      [_ in never]: never
+      action_department:
+        | "NTSA/KRA"
+        | "Biashara"
+        | "Agribusiness"
+        | "Business Development & Strategy"
+        | "Finance"
+        | "ICT"
+        | "Credit"
+        | "Collections & Settlements"
+        | "Operations"
+        | "Sales Support & Data"
+        | "Call Centre"
+        | "Delinquency"
+        | "Legal"
+        | "RISK & COMPLIANCE"
+        | "HR & Admin"
+        | "Customer Experience & Marketing"
+        | "Asset Finance"
+        | "Checkoff & Personal Loans"
+      action_priority: "high" | "medium" | "low"
+      action_progress: "Not Started" | "25%" | "50%" | "75%" | "100%"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +292,29 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      action_department: [
+        "NTSA/KRA",
+        "Biashara",
+        "Agribusiness",
+        "Business Development & Strategy",
+        "Finance",
+        "ICT",
+        "Credit",
+        "Collections & Settlements",
+        "Operations",
+        "Sales Support & Data",
+        "Call Centre",
+        "Delinquency",
+        "Legal",
+        "RISK & COMPLIANCE",
+        "HR & Admin",
+        "Customer Experience & Marketing",
+        "Asset Finance",
+        "Checkoff & Personal Loans",
+      ],
+      action_priority: ["high", "medium", "low"],
+      action_progress: ["Not Started", "25%", "50%", "75%", "100%"],
+    },
   },
 } as const
