@@ -14,39 +14,42 @@ import UpdateTask from './pages/UpdateTask';
 import UpdateSuccess from './pages/UpdateSuccess';
 import DatabaseSetup from './pages/DatabaseSetup';
 import Settings from './pages/Settings';
+import Onboarding from './pages/Onboarding';
 import { useIdleTimeout } from './hooks/useIdleTimeout';
 import { useAuth } from '@/lib/auth';
 import { AuthGuard } from '@/components/AuthGuard';
+import { OrgGuard } from '@/components/OrgGuard';
 import { ToastSettingsProvider, useToastSettings } from '@/contexts/ToastSettingsContext';
+import { OrganizationProvider } from '@/contexts/OrganizationContext';
 
 function AppContent() {
-  // Set up idle timeout - will only be active when user is logged in
   const { user } = useAuth();
   const { toastsEnabled } = useToastSettings();
-  useIdleTimeout(user ? 10 * 60 * 1000 : undefined); // 10 minutes
+  useIdleTimeout(user ? 10 * 60 * 1000 : undefined);
   
   return (
     <>
       <Routes>
-        <Route path="/" element={<Index />} />
+        <Route path="/" element={<OrgGuard><Index /></OrgGuard>} />
         <Route path="/auth" element={<Auth />} />
+        <Route path="/onboarding" element={<AuthGuard><Onboarding /></AuthGuard>} />
         
-        {/* Public routes that don't require authentication */}
+        {/* Public routes */}
         <Route path="/update-task/:id" element={<UpdateTask />} />
         <Route path="/update-success" element={<UpdateSuccess />} />
         
-        {/* Protected routes that require authentication */}
-        <Route path="/dashboard" element={<AuthGuard><Dashboard /></AuthGuard>} />
-        <Route path="/managed-actions" element={<AuthGuard><ManagedActions /></AuthGuard>} />
-        <Route path="/manage-actions" element={<AuthGuard><ManagedActions /></AuthGuard>} />
-        <Route path="/action-items" element={<AuthGuard><MyActions /></AuthGuard>} />
-        <Route path="/add-action" element={<AuthGuard><AddAction /></AuthGuard>} />
-        <Route path="/add" element={<AuthGuard><AddAction /></AuthGuard>} />
-        <Route path="/edit-action/:id" element={<AuthGuard><EditAction /></AuthGuard>} />
-        <Route path="/edit/:id" element={<AuthGuard><EditAction /></AuthGuard>} />
-        <Route path="/my-actions" element={<AuthGuard><MyActions /></AuthGuard>} />
-        <Route path="/settings" element={<AuthGuard><Settings /></AuthGuard>} />
-        <Route path="/database-setup" element={<AuthGuard><DatabaseSetup /></AuthGuard>} />
+        {/* Protected routes requiring auth + org */}
+        <Route path="/dashboard" element={<AuthGuard><OrgGuard><Dashboard /></OrgGuard></AuthGuard>} />
+        <Route path="/managed-actions" element={<AuthGuard><OrgGuard><ManagedActions /></OrgGuard></AuthGuard>} />
+        <Route path="/manage-actions" element={<AuthGuard><OrgGuard><ManagedActions /></OrgGuard></AuthGuard>} />
+        <Route path="/action-items" element={<AuthGuard><OrgGuard><MyActions /></OrgGuard></AuthGuard>} />
+        <Route path="/add-action" element={<AuthGuard><OrgGuard><AddAction /></OrgGuard></AuthGuard>} />
+        <Route path="/add" element={<AuthGuard><OrgGuard><AddAction /></OrgGuard></AuthGuard>} />
+        <Route path="/edit-action/:id" element={<AuthGuard><OrgGuard><EditAction /></OrgGuard></AuthGuard>} />
+        <Route path="/edit/:id" element={<AuthGuard><OrgGuard><EditAction /></OrgGuard></AuthGuard>} />
+        <Route path="/my-actions" element={<AuthGuard><OrgGuard><MyActions /></OrgGuard></AuthGuard>} />
+        <Route path="/settings" element={<AuthGuard><OrgGuard><Settings /></OrgGuard></AuthGuard>} />
+        <Route path="/database-setup" element={<AuthGuard><OrgGuard><DatabaseSetup /></OrgGuard></AuthGuard>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       {toastsEnabled && (
@@ -82,7 +85,9 @@ function AppContent() {
 function App() {
   return (
     <ToastSettingsProvider>
-      <AppContent />
+      <OrganizationProvider>
+        <AppContent />
+      </OrganizationProvider>
     </ToastSettingsProvider>
   );
 }
