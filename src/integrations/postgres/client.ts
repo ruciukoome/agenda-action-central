@@ -24,7 +24,7 @@ let POSTGRES_HOST = 'localhost';
 let POSTGRES_PORT = 5432;
 let POSTGRES_DATABASE = 'actionpoint'; // Correct database name
 let POSTGRES_USER = 'postgres';
-let POSTGRES_PASSWORD = 'Qwerty&&00Asdfgh';
+let POSTGRES_PASSWORD = '';
 
 // Create axios instance for API calls
 const api = axios.create({
