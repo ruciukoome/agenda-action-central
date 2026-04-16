@@ -29,6 +29,19 @@ export async function createAction(action: Omit<ActionItem, 'id' | 'createdAt' |
   console.log("Creating action in Supabase with data:", JSON.stringify(action, null, 2));
   
   // Explicitly prepare the dbAction object to ensure due date is preserved
+  // Get user's organization_id
+  let organizationId: string | null = null;
+  const { data: memberData } = await supabase
+    .from('organization_members')
+    .select('organization_id')
+    .eq('user_id', userData.user.id)
+    .limit(1)
+    .maybeSingle();
+  
+  if (memberData) {
+    organizationId = memberData.organization_id;
+  }
+
   const dbAction = {
     description: action.description,
     department: action.department,
@@ -36,11 +49,11 @@ export async function createAction(action: Omit<ActionItem, 'id' | 'createdAt' |
     priority: action.priority,
     owner_email: action.ownerEmail,
     completed: action.completed,
-    progress_status: action.progressStatus as any, // Type assertion to handle Continuous
+    progress_status: action.progressStatus as any,
     notes: action.notes || '',
     user_id: userData.user.id,
-    // Make sure due_date is explicitly included
-    due_date: action.dueDate ? action.dueDate : null
+    due_date: action.dueDate ? action.dueDate : null,
+    organization_id: organizationId,
   };
 
   // Log the prepared dbAction object
