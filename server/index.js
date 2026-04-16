@@ -77,8 +77,8 @@ function initializePool(credentials) {
 
 // API Routes
 
-// Test connection route
-app.post('/api/db/test-connection', async (req, res) => {
+// Test connection route (requires API key)
+app.post('/api/db/test-connection', requireApiKey, async (req, res) => {
   try {
     const credentials = req.body;
     
