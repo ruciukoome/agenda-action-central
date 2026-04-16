@@ -37,7 +37,7 @@ export async function updateAction(action: ActionItem): Promise<ActionItem> {
   // Proceed with update now that we've verified the action exists
   const { data, error } = await supabase
     .from('actions')
-    .update(dbActionWithoutUserId)
+    .update(dbActionWithoutUserId as any)
     .eq('id', action.id)
     .eq('user_id', userData.user.id)  // Ensure we only update user's own records
     .select()
