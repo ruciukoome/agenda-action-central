@@ -1,6 +1,5 @@
 
-import { ActionItem } from "@/types/action";
-import { Database } from "@/integrations/supabase/types";
+import { ActionItem, Department, Priority, ProgressStatus } from "@/types/action";
 
 /**
  * Database action representation
@@ -9,12 +8,12 @@ import { Database } from "@/integrations/supabase/types";
 export interface DbAction {
   id: string;
   description: string;
-  department: Database["public"]["Enums"]["action_department"];
+  department: Department;
   meeting_date: string;
-  priority: Database["public"]["Enums"]["action_priority"];
+  priority: Priority;
   owner_email: string;
   completed: boolean;
-  progress_status: Database["public"]["Enums"]["action_progress"] | "Continuous";
+  progress_status: ProgressStatus;
   notes: string;
   created_at: string;
   updated_at: string;
@@ -34,7 +33,7 @@ export function mapDbActionToActionItem(action: DbAction): ActionItem {
     priority: action.priority,
     ownerEmail: action.owner_email,
     completed: action.completed,
-    progressStatus: action.progress_status as any, // Type assertion to handle the Continuous case
+    progressStatus: action.progress_status as any,
     notes: action.notes || "",
     createdAt: action.created_at,
     updatedAt: action.updated_at,
@@ -53,9 +52,9 @@ export function mapActionItemToDbAction(action: ActionItem, userId?: string): Om
     priority: action.priority,
     owner_email: action.ownerEmail,
     completed: action.completed,
-    progress_status: action.progressStatus as any, // Type assertion to handle the Continuous case
+    progress_status: action.progressStatus as any,
     notes: action.notes,
     due_date: action.dueDate,
-    user_id: userId || '' // Ensuring user_id is always provided, using empty string as fallback
+    user_id: userId || ''
   };
 }
