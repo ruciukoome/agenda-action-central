@@ -3,11 +3,7 @@
  * MAIN APPLICATION PAGE
  * -------------------
  * Displays the action dashboard and handles data loading
- * 
- * Backend connections:
- * - Fetches actions from the PostgreSQL database via fetchActions()
- * - Uses polling for data refresh instead of Supabase's realtime
- * - Redirects to auth page if user is not authenticated
+ * Scoped to the user's organization
  */
 
 import { useState, useEffect } from "react";
@@ -19,12 +15,14 @@ import { EmailIntegrationCard } from "@/components/EmailIntegrationCard";
 import { fetchActions } from "@/lib/postgres-actions";
 import { toast } from "@/lib/toast-wrapper";
 import { useAuth } from "@/lib/auth";
+import { useOrganization } from "@/contexts/OrganizationContext";
 import { Button } from "@/components/ui/button";
 import { ChartPieIcon } from "lucide-react";
 
 export default function Index() {
   const navigate = useNavigate();
   const { session } = useAuth();
+  const { organization } = useOrganization();
   const [actions, setActions] = useState<ActionItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
@@ -37,7 +35,6 @@ export default function Index() {
     const loadActions = async () => {
       setIsLoading(true);
       try {
-        // Pass a user ID for PostgreSQL - in a real app, get this from auth context
         const userId = localStorage.getItem("USER_ID") || "test-user-id";
         const data = await fetchActions(userId);
         setActions(data);
@@ -52,24 +49,12 @@ export default function Index() {
     };
 
     loadActions();
-    
-    // Set up polling for data refresh every 30 seconds
-    // This replaces Supabase's realtime functionality
-    const intervalId = setInterval(() => {
-      loadActions();
-    }, 30000);
-
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [session, navigate]);
+    const intervalId = setInterval(() => loadActions(), 30000);
+    return () => clearInterval(intervalId);
+  }, [session, navigate, organization]);
   
   const handleEditAction = (action: ActionItem) => {
     navigate(`/edit/${action.id}`);
-  };
-  
-  const navigateToDashboard = () => {
-    navigate('/dashboard');
   };
   
   return (
@@ -78,9 +63,14 @@ export default function Index() {
       
       <main className="flex-1 container py-10">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-3xl font-bold tracking-tight">Action Items</h2>
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight">Action Items</h2>
+            {organization && (
+              <p className="text-muted-foreground text-sm mt-1">{organization.name}</p>
+            )}
+          </div>
           <Button 
-            onClick={navigateToDashboard} 
+            onClick={() => navigate('/dashboard')} 
             variant="outline" 
             className="flex items-center gap-2"
           >
