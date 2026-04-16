@@ -12,8 +12,21 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 // Middleware
-app.use(cors());
+const allowedOrigins = process.env.ALLOWED_ORIGINS 
+  ? process.env.ALLOWED_ORIGINS.split(',') 
+  : ['https://agenda-action-central.lovable.app', 'https://id-preview--ef25ae9f-2e88-4001-bda3-6f8571924790.lovable.app'];
+app.use(cors({ origin: allowedOrigins }));
 app.use(bodyParser.json());
+
+// Simple API key authentication middleware for sensitive routes
+const API_KEY = process.env.API_SECRET_KEY || '';
+function requireApiKey(req, res, next) {
+  const provided = req.headers['x-api-key'];
+  if (!API_KEY || provided !== API_KEY) {
+    return res.status(401).json({ error: 'Unauthorized: invalid or missing API key' });
+  }
+  next();
+}
 
 // Database connection pool
 let pool = null;
@@ -64,8 +77,8 @@ function initializePool(credentials) {
 
 // API Routes
 
-// Test connection route
-app.post('/api/db/test-connection', async (req, res) => {
+// Test connection route (requires API key)
+app.post('/api/db/test-connection', requireApiKey, async (req, res) => {
   try {
     const credentials = req.body;
     
@@ -163,7 +176,7 @@ app.post('/api/db/test-connection', async (req, res) => {
 });
 
 // Initialize database with credentials
-app.post('/api/db/initialize', async (req, res) => {
+app.post('/api/db/initialize', requireApiKey, async (req, res) => {
   try {
     const success = await initializePool(req.body);
     if (success) {
@@ -182,7 +195,7 @@ app.post('/api/db/initialize', async (req, res) => {
 });
 
 // Run database schema setup
-app.post('/api/db/setup-schema', async (req, res) => {
+app.post('/api/db/setup-schema', requireApiKey, async (req, res) => {
   try {
     if (!pool) {
       return res.status(400).json({ success: false, message: 'Database connection not initialized' });
@@ -203,7 +216,7 @@ app.post('/api/db/setup-schema', async (req, res) => {
 });
 
 // Actions API endpoints
-app.get('/api/actions', async (req, res) => {
+app.get('/api/actions', requireApiKey, async (req, res) => {
   try {
     if (!pool) {
       return res.status(400).json({ success: false, message: 'Database connection not initialized' });
@@ -225,7 +238,7 @@ app.get('/api/actions', async (req, res) => {
   }
 });
 
-app.post('/api/actions', async (req, res) => {
+app.post('/api/actions', requireApiKey, async (req, res) => {
   try {
     if (!pool) {
       return res.status(400).json({ success: false, message: 'Database connection not initialized' });
@@ -273,7 +286,7 @@ app.post('/api/actions', async (req, res) => {
   }
 });
 
-app.put('/api/actions/:id', async (req, res) => {
+app.put('/api/actions/:id', requireApiKey, async (req, res) => {
   try {
     if (!pool) {
       return res.status(400).json({ success: false, message: 'Database connection not initialized' });
@@ -342,7 +355,7 @@ app.put('/api/actions/:id', async (req, res) => {
   }
 });
 
-app.delete('/api/actions/:id', async (req, res) => {
+app.delete('/api/actions/:id', requireApiKey, async (req, res) => {
   try {
     if (!pool) {
       return res.status(400).json({ success: false, message: 'Database connection not initialized' });

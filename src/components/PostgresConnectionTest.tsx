@@ -20,7 +20,7 @@ export function PostgresConnectionTest() {
   const [port, setPort] = useState(() => localStorage.getItem('POSTGRES_PORT') || '5432');
   const [database, setDatabase] = useState(() => localStorage.getItem('POSTGRES_DATABASE') || 'actionpoint');
   const [username, setUsername] = useState(() => localStorage.getItem('POSTGRES_USER') || 'postgres');
-  const [password, setPassword] = useState(() => localStorage.getItem('POSTGRES_PASSWORD') || 'Qwerty&&00Asdfgh');
+  const [password, setPassword] = useState(() => localStorage.getItem('POSTGRES_PASSWORD') || '');
   const [isConfigChanged, setIsConfigChanged] = useState(false);
 
   // Check if the API server is running on component mount
