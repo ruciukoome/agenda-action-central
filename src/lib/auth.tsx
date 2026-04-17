@@ -21,7 +21,7 @@ interface AuthContextType {
   session: Session | null;
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string) => Promise<{ needsEmailConfirmation: boolean }>;
   signOut: () => Promise<void>;
 }
 
@@ -129,14 +129,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       // Clean up any stale auth state first
       cleanupAuthState();
-      
-      const { data, error } = await supabase.auth.signUp({ email, password });
-      
+
+      const redirectUrl = `${window.location.origin}/app`;
+
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { emailRedirectTo: redirectUrl },
+      });
+
       if (error) {
         console.error('Sign up error:', error.message);
         setIsLoading(false);
-        
-        // Show toast notification for email provider disabled error
+
         if (error.message.includes('Email signups are disabled')) {
           toast({
             title: "Email Signups Disabled",
@@ -150,21 +155,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             variant: "destructive",
           });
         }
-        
+
         throw error;
       }
-      
+
       console.log('Sign up result:', data);
-      
-      // Show success message with clear next steps
-      toast({
-        title: "Sign Up Successful",
-        description: data.user?.identities?.length === 0 
-          ? "Your account has been created. Please check your email to confirm your registration."
-          : "Your account has been created successfully.",
-      });
-      
-      // Don't navigate after signup as they might need to confirm email
+
+      // If no session was returned, email confirmation is required
+      const needsEmailConfirmation = !data.session;
+      return { needsEmailConfirmation };
     } catch (error) {
       console.error('Sign up exception:', error);
       setIsLoading(false);
