@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Header } from "@/components/Header";
+import { AppLayout } from "@/components/layout/AppLayout";
 import { Loader2, Database, CheckCircle } from "lucide-react";
 import { MigrationButton } from "@/utils/migrateData";
 import { SchemaSetupButton } from "@/utils/runDatabaseSchema";
@@ -68,11 +68,8 @@ export default function DatabaseSetup() {
   };
   
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      
-      <div className="container py-10">
-        <h1 className="text-3xl font-bold tracking-tight mb-6">Database Setup</h1>
+    <AppLayout title="Database Setup">
+      <div className="container py-6">
         
         <div className="grid gap-6">
           <Card>
@@ -186,7 +183,7 @@ export default function DatabaseSetup() {
           </Card>
         </div>
       </div>
-      
+
       <Dialog open={showConnectionDialog} onOpenChange={setShowConnectionDialog}>
         <DialogContent>
           <DialogHeader>
