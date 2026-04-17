@@ -222,6 +222,6 @@ export default function DatabaseSetup() {
           </Button>
         </DialogContent>
       </Dialog>
-    </div>
+    </AppLayout>
   );
 }
