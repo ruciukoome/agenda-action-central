@@ -3,6 +3,7 @@ import { Route, Routes } from 'react-router-dom';
 import './App.css';
 import { Toaster } from 'sonner';
 import Index from './pages/Index';
+import Landing from './pages/Landing';
 import Auth from './pages/Auth';
 import Dashboard from './pages/Dashboard';
 import ManagedActions from './pages/ManagedActions';
@@ -32,7 +33,8 @@ function AppContent() {
   return (
     <>
       <Routes>
-        <Route path="/" element={<OrgGuard><Index /></OrgGuard>} />
+        <Route path="/" element={<Landing />} />
+        <Route path="/app" element={<OrgGuard><Index /></OrgGuard>} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/onboarding" element={<AuthGuard><Onboarding /></AuthGuard>} />
         
