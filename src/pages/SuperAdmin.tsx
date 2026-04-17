@@ -33,7 +33,7 @@ export default function SuperAdmin() {
 
   useEffect(() => {
     if (!isLoading && !isSuperAdmin) {
-      navigate('/');
+      navigate('/app');
     }
   }, [isLoading, isSuperAdmin, navigate]);
 
