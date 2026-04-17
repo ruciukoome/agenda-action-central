@@ -5,14 +5,23 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { Loader2, AlertTriangle, UserPlus, LogIn, Target, ArrowLeft } from 'lucide-react';
+import { Loader2, AlertTriangle, UserPlus, LogIn, Target, ArrowLeft, Mail } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [signupConfirmEmail, setSignupConfirmEmail] = useState<string | null>(null);
   const { signIn, signUp, user, isLoading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -61,7 +70,18 @@ export default function Auth() {
       if (isLogin) {
         await signIn(email, password);
       } else {
-        await signUp(email, password);
+        const { needsEmailConfirmation } = await signUp(email, password);
+        if (needsEmailConfirmation) {
+          // Show popup with instructions; user lands on /onboarding after confirming
+          setSignupConfirmEmail(email);
+        } else {
+          // Auto-confirmed (e.g. confirmations disabled) — go straight to onboarding
+          toast({
+            title: 'Account created',
+            description: "Let's set up your organization.",
+          });
+          navigate('/onboarding', { replace: true });
+        }
       }
     } catch (error) {
       const errorMsg = (error as Error).message;
