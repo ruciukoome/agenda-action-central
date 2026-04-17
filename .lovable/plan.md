@@ -1,91 +1,73 @@
+The screenshot shows a **Kanban-style board** with columns by progress status (Not Started, 25%, 50%, 75%, Complete), plus stat cards across the top and a large search bar. This is in addition to having the sidebar on the left side. I'll redesign the Action Items area to match while keeping all existing data, filters, navigation, and edit flows working.
 
-
-## Multi-Tenant SaaS Architecture Plan for Action Point
-
-### Current State
-- Single-tenant: each user sees only their own actions (`user_id = auth.uid()`)
-- No concept of organizations, roles, or shared visibility
-- Tables: `actions`, `profiles`, `action_tokens`
-
-### Target Architecture
+### Layout to Build
 
 ```text
-┌─────────────────────────────────────────────────┐
-│                  YOU (Super Admin)               │
-│         Manages billing, subscriptions           │
-│         Sees all organizations                   │
-└──────────────────────┬──────────────────────────┘
-                       │
-        ┌──────────────┼──────────────────┐
-        ▼              ▼                  ▼
-  ┌──────────┐   ┌──────────┐      ┌──────────┐
-  │  Org A   │   │  Org B   │      │  Org C   │
-  │ (Admin)  │   │ (Admin)  │      │ (Admin)  │
-  └────┬─────┘   └────┬─────┘      └────┬─────┘
-       │               │                 │
-  ┌────┴────┐    ┌─────┴────┐      ┌────┴────┐
-  │ Members │    │ Members  │      │ Members │
-  │ Staff A │    │ Staff B  │      │ Staff C │
-  └─────────┘    └──────────┘      └─────────┘
+┌─────────────────────────────────────────────────────────────┐
+│  Action Items          [ 🔍  Search actions...        ]      │
+├─────────────────────────────────────────────────────────────┤
+│ ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐                 │
+│ │Total   │ │In Prog │ │Complete│ │ Due    │   (stat cards)  │
+│ │  58    │ │  25%   │ │  32%   │ │ Soon 4 │                 │
+│ └────────┘ └────────┘ └────────┘ └────────┘                 │
+├─────────────────────────────────────────────────────────────┤
+│ Not Started │  25%   │  50%   │  75%   │ Complete           │
+│ ┌────────┐  │┌──────┐│┌──────┐│┌──────┐│┌──────┐            │
+│ │ card   │  ││ card │││ card │││ card │││ card │            │
+│ │ 👤dept │  ││ 👤   │││ 👤   │││ 👤   │││ 👤   │            │
+│ │ Due... │  ││Due...│││Due...│││Due...│││Due...│            │
+│ └────────┘  │└──────┘│└──────┘│└──────┘│└──────┘            │
+│ ┌────────┐  │┌──────┐│                                      │
+│ │ card   │  ││ card ││  (scrollable columns)                │
+│ └────────┘  │└──────┘│                                      │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-### New Database Tables
+### Changes
 
-**1. `organizations`** — Each company/org using the platform
-- `id`, `name`, `slug` (unique URL-friendly identifier), `logo_url`, `created_at`, `created_by` (the user who created it)
+**1. Replace `ActionDashboard.tsx` grid with a Kanban board**
 
-**2. `organization_members`** — Links users to orgs with roles
-- `id`, `organization_id`, `user_id`, `role` (enum: `admin`, `member`), `created_at`
-- Unique constraint on `(organization_id, user_id)`
+- Top row: prominent search input (gradient/glassmorphism styling like screenshot).
+- Stats strip: 4 cards — Total, In Progress %, Completed %, Due Soon count — using brand gradient + `--shadow-glow`.
+- Board: 5 columns grouped by `progressStatus` ("Not Started", "25%", "50%", "75%", "100%/Complete"). Each column has a colored pill header with count badge, matching the soft pastels in the screenshot (blue, indigo, teal/green, pink/purple).
+- Keep existing `ActionFilters` (priority/department/completion) collapsed below the search as a "More filters" toggle, so functionality stays.
+- "New Action" button preserved in header row.
 
-**3. `subscriptions`** (for your SaaS billing)
-- `id`, `organization_id`, `plan` (enum: `free`, `basic`, `premium`), `status` (enum: `active`, `expired`, `cancelled`), `started_at`, `expires_at`
+**2. Create `ActionKanbanCard.tsx` (compact variant)**
 
-**4. `app_role` enum** — `super_admin`, stored in a `user_roles` table for you (the platform owner)
+- Replaces `ActionCard` only inside the board. White rounded card with subtle shadow.
+- Shows: avatar circle (initial of ownerEmail), department name (bold), Due date (small grey), small priority pill in the corner.
+- Click → same `onEdit(action)` → navigates to `/edit/:id` (unchanged).
+- Keep original `ActionCard.tsx` untouched in case it's used elsewhere.
 
-### Changes to Existing Tables
+**3. Tweak `Index.tsx**`
 
-**`actions` table** — Add `organization_id` column (UUID, FK to organizations)
-- RLS changes: users can see/edit actions belonging to their organization (not just their own)
-- Admins can see all org actions; members see actions assigned to them OR created by them
+- Remove the 7-col grid (5 + 2 with EmailIntegrationCard). Move `EmailIntegrationCard` below the board, full-width or tucked into a collapsible side panel, so the board gets full horizontal space (essential for 5 columns at 1100px viewport).
+- Keep `View Dashboard` button, org name, header.
 
-**`profiles` table** — No structural changes, but queries will be org-scoped
+**4. Styling**
 
-### Role-Based Access
+- Use existing tokens: `--gradient-hero`, `--shadow-glow`, `--shadow-card` and Tailwind `bg-gradient-to-br`.
+- Column header colors: `bg-blue-100/60`, `bg-indigo-100/60`, `bg-violet-100/60`, `bg-teal-100/60`, `bg-pink-100/60` with matching dark text — pastel feel from screenshot.
+- Backdrop blur + soft purple ambient glow behind the board on `/app`.
 
-| Role | Can Do |
-|------|--------|
-| **Super Admin (you)** | View all orgs, manage subscriptions, platform settings |
-| **Org Admin** | Invite/remove members, assign actions to any member, view all org actions, generate reports, customize org settings |
-| **Org Member** | View actions assigned to them, update progress/notes on their actions, create new actions |
+### Functionality Preserved
 
-### RLS Policy Changes
+- All filters (search, priority, department, progress, completion) still apply — search moves to top bar; rest in collapsible panel.
+- Edit click still calls `onEditAction` → `/edit/:id`.
+- Loading skeletons → column-shaped skeletons.
+- Empty state per column ("No items") + global empty state if zero results.
+- Polling, auth, org scoping unchanged.
+- `ActionStatusBadge`, `ActionItem` type, fetch/update logic — untouched.
 
-- **actions**: `SELECT/UPDATE` where `organization_id` matches user's org membership
-- **organization_members**: users can read members of their own org
-- **organizations**: users can read orgs they belong to; admins can update their org
-- Security definer function `get_user_org_id()` to avoid recursive RLS
+### Files
 
-### Key App Changes
+- **Edit** `src/components/ActionDashboard.tsx` — full rewrite to Kanban layout.
+- **Create** `src/components/ActionKanbanCard.tsx` — compact card.
+- **Edit** `src/pages/Index.tsx` — drop side column, give board full width, move EmailIntegrationCard below.
 
-1. **Onboarding flow** — After signup: create org OR join via invite
-2. **Org context provider** — Store active `organization_id` in React context; all queries filter by it
-3. **Admin dashboard** — Org admins see all org actions, can assign to members, generate reports (export CSV/Excel)
-4. **Member view** — Staff see "My Actions" (assigned to them) with ability to update progress
-5. **Action assignment** — When creating an action, select a member from the org as the owner
-6. **Super admin panel** — A separate view for you to manage orgs and subscriptions
-7. **Invite system** — Org admins invite users by email; creates a pending membership
+### Responsive
 
-### Implementation Order
-
-1. Database migration: new tables, enums, RLS policies, add `organization_id` to actions
-2. Org creation + onboarding flow
-3. Org context provider + update all queries to be org-scoped
-4. Member management (invite, remove, role assignment)
-5. Action assignment to org members
-6. Admin reporting/export features
-7. Super admin panel + subscription management
-8. Payment integration (Paddle or Stripe) for org billing
-
-This is a significant architectural evolution. Shall I proceed with implementation starting from the database migration?
-
+- ≥1024px: 5 columns side-by-side.
+- 768–1023px: horizontal scroll for columns (preserves Kanban feel).
+- <768px: stacked single column with column header dividers.
