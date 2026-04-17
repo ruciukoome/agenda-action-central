@@ -70,7 +70,7 @@ export default function Landing() {
           style={{ background: 'var(--gradient-hero)' }}
           aria-hidden
         />
-        <div className="container mx-auto px-4 py-20 md:py-28 relative">
+        <div className="container mx-auto px-4 py-16 md:py-24 relative">
           <div className="max-w-3xl mx-auto text-center space-y-6">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border bg-background/50 backdrop-blur text-xs font-medium text-muted-foreground">
               <Sparkles className="h-3 w-3" />
@@ -95,9 +95,30 @@ export default function Landing() {
                 <a href="#features">See features</a>
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground pt-4">
+            <p className="text-xs text-muted-foreground pt-2">
               Free to start · No credit card required · Set up in minutes
             </p>
+          </div>
+
+          {/* Hero visual */}
+          <div className="mt-14 md:mt-20 max-w-6xl mx-auto relative">
+            <div
+              className="absolute -inset-4 md:-inset-8 rounded-3xl opacity-40 blur-3xl pointer-events-none"
+              style={{ background: 'var(--gradient-hero)' }}
+              aria-hidden
+            />
+            <div
+              className="relative rounded-2xl overflow-hidden border bg-background"
+              style={{ boxShadow: 'var(--shadow-glow)' }}
+            >
+              <img
+                src={heroDashboard}
+                alt="ActionPoint dashboard showing action items grouped by progress status with assigned team members"
+                width={1920}
+                height={1080}
+                className="w-full h-auto block"
+              />
+            </div>
           </div>
         </div>
       </section>
