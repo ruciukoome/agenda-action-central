@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { fetchActions } from "@/lib/postgres-actions";
+import { fetchActions } from "@/lib/actions";
 import { toast } from "@/lib/toast-wrapper";
 import { ManagedActionsContent } from "@/components/actions/ManagedActionsContent";
 
@@ -15,8 +15,7 @@ export default function ManagedActions() {
   const loadActions = useCallback(async () => {
     setIsLoading(true);
     try {
-      const userId = localStorage.getItem("USER_ID") || "test-user-id";
-      const data = await fetchActions(userId);
+      const data = await fetchActions();
       setActions(data);
     } catch (error) {
       console.error("Failed to fetch actions:", error);

@@ -11,12 +11,13 @@ import { ActionDashboard } from "@/components/ActionDashboard";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ActionItem } from "@/types/action";
 import { EmailIntegrationCard } from "@/components/EmailIntegrationCard";
-import { fetchActions } from "@/lib/postgres-actions";
+import { fetchActions } from "@/lib/actions";
 import { toast } from "@/lib/toast-wrapper";
 import { useAuth } from "@/lib/auth";
 import { useOrganization } from "@/contexts/OrganizationContext";
 import { Button } from "@/components/ui/button";
-import { ChartPieIcon } from "lucide-react";
+import { ChartPieIcon, Mail, X } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 export default function Index() {
   const navigate = useNavigate();
@@ -34,8 +35,7 @@ export default function Index() {
     const loadActions = async () => {
       setIsLoading(true);
       try {
-        const userId = localStorage.getItem("USER_ID") || "test-user-id";
-        const data = await fetchActions(userId);
+        const data = await fetchActions();
         setActions(data);
       } catch (error) {
         console.error("Failed to fetch actions:", error);
@@ -60,15 +60,33 @@ export default function Index() {
     <AppLayout
       title="Action Items"
       actions={
-        <Button
-          onClick={() => navigate('/dashboard')}
-          variant="outline"
-          size="sm"
-          className="hidden sm:flex items-center gap-2"
-        >
-          <ChartPieIcon className="h-4 w-4" />
-          Dashboard
-        </Button>
+        <div className="flex items-center gap-2">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="sm" className="flex items-center gap-2">
+                <Mail className="h-4 w-4" />
+                <span className="hidden sm:inline">Email Notifications</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
+              <SheetHeader>
+                <SheetTitle>Email Notifications</SheetTitle>
+              </SheetHeader>
+              <div className="mt-4">
+                <EmailIntegrationCard />
+              </div>
+            </SheetContent>
+          </Sheet>
+          <Button
+            onClick={() => navigate('/dashboard')}
+            variant="outline"
+            size="sm"
+            className="hidden sm:flex items-center gap-2"
+          >
+            <ChartPieIcon className="h-4 w-4" />
+            Dashboard
+          </Button>
+        </div>
       }
     >
       <div className="container py-6 space-y-6">
@@ -77,10 +95,6 @@ export default function Index() {
           onEditAction={handleEditAction}
           isLoading={isLoading}
         />
-
-        <div className="grid gap-6 md:grid-cols-2">
-          <EmailIntegrationCard />
-        </div>
       </div>
     </AppLayout>
   );

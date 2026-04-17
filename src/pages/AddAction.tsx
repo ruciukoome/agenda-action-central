@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ActionForm } from "@/components/ActionForm";
 import { ActionItem } from "@/types/action";
 import { toast } from "@/lib/toast-wrapper";
-import { createAction } from "@/lib/postgres-actions";
+import { createAction } from "@/lib/actions";
 import { AppLayout } from "@/components/layout/AppLayout";
 
 export default function AddAction() {
@@ -11,8 +11,7 @@ export default function AddAction() {
 
   const handleSave = async (action: ActionItem) => {
     try {
-      const userId = localStorage.getItem("USER_ID") || "test-user-id";
-      await createAction(action, userId);
+      await createAction(action);
       toast.success("Action created", {
         description: "Your new action item has been created successfully.",
       });

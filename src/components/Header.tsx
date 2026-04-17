@@ -57,12 +57,6 @@ export function Header() {
               >
                 Actions
               </Link>
-              <Link
-                to="/database-setup"
-                className={`text-sm font-medium ${location.pathname === "/database-setup" ? "text-primary" : "text-muted-foreground"} transition-colors hover:text-primary font-bold`}
-              >
-                Database Setup
-              </Link>
             </nav>
           )}
           

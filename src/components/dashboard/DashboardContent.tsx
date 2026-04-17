@@ -4,7 +4,7 @@ import { NotesStatistics } from "./NotesStatistics";
 import { ActionCharts } from "./ActionCharts";
 import { UpcomingDeadlines } from "./UpcomingDeadlines";
 import { ActionItem } from "@/types/action";
-import { fetchActions } from "@/lib/postgres-actions";
+import { fetchActions } from "@/lib/actions";
 
 export function DashboardContent() {
   const [actions, setActions] = useState<ActionItem[]>([]);
@@ -14,9 +14,7 @@ export function DashboardContent() {
     const loadActions = async () => {
       setIsLoading(true);
       try {
-        // Pass a user ID for PostgreSQL - in a real app, get this from auth context
-        const userId = localStorage.getItem("USER_ID") || "test-user-id";
-        const data = await fetchActions(userId);
+        const data = await fetchActions();
         setActions(data);
       } catch (error) {
         console.error("Failed to fetch actions:", error);
