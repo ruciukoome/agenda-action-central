@@ -57,7 +57,21 @@ export function MemberManagement() {
       const { data, error } = await supabase.functions.invoke('invite-org-member', {
         body: { email: email.trim(), organizationId: organization.id, role },
       });
-      if (error) throw error;
+      // When the function returns a non-2xx status, supabase-js wraps it in FunctionsHttpError
+      // and the readable reason lives in error.context (a Response). Extract it.
+      if (error) {
+        let message = error.message;
+        try {
+          const ctx = (error as unknown as { context?: Response }).context;
+          if (ctx && typeof ctx.json === 'function') {
+            const body = await ctx.json();
+            if (body?.error) message = body.error;
+          }
+        } catch {
+          // ignore parse failures, fall back to default message
+        }
+        throw new Error(message);
+      }
       if (data?.error) throw new Error(data.error);
       toast.success('Member added successfully');
       setEmail('');
