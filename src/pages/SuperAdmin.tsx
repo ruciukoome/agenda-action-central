@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/lib/toast-wrapper';
-import { ArrowLeft, Building2, Users, CreditCard, ListChecks, Loader2 } from 'lucide-react';
+import { Building2, Users, CreditCard, ListChecks, Loader2 } from 'lucide-react';
+import { AppLayout } from '@/components/layout/AppLayout';
 
 interface OrgRow {
   id: string;
@@ -234,7 +235,7 @@ export default function SuperAdmin() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </AppLayout>
   );
 }
 
