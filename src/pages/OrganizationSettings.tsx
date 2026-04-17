@@ -1,44 +1,37 @@
-import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { MemberManagement } from '@/components/organization/MemberManagement';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+import { AppLayout } from '@/components/layout/AppLayout';
 
 export default function OrganizationSettings() {
   const { organization, isLoading } = useOrganization();
-  const navigate = useNavigate();
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin" />
-      </div>
+      <AppLayout title="Organization">
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <Loader2 className="h-6 w-6 animate-spin" />
+        </div>
+      </AppLayout>
     );
   }
 
   if (!organization) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">No organization found.</p>
-      </div>
+      <AppLayout title="Organization">
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <p className="text-muted-foreground">No organization found.</p>
+        </div>
+      </AppLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
+    <AppLayout title={organization.name}>
+      <div className="container mx-auto px-4 py-6">
         <div className="max-w-4xl mx-auto space-y-6">
-          <div className="flex items-center gap-4">
-            <Button variant="outline" size="sm" onClick={() => navigate(-1)}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
-            </Button>
-            <div>
-              <h1 className="text-3xl font-bold">{organization.name}</h1>
-              <p className="text-muted-foreground">Organization settings & members</p>
-            </div>
-          </div>
+          <p className="text-muted-foreground">Organization settings & members</p>
 
           <Card>
             <CardHeader>
@@ -62,6 +55,6 @@ export default function OrganizationSettings() {
           <MemberManagement />
         </div>
       </div>
-    </div>
+    </AppLayout>
   );
 }

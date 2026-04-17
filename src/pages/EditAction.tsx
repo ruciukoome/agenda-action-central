@@ -6,7 +6,7 @@ import { ActionItem } from "@/types/action";
 import { toast } from "@/lib/toast-wrapper";
 import { fetchActions } from "@/lib/postgres-actions";
 import { updateAction } from "@/lib/postgres-actions";
-import { Header } from "@/components/Header";
+import { AppLayout } from "@/components/layout/AppLayout";
 
 export default function EditAction() {
   const { id } = useParams<{ id: string }>();
@@ -82,34 +82,27 @@ export default function EditAction() {
   
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col">
-        <Header />
-        <div className="container max-w-3xl py-10">
-          <h1 className="text-3xl font-bold tracking-tight mb-6">Loading...</h1>
-        </div>
-      </div>
+      <AppLayout title="Loading...">
+        <div className="container max-w-3xl py-6" />
+      </AppLayout>
     );
   }
-  
+
   if (error || !action) {
     return (
-      <div className="min-h-screen flex flex-col">
-        <Header />
-        <div className="container max-w-3xl py-10">
-          <h1 className="text-3xl font-bold tracking-tight mb-6">Action Not Found</h1>
+      <AppLayout title="Action Not Found">
+        <div className="container max-w-3xl py-6">
           <p>{error || "The action you're looking for could not be found."}</p>
         </div>
-      </div>
+      </AppLayout>
     );
   }
-  
+
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      <div className="container max-w-3xl py-10">
-        <h1 className="text-3xl font-bold tracking-tight mb-6">Edit Action Item</h1>
+    <AppLayout title="Edit Action Item">
+      <div className="container max-w-3xl py-6">
         <ActionForm actionToEdit={action} onSave={handleSave} />
       </div>
-    </div>
+    </AppLayout>
   );
 }

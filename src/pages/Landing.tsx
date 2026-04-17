@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -20,14 +21,21 @@ import {
 export default function Landing() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { organization, isSuperAdmin } = useOrganization();
+  const { organization, isSuperAdmin, isLoading: orgLoading } = useOrganization();
+
+  // Auto-redirect signed-in users into the app so they don't get stuck on Landing
+  useEffect(() => {
+    if (!user || orgLoading) return;
+    if (isSuperAdmin) navigate('/super-admin', { replace: true });
+    else if (organization) navigate('/app', { replace: true });
+  }, [user, orgLoading, organization, isSuperAdmin, navigate]);
 
   const ctaTarget = !user
     ? '/auth'
     : isSuperAdmin
       ? '/super-admin'
       : organization
-        ? '/action-items'
+        ? '/app'
         : '/onboarding';
 
   const ctaLabel = !user ? 'Get Started Free' : 'Open Dashboard';

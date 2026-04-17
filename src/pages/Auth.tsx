@@ -27,8 +27,13 @@ export default function Auth() {
 
   useEffect(() => {
     if (user) {
-      const from = location.state?.from?.pathname || '/';
-      navigate(from, { replace: true });
+      const fromPath = location.state?.from?.pathname;
+      // Never bounce back to landing or auth — send authed users to the app
+      const target =
+        !fromPath || fromPath === '/' || fromPath === '/auth'
+          ? '/app'
+          : fromPath;
+      navigate(target, { replace: true });
     }
   }, [user, navigate, location]);
 

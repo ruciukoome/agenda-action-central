@@ -1,16 +1,9 @@
-
 /**
  * ACTIONS MANAGEMENT PAGE
- * ---------------------
- * Provides interface for viewing, filtering, and managing actions
- * 
- * Backend connections:
- * - Fetches actions from the PostgreSQL database via fetchActions()
- * - Handles deleting actions via deleteAction()
  */
 
 import { useState, useEffect, useCallback } from "react";
-import { Header } from "@/components/Header";
+import { AppLayout } from "@/components/layout/AppLayout";
 import { fetchActions } from "@/lib/postgres-actions";
 import { toast } from "@/lib/toast-wrapper";
 import { ManagedActionsContent } from "@/components/actions/ManagedActionsContent";
@@ -22,7 +15,6 @@ export default function ManagedActions() {
   const loadActions = useCallback(async () => {
     setIsLoading(true);
     try {
-      // Pass a user ID for PostgreSQL - in a real app, get this from auth context
       const userId = localStorage.getItem("USER_ID") || "test-user-id";
       const data = await fetchActions(userId);
       setActions(data);
@@ -38,26 +30,17 @@ export default function ManagedActions() {
 
   useEffect(() => {
     loadActions();
-    
-    // Set up polling for data refresh every 30 seconds
-    // This replaces Supabase's realtime functionality
     const intervalId = setInterval(() => {
       loadActions();
     }, 30000);
-
-    return () => {
-      clearInterval(intervalId);
-    };
+    return () => clearInterval(intervalId);
   }, [loadActions]);
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      
-      <div className="container py-10">
-        <h1 className="text-3xl font-bold tracking-tight mb-6">Manage Actions</h1>
+    <AppLayout title="Manage Actions">
+      <div className="container py-6">
         <ManagedActionsContent actions={actions} isLoading={isLoading} onActionUpdated={loadActions} />
       </div>
-    </div>
+    </AppLayout>
   );
 }

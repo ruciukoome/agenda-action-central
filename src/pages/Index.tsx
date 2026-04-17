@@ -1,4 +1,3 @@
-
 /**
  * MAIN APPLICATION PAGE
  * -------------------
@@ -9,7 +8,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ActionDashboard } from "@/components/ActionDashboard";
-import { Header } from "@/components/Header";
+import { AppLayout } from "@/components/layout/AppLayout";
 import { ActionItem } from "@/types/action";
 import { EmailIntegrationCard } from "@/components/EmailIntegrationCard";
 import { fetchActions } from "@/lib/postgres-actions";
@@ -25,7 +24,7 @@ export default function Index() {
   const { organization } = useOrganization();
   const [actions, setActions] = useState<ActionItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   useEffect(() => {
     if (!session) {
       navigate('/auth');
@@ -52,43 +51,37 @@ export default function Index() {
     const intervalId = setInterval(() => loadActions(), 30000);
     return () => clearInterval(intervalId);
   }, [session, navigate, organization]);
-  
+
   const handleEditAction = (action: ActionItem) => {
     navigate(`/edit/${action.id}`);
   };
-  
+
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      
-      <main className="flex-1 container py-10">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h2 className="text-3xl font-bold tracking-tight">Action Items</h2>
-            {organization && (
-              <p className="text-muted-foreground text-sm mt-1">{organization.name}</p>
-            )}
-          </div>
-          <Button 
-            onClick={() => navigate('/dashboard')} 
-            variant="outline" 
-            className="flex items-center gap-2"
-          >
-            <ChartPieIcon className="h-4 w-4" />
-            View Dashboard
-          </Button>
-        </div>
-        
+    <AppLayout
+      title="Action Items"
+      actions={
+        <Button
+          onClick={() => navigate('/dashboard')}
+          variant="outline"
+          size="sm"
+          className="hidden sm:flex items-center gap-2"
+        >
+          <ChartPieIcon className="h-4 w-4" />
+          Dashboard
+        </Button>
+      }
+    >
+      <div className="container py-6 space-y-6">
         <ActionDashboard
           actions={actions}
           onEditAction={handleEditAction}
           isLoading={isLoading}
         />
 
-        <div className="mt-8 grid gap-6 md:grid-cols-2">
+        <div className="grid gap-6 md:grid-cols-2">
           <EmailIntegrationCard />
         </div>
-      </main>
-    </div>
+      </div>
+    </AppLayout>
   );
 }

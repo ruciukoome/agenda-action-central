@@ -10,11 +10,11 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/lib/toast-wrapper';
-import { Building2, UserPlus } from 'lucide-react';
+import { Building2, UserPlus, LogOut } from 'lucide-react';
 
 export default function Onboarding() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { refreshOrg } = useOrganization();
   const [orgName, setOrgName] = useState('');
   const [inviteCode, setInviteCode] = useState('');
@@ -59,7 +59,7 @@ export default function Onboarding() {
       });
 
       await refreshOrg();
-      navigate('/');
+      navigate('/app');
     } catch (error) {
       console.error('Error creating organization:', error);
       toast.error('Failed to create organization');
@@ -110,7 +110,7 @@ export default function Onboarding() {
       });
 
       await refreshOrg();
-      navigate('/');
+      navigate('/app');
     } catch (error) {
       console.error('Error joining organization:', error);
       toast.error('Failed to join organization');
@@ -119,8 +119,22 @@ export default function Onboarding() {
     }
   };
 
+  const handleSignOutAndGoAuth = async () => {
+    try {
+      await signOut();
+    } finally {
+      navigate('/auth', { replace: true });
+    }
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4 relative">
+      <div className="absolute top-4 right-4">
+        <Button variant="ghost" size="sm" onClick={handleSignOutAndGoAuth} className="gap-2">
+          <LogOut className="h-4 w-4" />
+          Sign out
+        </Button>
+      </div>
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Welcome to Action Central</CardTitle>

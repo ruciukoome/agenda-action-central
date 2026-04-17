@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/lib/toast-wrapper';
-import { ArrowLeft, Building2, Users, CreditCard, ListChecks, Loader2 } from 'lucide-react';
+import { Building2, Users, CreditCard, ListChecks, Loader2 } from 'lucide-react';
+import { AppLayout } from '@/components/layout/AppLayout';
 
 interface OrgRow {
   id: string;
@@ -33,7 +34,7 @@ export default function SuperAdmin() {
 
   useEffect(() => {
     if (!isLoading && !isSuperAdmin) {
-      navigate('/');
+      navigate('/app');
     }
   }, [isLoading, isSuperAdmin, navigate]);
 
@@ -124,27 +125,20 @@ export default function SuperAdmin() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin" />
-      </div>
+      <AppLayout title="Super Admin">
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <Loader2 className="h-6 w-6 animate-spin" />
+        </div>
+      </AppLayout>
     );
   }
 
   if (!isSuperAdmin) return null;
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 space-y-6">
-        <div className="flex items-center gap-4">
-          <Button variant="outline" size="sm" onClick={() => navigate(-1)}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold">Super Admin</h1>
-            <p className="text-muted-foreground">Platform-wide management</p>
-          </div>
-        </div>
+    <AppLayout title="Super Admin">
+      <div className="container mx-auto px-4 py-6 space-y-6">
+        <p className="text-muted-foreground">Platform-wide management</p>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatCard icon={<Building2 className="h-5 w-5" />} label="Organizations" value={totalOrgs} />
@@ -234,7 +228,7 @@ export default function SuperAdmin() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </AppLayout>
   );
 }
 
