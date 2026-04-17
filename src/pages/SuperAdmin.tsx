@@ -96,19 +96,18 @@ export default function SuperAdmin() {
   const updateSubscription = async (orgId: string, subId: string | null, field: 'plan' | 'status', value: string) => {
     try {
       if (subId) {
-        const { error } = await supabase
-          .from('subscriptions')
-          .update({ [field]: value })
+        const updates: any = { [field]: value };
+        const { error } = await (supabase.from('subscriptions') as any)
+          .update(updates)
           .eq('id', subId);
         if (error) throw error;
       } else {
-        const { error } = await supabase
-          .from('subscriptions')
-          .insert({
-            organization_id: orgId,
-            plan: field === 'plan' ? value : 'free',
-            status: field === 'status' ? value : 'active',
-          } as any);
+        const insert: any = {
+          organization_id: orgId,
+          plan: field === 'plan' ? value : 'free',
+          status: field === 'status' ? value : 'active',
+        };
+        const { error } = await (supabase.from('subscriptions') as any).insert(insert);
         if (error) throw error;
       }
       toast.success('Subscription updated');
