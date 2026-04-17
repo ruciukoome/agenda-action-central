@@ -10,11 +10,11 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/lib/toast-wrapper';
-import { Building2, UserPlus } from 'lucide-react';
+import { Building2, UserPlus, LogOut } from 'lucide-react';
 
 export default function Onboarding() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { refreshOrg } = useOrganization();
   const [orgName, setOrgName] = useState('');
   const [inviteCode, setInviteCode] = useState('');
