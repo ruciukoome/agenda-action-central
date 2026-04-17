@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/auth';
@@ -15,10 +15,17 @@ import { Building2, UserPlus, LogOut } from 'lucide-react';
 export default function Onboarding() {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { refreshOrg } = useOrganization();
+  const { organization, isLoading: orgLoading, isSuperAdmin, refreshOrg } = useOrganization();
   const [orgName, setOrgName] = useState('');
   const [inviteCode, setInviteCode] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // If the user already belongs to an org (or is a super admin), skip onboarding
+  useEffect(() => {
+    if (!orgLoading && (organization || isSuperAdmin)) {
+      navigate('/app', { replace: true });
+    }
+  }, [orgLoading, organization, isSuperAdmin, navigate]);
 
   const generateSlug = (name: string) => {
     return name

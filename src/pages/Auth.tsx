@@ -5,14 +5,23 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { Loader2, AlertTriangle, UserPlus, LogIn, Target, ArrowLeft } from 'lucide-react';
+import { Loader2, AlertTriangle, UserPlus, LogIn, Target, ArrowLeft, Mail } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [signupConfirmEmail, setSignupConfirmEmail] = useState<string | null>(null);
   const { signIn, signUp, user, isLoading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -61,7 +70,18 @@ export default function Auth() {
       if (isLogin) {
         await signIn(email, password);
       } else {
-        await signUp(email, password);
+        const { needsEmailConfirmation } = await signUp(email, password);
+        if (needsEmailConfirmation) {
+          // Show popup with instructions; user lands on /onboarding after confirming
+          setSignupConfirmEmail(email);
+        } else {
+          // Auto-confirmed (e.g. confirmations disabled) — go straight to onboarding
+          toast({
+            title: 'Account created',
+            description: "Let's set up your organization.",
+          });
+          navigate('/onboarding', { replace: true });
+        }
       }
     } catch (error) {
       const errorMsg = (error as Error).message;
@@ -247,6 +267,53 @@ export default function Auth() {
           </p>
         </div>
       </main>
+
+      {/* Email confirmation dialog after signup */}
+      <Dialog
+        open={!!signupConfirmEmail}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSignupConfirmEmail(null);
+            setIsLogin(true);
+            setPassword('');
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="mx-auto h-14 w-14 rounded-2xl bg-[image:var(--gradient-hero)] flex items-center justify-center shadow-[var(--shadow-glow)] mb-2">
+              <Mail className="h-6 w-6 text-white" />
+            </div>
+            <DialogTitle className="text-center text-xl">Confirm your email</DialogTitle>
+            <DialogDescription className="text-center pt-2">
+              We sent a confirmation link to{' '}
+              <span className="font-medium text-foreground">{signupConfirmEmail}</span>.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 text-sm text-muted-foreground">
+            <ol className="list-decimal list-inside space-y-2">
+              <li>Open your inbox and look for the email from ActionPoint.</li>
+              <li>Click the confirmation link to activate your account.</li>
+              <li>You'll be guided to set up or join your organization.</li>
+            </ol>
+            <p className="text-xs">
+              Don't see it? Check your spam folder, or wait a minute and try again.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button
+              className="w-full"
+              onClick={() => {
+                setSignupConfirmEmail(null);
+                setIsLogin(true);
+                setPassword('');
+              }}
+            >
+              Got it
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
