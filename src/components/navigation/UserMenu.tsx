@@ -11,11 +11,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/lib/auth";
+import { useOrganization } from "@/contexts/OrganizationContext";
 import { toast } from "@/lib/toast-wrapper";
-import { Settings } from "lucide-react";
+import { Settings, Building2, Shield } from "lucide-react";
 
 export function UserMenu() {
   const { signOut, session } = useAuth();
+  const { organization, isOrgAdmin, isSuperAdmin } = useOrganization();
 
   const handleSignOut = async () => {
     try {
@@ -64,6 +66,22 @@ export function UserMenu() {
             Settings
           </Link>
         </DropdownMenuItem>
+        {organization && isOrgAdmin && (
+          <DropdownMenuItem>
+            <Link to="/organization" className="w-full flex items-center gap-2">
+              <Building2 className="h-4 w-4" />
+              Organization
+            </Link>
+          </DropdownMenuItem>
+        )}
+        {isSuperAdmin && (
+          <DropdownMenuItem>
+            <Link to="/super-admin" className="w-full flex items-center gap-2">
+              <Shield className="h-4 w-4" />
+              Super Admin
+            </Link>
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut}>Sign out</DropdownMenuItem>
       </DropdownMenuContent>
