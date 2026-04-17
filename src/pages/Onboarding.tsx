@@ -59,7 +59,7 @@ export default function Onboarding() {
       });
 
       await refreshOrg();
-      navigate('/');
+      navigate('/app');
     } catch (error) {
       console.error('Error creating organization:', error);
       toast.error('Failed to create organization');
@@ -110,7 +110,7 @@ export default function Onboarding() {
       });
 
       await refreshOrg();
-      navigate('/');
+      navigate('/app');
     } catch (error) {
       console.error('Error joining organization:', error);
       toast.error('Failed to join organization');

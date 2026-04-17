@@ -113,7 +113,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       
       console.log('Sign in successful:', data?.user?.email);
-      navigate('/');
+      navigate('/app');
     } catch (error) {
       console.error('Sign in exception:', error);
       setIsLoading(false);
