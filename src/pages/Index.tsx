@@ -79,18 +79,14 @@ export default function Index() {
           </Button>
         </div>
         
-        <div className="grid gap-6 md:grid-cols-7">
-          <div className="md:col-span-5">
-            <ActionDashboard 
-              actions={actions} 
-              onEditAction={handleEditAction}
-              isLoading={isLoading}
-            />
-          </div>
-          
-          <div className="md:col-span-2 space-y-6">
-            <EmailIntegrationCard />
-          </div>
+        <ActionDashboard
+          actions={actions}
+          onEditAction={handleEditAction}
+          isLoading={isLoading}
+        />
+
+        <div className="mt-8 grid gap-6 md:grid-cols-2">
+          <EmailIntegrationCard />
         </div>
       </main>
     </div>
