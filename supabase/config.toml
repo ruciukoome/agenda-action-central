@@ -1,1 +1,7 @@
 project_id = "kjsmqsjyqenyprfvagxk"
+
+[functions.invite-org-member]
+verify_jwt = true
+
+[functions.get-org-members-info]
+verify_jwt = true
