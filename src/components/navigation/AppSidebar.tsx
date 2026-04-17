@@ -7,7 +7,6 @@ import {
   ListChecks,
   Settings,
   Building2,
-  Database,
   Shield,
   LogOut,
   Target,
@@ -40,7 +39,6 @@ const mainItems = [
 
 const settingsItems = [
   { title: "Settings", url: "/settings", icon: Settings },
-  { title: "Database Setup", url: "/database-setup", icon: Database },
 ];
 
 export function AppSidebar() {

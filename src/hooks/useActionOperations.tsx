@@ -1,7 +1,7 @@
 
 import { useState, useCallback } from "react";
 import { ActionItem } from "@/types/action";
-import { deleteAction } from "@/lib/postgres-actions";
+import { deleteAction } from "@/lib/actions";
 import { toast } from "@/lib/toast-wrapper";
 import { useActionExport } from "@/hooks/useActionExport";
 
@@ -24,9 +24,7 @@ export function useActionOperations(actions: ActionItem[], onActionDeleted: () =
       
       for (const id of selectedActions) {
         try {
-          // Pass a user ID for PostgreSQL - in a real app, get this from auth context
-          const userId = localStorage.getItem("USER_ID") || "test-user-id";
-          await deleteAction(id, userId);
+          await deleteAction(id);
           deletedCount++;
         } catch (error) {
           console.error(`Failed to delete action ${id}:`, error);
