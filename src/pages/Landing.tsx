@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/lib/auth';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import heroDashboard from '@/assets/hero-dashboard.jpg';
 import {
   ArrowRight,
   CheckCircle2,
