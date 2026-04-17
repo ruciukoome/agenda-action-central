@@ -125,27 +125,20 @@ export default function SuperAdmin() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin" />
-      </div>
+      <AppLayout title="Super Admin">
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <Loader2 className="h-6 w-6 animate-spin" />
+        </div>
+      </AppLayout>
     );
   }
 
   if (!isSuperAdmin) return null;
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 space-y-6">
-        <div className="flex items-center gap-4">
-          <Button variant="outline" size="sm" onClick={() => navigate(-1)}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold">Super Admin</h1>
-            <p className="text-muted-foreground">Platform-wide management</p>
-          </div>
-        </div>
+    <AppLayout title="Super Admin">
+      <div className="container mx-auto px-4 py-6 space-y-6">
+        <p className="text-muted-foreground">Platform-wide management</p>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatCard icon={<Building2 className="h-5 w-5" />} label="Organizations" value={totalOrgs} />
