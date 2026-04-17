@@ -52,7 +52,7 @@ function AppContent() {
         <Route path="/edit/:id" element={<AuthGuard><OrgGuard><EditAction /></OrgGuard></AuthGuard>} />
         <Route path="/my-actions" element={<AuthGuard><OrgGuard><MyActions /></OrgGuard></AuthGuard>} />
         <Route path="/settings" element={<AuthGuard><OrgGuard><Settings /></OrgGuard></AuthGuard>} />
-        <Route path="/database-setup" element={<AuthGuard><OrgGuard><DatabaseSetup /></OrgGuard></AuthGuard>} />
+        
         <Route path="/organization" element={<AuthGuard><OrgGuard><OrganizationSettings /></OrgGuard></AuthGuard>} />
         <Route path="/super-admin" element={<AuthGuard><SuperAdmin /></AuthGuard>} />
         <Route path="*" element={<NotFound />} />
