@@ -4,8 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { ActionForm } from "@/components/ActionForm";
 import { ActionItem } from "@/types/action";
 import { toast } from "@/lib/toast-wrapper";
-import { fetchActions } from "@/lib/postgres-actions";
-import { updateAction } from "@/lib/postgres-actions";
+import { fetchActions, updateAction } from "@/lib/actions";
 import { AppLayout } from "@/components/layout/AppLayout";
 
 export default function EditAction() {
@@ -14,18 +13,16 @@ export default function EditAction() {
   const [action, setAction] = useState<ActionItem | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   useEffect(() => {
     const loadAction = async () => {
       try {
         setIsLoading(true);
         setError(null);
-        // Get a user ID for PostgreSQL - in a real app, get this from auth context
-        const userId = localStorage.getItem("USER_ID") || "test-user-id";
-        
-        const actions = await fetchActions(userId);
+
+        const actions = await fetchActions();
         const foundAction = actions.find(a => a.id === id);
-        
+
         if (foundAction) {
           setAction(foundAction);
         } else {
@@ -47,39 +44,33 @@ export default function EditAction() {
         setIsLoading(false);
       }
     };
-    
+
     if (id) {
       loadAction();
     }
   }, [id, navigate]);
-  
+
   const handleSave = async (updatedAction: ActionItem) => {
     try {
-      console.log("Saving updated action:", updatedAction);
-      // Get a user ID for PostgreSQL - in a real app, get this from auth context
-      const userId = localStorage.getItem("USER_ID") || "test-user-id";
-      
-      await updateAction(updatedAction.id, updatedAction, userId);
-      console.log("Action updated successfully");
-      
+      await updateAction(updatedAction);
+
       toast.success("Action Updated", {
         description: "The action has been updated successfully.",
       });
-      
-      // Navigate back to the appropriate page based on context
+
       const returnTo = localStorage.getItem("EDIT_RETURN_TO") || "/managed-actions";
-      localStorage.removeItem("EDIT_RETURN_TO"); // Clean up
+      localStorage.removeItem("EDIT_RETURN_TO");
       navigate(returnTo);
     } catch (error) {
       console.error("Failed to update action:", error);
       toast.error("Error", {
-        description: error instanceof Error 
-          ? `Failed to update action: ${error.message}` 
+        description: error instanceof Error
+          ? `Failed to update action: ${error.message}`
           : "Failed to update action. Please try again.",
       });
     }
   };
-  
+
   if (isLoading) {
     return (
       <AppLayout title="Loading...">
