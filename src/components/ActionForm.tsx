@@ -20,19 +20,35 @@ import { ActionItem, Department, Priority, ProgressStatus, parseEmailList, forma
 import { getDepartments, getPriorities, getProgressStatuses } from "@/data/mockActions";
 import { sendActionNotification } from "@/lib/notifications";
 
-const formSchema = z.object({
-  description: z.string().min(5, "Description must be at least 5 characters"),
-  department: z.string(),
-  meetingDate: z.date(),
-  priority: z.enum(["high", "medium", "low"]),
-  ownerEmail: z.string().email("Please enter a valid email address"),
-  completed: z.boolean().default(false),
-  progressStatus: z.enum(["Not Started", "25%", "50%", "75%", "100%", "Continuous"]).default("Not Started"),
-  notes: z.string().optional(),
-  dueDate: z.date().optional(),
-  ccEmails: z.string().optional(),
-  bccEmails: z.string().optional(),
-});
+const formSchema = z
+  .object({
+    description: z.string().min(5, "Description must be at least 5 characters"),
+    department: z.string(),
+    meetingDate: z.date(),
+    priority: z.enum(["high", "medium", "low"]),
+    ownerEmail: z.string().email("Please enter a valid email address"),
+    completed: z.boolean().default(false),
+    progressStatus: z
+      .enum(["Not Started", "25%", "50%", "75%", "100%", "Continuous"])
+      .default("Not Started"),
+    notes: z.string().optional(),
+    dueDate: z.date().optional(),
+    ccEmails: z.string().optional(),
+    bccEmails: z.string().optional(),
+    allowCompletionException: z.boolean().default(false),
+  })
+  .refine(
+    (data) =>
+      !data.completed ||
+      data.progressStatus === "100%" ||
+      data.progressStatus === "Continuous" ||
+      data.allowCompletionException,
+    {
+      message:
+        "Completed actions must be at 100% progress. Enable 'Allow exception' to override.",
+      path: ["progressStatus"],
+    }
+  );
 
 type FormValues = z.infer<typeof formSchema>;
 
