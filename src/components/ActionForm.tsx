@@ -73,6 +73,7 @@ export function ActionForm({ actionToEdit, onSave }: ActionFormProps) {
     dueDate: actionToEdit.dueDate ? new Date(actionToEdit.dueDate) : undefined,
     ccEmails: actionToEdit.ccEmails ? formatEmailList(actionToEdit.ccEmails) : "",
     bccEmails: actionToEdit.bccEmails ? formatEmailList(actionToEdit.bccEmails) : "",
+    allowCompletionException: false,
   } : {
     meetingDate: new Date(),
     priority: "medium" as Priority,
@@ -80,6 +81,7 @@ export function ActionForm({ actionToEdit, onSave }: ActionFormProps) {
     progressStatus: "Not Started" as ProgressStatus,
     ccEmails: "",
     bccEmails: "",
+    allowCompletionException: false,
   };
   
   const form = useForm<FormValues>({
