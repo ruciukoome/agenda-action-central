@@ -1,13 +1,15 @@
 import { ActionItem } from "@/types/action";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Calendar } from "lucide-react";
+import { Calendar, CheckCircle2 } from "lucide-react";
 import { format, isValid, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
+import { QuickStatusUpdate } from "@/components/QuickStatusUpdate";
 
 interface ActionKanbanCardProps {
   action: ActionItem;
   onEdit: (action: ActionItem) => void;
+  onUpdated?: (updated: ActionItem) => void;
 }
 
 const priorityStyles: Record<string, string> = {
