@@ -27,6 +27,7 @@ import { differenceInCalendarDays, parseISO, isValid } from "date-fns";
 interface ActionDashboardProps {
   actions: ActionItem[];
   onEditAction: (action: ActionItem) => void;
+  onActionUpdated?: (updated: ActionItem) => void;
   isLoading?: boolean;
 }
 
@@ -68,6 +69,7 @@ const COLUMNS: { key: ColumnKey; label: string; headerClass: string; dotClass: s
 export function ActionDashboard({
   actions,
   onEditAction,
+  onActionUpdated,
   isLoading = false,
 }: ActionDashboardProps) {
   const navigate = useNavigate();
@@ -309,6 +311,7 @@ export function ActionDashboard({
                           key={action.id}
                           action={action}
                           onEdit={onEditAction}
+                          onUpdated={onActionUpdated}
                         />
                       ))
                     )}
