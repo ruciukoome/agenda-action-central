@@ -235,6 +235,48 @@ export type Database = {
           },
         ]
       }
+      todos: {
+        Row: {
+          category: string | null
+          completed_at: string | null
+          created_at: string
+          description: string | null
+          due_date: string | null
+          id: string
+          priority: Database["public"]["Enums"]["todo_priority"]
+          status: Database["public"]["Enums"]["todo_status"]
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: Database["public"]["Enums"]["todo_priority"]
+          status?: Database["public"]["Enums"]["todo_status"]
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: Database["public"]["Enums"]["todo_priority"]
+          status?: Database["public"]["Enums"]["todo_status"]
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -315,6 +357,8 @@ export type Database = {
       org_role: "admin" | "member"
       subscription_plan: "free" | "basic" | "premium"
       subscription_status: "active" | "expired" | "cancelled"
+      todo_priority: "low" | "medium" | "high"
+      todo_status: "todo" | "in_progress" | "done"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -468,6 +512,8 @@ export const Constants = {
       org_role: ["admin", "member"],
       subscription_plan: ["free", "basic", "premium"],
       subscription_status: ["active", "expired", "cancelled"],
+      todo_priority: ["low", "medium", "high"],
+      todo_status: ["todo", "in_progress", "done"],
     },
   },
 } as const
