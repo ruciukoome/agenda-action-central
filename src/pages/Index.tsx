@@ -56,6 +56,10 @@ export default function Index() {
     navigate(`/edit/${action.id}`);
   };
 
+  const handleActionUpdated = (updated: ActionItem) => {
+    setActions((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
+  };
+
   return (
     <AppLayout
       title="Action Items"
@@ -93,6 +97,7 @@ export default function Index() {
         <ActionDashboard
           actions={actions}
           onEditAction={handleEditAction}
+          onActionUpdated={handleActionUpdated}
           isLoading={isLoading}
         />
       </div>
