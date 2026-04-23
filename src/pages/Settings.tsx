@@ -1,5 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ToastSettings } from '@/components/ToastSettings';
+import { PasswordChangeForm } from '@/components/PasswordChangeForm';
 import { useAuth } from '@/lib/auth';
 import { AppLayout } from '@/components/layout/AppLayout';
 
@@ -10,12 +11,12 @@ export default function Settings() {
     <AppLayout title="Settings">
       <div className="container mx-auto px-4 py-6">
         <div className="max-w-2xl mx-auto space-y-6">
-          <p className="text-muted-foreground">Manage your preferences and notifications</p>
+          <p className="text-muted-foreground">Manage your profile, security, and preferences</p>
 
           {user && (
             <Card>
               <CardHeader>
-                <CardTitle>Account Information</CardTitle>
+                <CardTitle>My Profile</CardTitle>
                 <CardDescription>Your current account details</CardDescription>
               </CardHeader>
               <CardContent>
@@ -28,6 +29,8 @@ export default function Settings() {
               </CardContent>
             </Card>
           )}
+
+          <PasswordChangeForm />
 
           <ToastSettings />
         </div>
