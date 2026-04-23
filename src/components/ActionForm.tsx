@@ -20,19 +20,35 @@ import { ActionItem, Department, Priority, ProgressStatus, parseEmailList, forma
 import { getDepartments, getPriorities, getProgressStatuses } from "@/data/mockActions";
 import { sendActionNotification } from "@/lib/notifications";
 
-const formSchema = z.object({
-  description: z.string().min(5, "Description must be at least 5 characters"),
-  department: z.string(),
-  meetingDate: z.date(),
-  priority: z.enum(["high", "medium", "low"]),
-  ownerEmail: z.string().email("Please enter a valid email address"),
-  completed: z.boolean().default(false),
-  progressStatus: z.enum(["Not Started", "25%", "50%", "75%", "100%", "Continuous"]).default("Not Started"),
-  notes: z.string().optional(),
-  dueDate: z.date().optional(),
-  ccEmails: z.string().optional(),
-  bccEmails: z.string().optional(),
-});
+const formSchema = z
+  .object({
+    description: z.string().min(5, "Description must be at least 5 characters"),
+    department: z.string(),
+    meetingDate: z.date(),
+    priority: z.enum(["high", "medium", "low"]),
+    ownerEmail: z.string().email("Please enter a valid email address"),
+    completed: z.boolean().default(false),
+    progressStatus: z
+      .enum(["Not Started", "25%", "50%", "75%", "100%", "Continuous"])
+      .default("Not Started"),
+    notes: z.string().optional(),
+    dueDate: z.date().optional(),
+    ccEmails: z.string().optional(),
+    bccEmails: z.string().optional(),
+    allowCompletionException: z.boolean().default(false),
+  })
+  .refine(
+    (data) =>
+      !data.completed ||
+      data.progressStatus === "100%" ||
+      data.progressStatus === "Continuous" ||
+      data.allowCompletionException,
+    {
+      message:
+        "Completed actions must be at 100% progress. Enable 'Allow exception' to override.",
+      path: ["progressStatus"],
+    }
+  );
 
 type FormValues = z.infer<typeof formSchema>;
 
@@ -57,6 +73,7 @@ export function ActionForm({ actionToEdit, onSave }: ActionFormProps) {
     dueDate: actionToEdit.dueDate ? new Date(actionToEdit.dueDate) : undefined,
     ccEmails: actionToEdit.ccEmails ? formatEmailList(actionToEdit.ccEmails) : "",
     bccEmails: actionToEdit.bccEmails ? formatEmailList(actionToEdit.bccEmails) : "",
+    allowCompletionException: false,
   } : {
     meetingDate: new Date(),
     priority: "medium" as Priority,
@@ -64,6 +81,7 @@ export function ActionForm({ actionToEdit, onSave }: ActionFormProps) {
     progressStatus: "Not Started" as ProgressStatus,
     ccEmails: "",
     bccEmails: "",
+    allowCompletionException: false,
   };
   
   const form = useForm<FormValues>({
@@ -395,11 +413,10 @@ export function ActionForm({ actionToEdit, onSave }: ActionFormProps) {
                         checked={field.value}
                         onCheckedChange={(checked) => {
                           field.onChange(checked);
-                          // Update progress status if completed is checked
-                          // Don't change "Continuous" to "100%" when completed
                           if (checked && form.getValues("progressStatus") !== "Continuous") {
-                            form.setValue("progressStatus", "100%");
+                            form.setValue("progressStatus", "100%", { shouldValidate: true });
                           }
+                          form.setValue("allowCompletionException", false, { shouldValidate: true });
                         }}
                       />
                     </FormControl>
@@ -407,6 +424,38 @@ export function ActionForm({ actionToEdit, onSave }: ActionFormProps) {
                 )}
               />
             </div>
+
+            {form.watch("completed") &&
+              form.watch("progressStatus") !== "100%" &&
+              form.watch("progressStatus") !== "Continuous" && (
+                <FormField
+                  control={form.control}
+                  name="allowCompletionException"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border border-amber-300 bg-amber-50 p-3 shadow-sm">
+                      <div className="space-y-0.5 pr-3">
+                        <FormLabel className="text-amber-900">
+                          Allow completion exception
+                        </FormLabel>
+                        <FormDescription className="text-amber-800">
+                          This action is marked completed but progress is{" "}
+                          <strong>{form.watch("progressStatus")}</strong>. Enable
+                          to explicitly allow this mismatch.
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={(v) => {
+                            field.onChange(v);
+                            form.trigger("progressStatus");
+                          }}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              )}
             
             <FormField
               control={form.control}

@@ -7,6 +7,16 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { CheckCircle2, Loader2, MoreVertical } from "lucide-react";
@@ -49,8 +59,14 @@ export function QuickStatusUpdate({
   const [saving, setSaving] = useState(false);
   const [progress, setProgress] = useState<ProgressStatus>(action.progressStatus);
   const [completed, setCompleted] = useState(action.completed);
+  const [confirmException, setConfirmException] = useState<{ progress: ProgressStatus } | null>(null);
 
   const handleProgressChange = async (next: ProgressStatus) => {
+    // Block lowering progress while completed unless user confirms an exception
+    if (completed && next !== "100%" && next !== "Continuous") {
+      setConfirmException({ progress: next });
+      return;
+    }
     setProgress(next);
     const isComplete = next === "100%";
     if (isComplete) setCompleted(true);
@@ -58,10 +74,29 @@ export function QuickStatusUpdate({
   };
 
   const handleCompletedChange = async (checked: boolean) => {
+    // Marking complete with low progress -> auto-bump to 100%
+    if (checked && progress !== "100%" && progress !== "Continuous") {
+      setCompleted(true);
+      setProgress("100%");
+      await persist({ completed: true, progressStatus: "100%" });
+      return;
+    }
     setCompleted(checked);
-    const nextProgress: ProgressStatus = checked ? "100%" : progress === "100%" ? "75%" : progress;
+    const nextProgress: ProgressStatus = checked
+      ? "100%"
+      : progress === "100%"
+      ? "75%"
+      : progress;
     setProgress(nextProgress);
     await persist({ completed: checked, progressStatus: nextProgress });
+  };
+
+  const confirmExceptionApply = async () => {
+    if (!confirmException) return;
+    const next = confirmException.progress;
+    setConfirmException(null);
+    setProgress(next);
+    await persist({ progressStatus: next, completed: true });
   };
 
   const persist = async (patch: Partial<ActionItem>) => {
@@ -82,84 +117,114 @@ export function QuickStatusUpdate({
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild onClick={(e) => e.stopPropagation()}>
-        {variant === "pill" ? (
-          <button
-            type="button"
-            className={cn(
-              "inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-colors",
-              progressStyles[progress] ?? progressStyles["Not Started"],
-              className
-            )}
-          >
-            {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
-            {completed ? "Completed" : progress}
-          </button>
-        ) : (
-          <Button
-            variant="ghost"
-            size="icon"
-            className={cn("h-7 w-7 shrink-0", className)}
-            aria-label="Quick update status"
-          >
-            {saving ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <MoreVertical className="h-4 w-4" />
-            )}
-          </Button>
-        )}
-      </PopoverTrigger>
-      <PopoverContent
-        className="w-60 p-3"
-        align="end"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="space-y-3">
-          <div>
-            <p className="text-xs font-semibold text-muted-foreground mb-2">
-              Progress
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {PROGRESS_OPTIONS.map((opt) => {
-                const active = progress === opt;
-                return (
-                  <button
-                    key={opt}
-                    type="button"
-                    disabled={saving}
-                    onClick={() => handleProgressChange(opt)}
-                    className={cn(
-                      "px-2 py-1 rounded-md text-xs font-medium border transition-colors",
-                      active
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "bg-background hover:bg-accent border-border"
-                    )}
-                  >
-                    {opt}
-                  </button>
-                );
-              })}
+    <>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild onClick={(e) => e.stopPropagation()}>
+          {variant === "pill" ? (
+            <button
+              type="button"
+              className={cn(
+                "inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-colors",
+                progressStyles[progress] ?? progressStyles["Not Started"],
+                className
+              )}
+            >
+              {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
+              {completed ? "Completed" : progress}
+            </button>
+          ) : (
+            <Button
+              variant="ghost"
+              size="icon"
+              className={cn("h-7 w-7 shrink-0", className)}
+              aria-label="Quick update status"
+            >
+              {saving ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <MoreVertical className="h-4 w-4" />
+              )}
+            </Button>
+          )}
+        </PopoverTrigger>
+        <PopoverContent
+          className="w-60 p-3"
+          align="end"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="space-y-3">
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground mb-2">
+                Progress
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {PROGRESS_OPTIONS.map((opt) => {
+                  const active = progress === opt;
+                  return (
+                    <button
+                      key={opt}
+                      type="button"
+                      disabled={saving}
+                      onClick={() => handleProgressChange(opt)}
+                      className={cn(
+                        "px-2 py-1 rounded-md text-xs font-medium border transition-colors",
+                        active
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-background hover:bg-accent border-border"
+                      )}
+                    >
+                      {opt}
+                    </button>
+                  );
+                })}
+              </div>
+              {completed && (
+                <p className="text-[11px] text-amber-700 mt-2">
+                  Action is completed. Lowering progress requires confirmation.
+                </p>
+              )}
+            </div>
+            <div className="flex items-center gap-2 pt-2 border-t">
+              <Checkbox
+                id={`completed-${action.id}`}
+                checked={completed}
+                disabled={saving}
+                onCheckedChange={(c) => handleCompletedChange(Boolean(c))}
+              />
+              <Label
+                htmlFor={`completed-${action.id}`}
+                className="text-sm flex items-center gap-1.5 cursor-pointer"
+              >
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                Mark as completed
+              </Label>
             </div>
           </div>
-          <div className="flex items-center gap-2 pt-2 border-t">
-            <Checkbox
-              id={`completed-${action.id}`}
-              checked={completed}
-              disabled={saving}
-              onCheckedChange={(c) => handleCompletedChange(Boolean(c))}
-            />
-            <Label
-              htmlFor={`completed-${action.id}`}
-              className="text-sm flex items-center gap-1.5 cursor-pointer"
-            >
-              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-              Mark as completed
-            </Label>
-          </div>
-        </div>
-      </PopoverContent>
-    </Popover>
+        </PopoverContent>
+      </Popover>
+
+      <AlertDialog
+        open={confirmException !== null}
+        onOpenChange={(o) => !o && setConfirmException(null)}
+      >
+        <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Allow completion exception?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action is marked as <strong>completed</strong>. Setting
+              progress to <strong>{confirmException?.progress}</strong> will
+              create a mismatch. Continue only if you explicitly want to allow
+              this exception.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmExceptionApply}>
+              Allow exception
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
