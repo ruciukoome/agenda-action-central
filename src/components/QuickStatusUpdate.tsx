@@ -59,8 +59,14 @@ export function QuickStatusUpdate({
   const [saving, setSaving] = useState(false);
   const [progress, setProgress] = useState<ProgressStatus>(action.progressStatus);
   const [completed, setCompleted] = useState(action.completed);
+  const [confirmException, setConfirmException] = useState<{ progress: ProgressStatus } | null>(null);
 
   const handleProgressChange = async (next: ProgressStatus) => {
+    // Block lowering progress while completed unless user confirms an exception
+    if (completed && next !== "100%" && next !== "Continuous") {
+      setConfirmException({ progress: next });
+      return;
+    }
     setProgress(next);
     const isComplete = next === "100%";
     if (isComplete) setCompleted(true);
@@ -68,10 +74,29 @@ export function QuickStatusUpdate({
   };
 
   const handleCompletedChange = async (checked: boolean) => {
+    // Marking complete with low progress -> auto-bump to 100%
+    if (checked && progress !== "100%" && progress !== "Continuous") {
+      setCompleted(true);
+      setProgress("100%");
+      await persist({ completed: true, progressStatus: "100%" });
+      return;
+    }
     setCompleted(checked);
-    const nextProgress: ProgressStatus = checked ? "100%" : progress === "100%" ? "75%" : progress;
+    const nextProgress: ProgressStatus = checked
+      ? "100%"
+      : progress === "100%"
+      ? "75%"
+      : progress;
     setProgress(nextProgress);
     await persist({ completed: checked, progressStatus: nextProgress });
+  };
+
+  const confirmExceptionApply = async () => {
+    if (!confirmException) return;
+    const next = confirmException.progress;
+    setConfirmException(null);
+    setProgress(next);
+    await persist({ progressStatus: next, completed: true });
   };
 
   const persist = async (patch: Partial<ActionItem>) => {
