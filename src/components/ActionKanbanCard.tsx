@@ -29,7 +29,7 @@ function formatDueDate(d?: string) {
   return format(parsed, "MMM d, yyyy");
 }
 
-export function ActionKanbanCard({ action, onEdit }: ActionKanbanCardProps) {
+export function ActionKanbanCard({ action, onEdit, onUpdated }: ActionKanbanCardProps) {
   const due = formatDueDate(action.dueDate);
 
   return (
@@ -53,26 +53,38 @@ export function ActionKanbanCard({ action, onEdit }: ActionKanbanCardProps) {
             </p>
           </div>
         </div>
-        <span
-          className={cn(
-            "text-[10px] font-medium px-1.5 py-0.5 rounded-full border capitalize shrink-0",
-            priorityStyles[action.priority] ?? priorityStyles.low
-          )}
-        >
-          {action.priority}
-        </span>
+        <div className="flex items-center gap-1 shrink-0">
+          <span
+            className={cn(
+              "text-[10px] font-medium px-1.5 py-0.5 rounded-full border capitalize",
+              priorityStyles[action.priority] ?? priorityStyles.low
+            )}
+          >
+            {action.priority}
+          </span>
+          <QuickStatusUpdate action={action} onUpdated={onUpdated} />
+        </div>
       </div>
 
       <p className="text-xs text-foreground/80 line-clamp-2 mb-2">
         {action.description}
       </p>
 
-      {due && (
-        <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
-          <Calendar className="h-3 w-3" />
-          <span>Due {due}</span>
-        </div>
-      )}
+      <div className="flex items-center justify-between gap-2">
+        {due ? (
+          <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+            <Calendar className="h-3 w-3" />
+            <span>Due {due}</span>
+          </div>
+        ) : (
+          <span />
+        )}
+        {action.completed && (
+          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-700">
+            <CheckCircle2 className="h-3 w-3" /> Done
+          </span>
+        )}
+      </div>
     </Card>
   );
 }
