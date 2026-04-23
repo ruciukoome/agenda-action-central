@@ -413,11 +413,10 @@ export function ActionForm({ actionToEdit, onSave }: ActionFormProps) {
                         checked={field.value}
                         onCheckedChange={(checked) => {
                           field.onChange(checked);
-                          // Update progress status if completed is checked
-                          // Don't change "Continuous" to "100%" when completed
                           if (checked && form.getValues("progressStatus") !== "Continuous") {
-                            form.setValue("progressStatus", "100%");
+                            form.setValue("progressStatus", "100%", { shouldValidate: true });
                           }
+                          form.setValue("allowCompletionException", false, { shouldValidate: true });
                         }}
                       />
                     </FormControl>
@@ -425,6 +424,38 @@ export function ActionForm({ actionToEdit, onSave }: ActionFormProps) {
                 )}
               />
             </div>
+
+            {form.watch("completed") &&
+              form.watch("progressStatus") !== "100%" &&
+              form.watch("progressStatus") !== "Continuous" && (
+                <FormField
+                  control={form.control}
+                  name="allowCompletionException"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border border-amber-300 bg-amber-50 p-3 shadow-sm">
+                      <div className="space-y-0.5 pr-3">
+                        <FormLabel className="text-amber-900">
+                          Allow completion exception
+                        </FormLabel>
+                        <FormDescription className="text-amber-800">
+                          This action is marked completed but progress is{" "}
+                          <strong>{form.watch("progressStatus")}</strong>. Enable
+                          to explicitly allow this mismatch.
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={(v) => {
+                            field.onChange(v);
+                            form.trigger("progressStatus");
+                          }}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              )}
             
             <FormField
               control={form.control}
