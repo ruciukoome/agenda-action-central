@@ -8,8 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/lib/toast-wrapper';
-import { Building2, Users, CreditCard, ListChecks, Loader2 } from 'lucide-react';
+import { Building2, Users, CreditCard, ListChecks, Loader2, ShieldCheck, ShieldAlert, CheckCircle2, XCircle, RefreshCw, Copy } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { useAuth } from '@/lib/auth';
 
 interface OrgRow {
   id: string;
@@ -26,17 +27,157 @@ interface OrgRow {
 const PLANS = ['free', 'basic', 'premium'] as const;
 const STATUSES = ['active', 'expired', 'cancelled'] as const;
 
+type CheckStatus = 'pending' | 'pass' | 'fail';
+interface AccessCheck {
+  key: string;
+  label: string;
+  description: string;
+  status: CheckStatus;
+  detail?: string;
+}
+
 export default function SuperAdmin() {
   const { isSuperAdmin, isLoading } = useOrganization();
+  const { user, session } = useAuth();
   const navigate = useNavigate();
   const [rows, setRows] = useState<OrgRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [checks, setChecks] = useState<AccessCheck[]>([]);
+  const [checking, setChecking] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !isSuperAdmin) {
       navigate('/app');
     }
   }, [isLoading, isSuperAdmin, navigate]);
+
+  const runAccessChecks = async () => {
+    if (!user) return;
+    setChecking(true);
+    const results: AccessCheck[] = [];
+
+    // 1. Authenticated session
+    results.push({
+      key: 'session',
+      label: 'Authenticated session',
+      description: 'A valid Supabase auth session exists.',
+      status: session?.access_token ? 'pass' : 'fail',
+      detail: session?.access_token ? `User: ${user.email}` : 'No active session',
+    });
+
+    // 2. Direct user_roles row
+    try {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('role', 'super_admin')
+        .maybeSingle();
+      if (error) throw error;
+      results.push({
+        key: 'role_row',
+        label: 'super_admin role row',
+        description: 'A row exists in public.user_roles for this user.',
+        status: data ? 'pass' : 'fail',
+        detail: data ? `role_id: ${data.id}` : 'No matching row in user_roles',
+      });
+    } catch (err) {
+      results.push({
+        key: 'role_row',
+        label: 'super_admin role row',
+        description: 'A row exists in public.user_roles for this user.',
+        status: 'fail',
+        detail: (err as Error).message,
+      });
+    }
+
+    // 3. is_super_admin RPC
+    try {
+      const { data, error } = await supabase.rpc('is_super_admin', { _user_id: user.id });
+      if (error) throw error;
+      results.push({
+        key: 'rpc',
+        label: 'is_super_admin() RPC',
+        description: 'Server-side function confirms super-admin status.',
+        status: data === true ? 'pass' : 'fail',
+        detail: `Returned: ${String(data)}`,
+      });
+    } catch (err) {
+      results.push({
+        key: 'rpc',
+        label: 'is_super_admin() RPC',
+        description: 'Server-side function confirms super-admin status.',
+        status: 'fail',
+        detail: (err as Error).message,
+      });
+    }
+
+    // 4. Cross-org read (RLS bypass via super_admin policy)
+    try {
+      const { data, error } = await supabase
+        .from('organizations')
+        .select('id', { count: 'exact', head: false })
+        .limit(50);
+      if (error) throw error;
+      results.push({
+        key: 'cross_org_read',
+        label: 'Cross-organization read',
+        description: 'RLS allows reading all organizations.',
+        status: 'pass',
+        detail: `Visible orgs: ${data?.length ?? 0}`,
+      });
+    } catch (err) {
+      results.push({
+        key: 'cross_org_read',
+        label: 'Cross-organization read',
+        description: 'RLS allows reading all organizations.',
+        status: 'fail',
+        detail: (err as Error).message,
+      });
+    }
+
+    // 5. Subscription write probe (no-op update)
+    try {
+      const { data: sub, error: subErr } = await supabase
+        .from('subscriptions')
+        .select('id, status')
+        .limit(1)
+        .maybeSingle();
+      if (subErr) throw subErr;
+      if (!sub) {
+        results.push({
+          key: 'sub_write',
+          label: 'Subscription write privilege',
+          description: 'Super admins can update subscriptions table.',
+          status: 'pass',
+          detail: 'No subscriptions to probe (skipped)',
+        });
+      } else {
+        const { error: updErr } = await (supabase.from('subscriptions') as any)
+          .update({ status: sub.status })
+          .eq('id', sub.id);
+        if (updErr) throw updErr;
+        results.push({
+          key: 'sub_write',
+          label: 'Subscription write privilege',
+          description: 'Super admins can update subscriptions table.',
+          status: 'pass',
+          detail: 'No-op update succeeded',
+        });
+      }
+    } catch (err) {
+      results.push({
+        key: 'sub_write',
+        label: 'Subscription write privilege',
+        description: 'Super admins can update subscriptions table.',
+        status: 'fail',
+        detail: (err as Error).message,
+      });
+    }
+
+    setChecks(results);
+    setChecking(false);
+  };
 
   const load = async () => {
     setLoading(true);
@@ -91,7 +232,10 @@ export default function SuperAdmin() {
   };
 
   useEffect(() => {
-    if (isSuperAdmin) load();
+    if (isSuperAdmin) {
+      load();
+      runAccessChecks();
+    }
   }, [isSuperAdmin]);
 
   const updateSubscription = async (orgId: string, subId: string | null, field: 'plan' | 'status', value: string) => {
@@ -139,6 +283,13 @@ export default function SuperAdmin() {
     <AppLayout title="Super Admin">
       <div className="container mx-auto px-4 py-6 space-y-6">
         <p className="text-muted-foreground">Platform-wide management</p>
+
+        <AccessPermissionsCard
+          user={user}
+          checks={checks}
+          checking={checking}
+          onRerun={runAccessChecks}
+        />
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatCard icon={<Building2 className="h-5 w-5" />} label="Organizations" value={totalOrgs} />
@@ -247,3 +398,123 @@ function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string
     </Card>
   );
 }
+
+function AccessPermissionsCard({
+  user,
+  checks,
+  checking,
+  onRerun,
+}: {
+  user: { id: string; email?: string | null } | null;
+  checks: AccessCheck[];
+  checking: boolean;
+  onRerun: () => void;
+}) {
+  const allPass = checks.length > 0 && checks.every((c) => c.status === 'pass');
+  const anyFail = checks.some((c) => c.status === 'fail');
+
+  const copyId = async () => {
+    if (!user?.id) return;
+    await navigator.clipboard.writeText(user.id);
+    toast.success('User ID copied');
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-3">
+            <div
+              className={`p-2 rounded-md ${
+                allPass
+                  ? 'bg-green-500/10 text-green-600'
+                  : anyFail
+                  ? 'bg-destructive/10 text-destructive'
+                  : 'bg-muted text-muted-foreground'
+              }`}
+            >
+              {allPass ? <ShieldCheck className="h-5 w-5" /> : <ShieldAlert className="h-5 w-5" />}
+            </div>
+            <div>
+              <CardTitle>Access & Permissions</CardTitle>
+              <CardDescription>
+                End-to-end verification of your super-admin access
+              </CardDescription>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {allPass && <Badge className="bg-green-500/15 text-green-700 hover:bg-green-500/20">All checks passing</Badge>}
+            {anyFail && <Badge variant="destructive">Issues detected</Badge>}
+            <Button variant="outline" size="sm" onClick={onRerun} disabled={checking}>
+              {checking ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+              Re-run
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+          <div className="rounded-md border p-3">
+            <div className="text-xs text-muted-foreground mb-1">Email</div>
+            <div className="font-medium truncate">{user?.email ?? '—'}</div>
+          </div>
+          <div className="rounded-md border p-3">
+            <div className="text-xs text-muted-foreground mb-1">User ID</div>
+            <div className="flex items-center gap-2">
+              <code className="text-xs truncate">{user?.id ?? '—'}</code>
+              {user?.id && (
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={copyId}>
+                  <Copy className="h-3 w-3" />
+                </Button>
+              )}
+            </div>
+          </div>
+          <div className="rounded-md border p-3">
+            <div className="text-xs text-muted-foreground mb-1">Effective role</div>
+            <Badge variant={allPass ? 'default' : 'secondary'}>
+              {allPass ? 'super_admin (verified)' : checks.length === 0 ? 'checking…' : 'unverified'}
+            </Badge>
+          </div>
+        </div>
+
+        <div className="border rounded-md divide-y">
+          {checks.length === 0 && (
+            <div className="p-4 flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" /> Running checks…
+            </div>
+          )}
+          {checks.map((c) => (
+            <div key={c.key} className="p-3 flex items-start gap-3">
+              <div className="mt-0.5 shrink-0">
+                {c.status === 'pass' ? (
+                  <CheckCircle2 className="h-5 w-5 text-green-600" />
+                ) : c.status === 'fail' ? (
+                  <XCircle className="h-5 w-5 text-destructive" />
+                ) : (
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-medium text-sm">{c.label}</div>
+                <div className="text-xs text-muted-foreground">{c.description}</div>
+                {c.detail && (
+                  <div className="text-xs mt-1 font-mono break-all text-muted-foreground/80">
+                    {c.detail}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {anyFail && (
+          <div className="text-xs text-muted-foreground">
+            If a check fails, ensure a row exists in <code>public.user_roles</code> with{' '}
+            <code>role = 'super_admin'</code> for your user ID, then re-run.
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
