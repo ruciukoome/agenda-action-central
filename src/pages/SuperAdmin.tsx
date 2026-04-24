@@ -232,7 +232,10 @@ export default function SuperAdmin() {
   };
 
   useEffect(() => {
-    if (isSuperAdmin) load();
+    if (isSuperAdmin) {
+      load();
+      runAccessChecks();
+    }
   }, [isSuperAdmin]);
 
   const updateSubscription = async (orgId: string, subId: string | null, field: 'plan' | 'status', value: string) => {
