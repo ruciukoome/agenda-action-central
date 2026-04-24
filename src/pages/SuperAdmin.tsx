@@ -398,3 +398,123 @@ function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string
     </Card>
   );
 }
+
+function AccessPermissionsCard({
+  user,
+  checks,
+  checking,
+  onRerun,
+}: {
+  user: { id: string; email?: string | null } | null;
+  checks: AccessCheck[];
+  checking: boolean;
+  onRerun: () => void;
+}) {
+  const allPass = checks.length > 0 && checks.every((c) => c.status === 'pass');
+  const anyFail = checks.some((c) => c.status === 'fail');
+
+  const copyId = async () => {
+    if (!user?.id) return;
+    await navigator.clipboard.writeText(user.id);
+    toast.success('User ID copied');
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-3">
+            <div
+              className={`p-2 rounded-md ${
+                allPass
+                  ? 'bg-green-500/10 text-green-600'
+                  : anyFail
+                  ? 'bg-destructive/10 text-destructive'
+                  : 'bg-muted text-muted-foreground'
+              }`}
+            >
+              {allPass ? <ShieldCheck className="h-5 w-5" /> : <ShieldAlert className="h-5 w-5" />}
+            </div>
+            <div>
+              <CardTitle>Access & Permissions</CardTitle>
+              <CardDescription>
+                End-to-end verification of your super-admin access
+              </CardDescription>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {allPass && <Badge className="bg-green-500/15 text-green-700 hover:bg-green-500/20">All checks passing</Badge>}
+            {anyFail && <Badge variant="destructive">Issues detected</Badge>}
+            <Button variant="outline" size="sm" onClick={onRerun} disabled={checking}>
+              {checking ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+              Re-run
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+          <div className="rounded-md border p-3">
+            <div className="text-xs text-muted-foreground mb-1">Email</div>
+            <div className="font-medium truncate">{user?.email ?? '—'}</div>
+          </div>
+          <div className="rounded-md border p-3">
+            <div className="text-xs text-muted-foreground mb-1">User ID</div>
+            <div className="flex items-center gap-2">
+              <code className="text-xs truncate">{user?.id ?? '—'}</code>
+              {user?.id && (
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={copyId}>
+                  <Copy className="h-3 w-3" />
+                </Button>
+              )}
+            </div>
+          </div>
+          <div className="rounded-md border p-3">
+            <div className="text-xs text-muted-foreground mb-1">Effective role</div>
+            <Badge variant={allPass ? 'default' : 'secondary'}>
+              {allPass ? 'super_admin (verified)' : checks.length === 0 ? 'checking…' : 'unverified'}
+            </Badge>
+          </div>
+        </div>
+
+        <div className="border rounded-md divide-y">
+          {checks.length === 0 && (
+            <div className="p-4 flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" /> Running checks…
+            </div>
+          )}
+          {checks.map((c) => (
+            <div key={c.key} className="p-3 flex items-start gap-3">
+              <div className="mt-0.5 shrink-0">
+                {c.status === 'pass' ? (
+                  <CheckCircle2 className="h-5 w-5 text-green-600" />
+                ) : c.status === 'fail' ? (
+                  <XCircle className="h-5 w-5 text-destructive" />
+                ) : (
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-medium text-sm">{c.label}</div>
+                <div className="text-xs text-muted-foreground">{c.description}</div>
+                {c.detail && (
+                  <div className="text-xs mt-1 font-mono break-all text-muted-foreground/80">
+                    {c.detail}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {anyFail && (
+          <div className="text-xs text-muted-foreground">
+            If a check fails, ensure a row exists in <code>public.user_roles</code> with{' '}
+            <code>role = 'super_admin'</code> for your user ID, then re-run.
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
