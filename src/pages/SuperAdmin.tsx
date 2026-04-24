@@ -284,6 +284,13 @@ export default function SuperAdmin() {
       <div className="container mx-auto px-4 py-6 space-y-6">
         <p className="text-muted-foreground">Platform-wide management</p>
 
+        <AccessPermissionsCard
+          user={user}
+          checks={checks}
+          checking={checking}
+          onRerun={runAccessChecks}
+        />
+
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatCard icon={<Building2 className="h-5 w-5" />} label="Organizations" value={totalOrgs} />
           <StatCard icon={<Users className="h-5 w-5" />} label="Total Members" value={totalMembers} />
