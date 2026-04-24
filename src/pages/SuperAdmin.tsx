@@ -8,8 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/lib/toast-wrapper';
-import { Building2, Users, CreditCard, ListChecks, Loader2 } from 'lucide-react';
+import { Building2, Users, CreditCard, ListChecks, Loader2, ShieldCheck, ShieldAlert, CheckCircle2, XCircle, RefreshCw, Copy } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { useAuth } from '@/lib/auth';
 
 interface OrgRow {
   id: string;
