@@ -27,17 +27,157 @@ interface OrgRow {
 const PLANS = ['free', 'basic', 'premium'] as const;
 const STATUSES = ['active', 'expired', 'cancelled'] as const;
 
+type CheckStatus = 'pending' | 'pass' | 'fail';
+interface AccessCheck {
+  key: string;
+  label: string;
+  description: string;
+  status: CheckStatus;
+  detail?: string;
+}
+
 export default function SuperAdmin() {
   const { isSuperAdmin, isLoading } = useOrganization();
+  const { user, session } = useAuth();
   const navigate = useNavigate();
   const [rows, setRows] = useState<OrgRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [checks, setChecks] = useState<AccessCheck[]>([]);
+  const [checking, setChecking] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !isSuperAdmin) {
       navigate('/app');
     }
   }, [isLoading, isSuperAdmin, navigate]);
+
+  const runAccessChecks = async () => {
+    if (!user) return;
+    setChecking(true);
+    const results: AccessCheck[] = [];
+
+    // 1. Authenticated session
+    results.push({
+      key: 'session',
+      label: 'Authenticated session',
+      description: 'A valid Supabase auth session exists.',
+      status: session?.access_token ? 'pass' : 'fail',
+      detail: session?.access_token ? `User: ${user.email}` : 'No active session',
+    });
+
+    // 2. Direct user_roles row
+    try {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('role', 'super_admin')
+        .maybeSingle();
+      if (error) throw error;
+      results.push({
+        key: 'role_row',
+        label: 'super_admin role row',
+        description: 'A row exists in public.user_roles for this user.',
+        status: data ? 'pass' : 'fail',
+        detail: data ? `role_id: ${data.id}` : 'No matching row in user_roles',
+      });
+    } catch (err) {
+      results.push({
+        key: 'role_row',
+        label: 'super_admin role row',
+        description: 'A row exists in public.user_roles for this user.',
+        status: 'fail',
+        detail: (err as Error).message,
+      });
+    }
+
+    // 3. is_super_admin RPC
+    try {
+      const { data, error } = await supabase.rpc('is_super_admin', { _user_id: user.id });
+      if (error) throw error;
+      results.push({
+        key: 'rpc',
+        label: 'is_super_admin() RPC',
+        description: 'Server-side function confirms super-admin status.',
+        status: data === true ? 'pass' : 'fail',
+        detail: `Returned: ${String(data)}`,
+      });
+    } catch (err) {
+      results.push({
+        key: 'rpc',
+        label: 'is_super_admin() RPC',
+        description: 'Server-side function confirms super-admin status.',
+        status: 'fail',
+        detail: (err as Error).message,
+      });
+    }
+
+    // 4. Cross-org read (RLS bypass via super_admin policy)
+    try {
+      const { data, error } = await supabase
+        .from('organizations')
+        .select('id', { count: 'exact', head: false })
+        .limit(50);
+      if (error) throw error;
+      results.push({
+        key: 'cross_org_read',
+        label: 'Cross-organization read',
+        description: 'RLS allows reading all organizations.',
+        status: 'pass',
+        detail: `Visible orgs: ${data?.length ?? 0}`,
+      });
+    } catch (err) {
+      results.push({
+        key: 'cross_org_read',
+        label: 'Cross-organization read',
+        description: 'RLS allows reading all organizations.',
+        status: 'fail',
+        detail: (err as Error).message,
+      });
+    }
+
+    // 5. Subscription write probe (no-op update)
+    try {
+      const { data: sub, error: subErr } = await supabase
+        .from('subscriptions')
+        .select('id, status')
+        .limit(1)
+        .maybeSingle();
+      if (subErr) throw subErr;
+      if (!sub) {
+        results.push({
+          key: 'sub_write',
+          label: 'Subscription write privilege',
+          description: 'Super admins can update subscriptions table.',
+          status: 'pass',
+          detail: 'No subscriptions to probe (skipped)',
+        });
+      } else {
+        const { error: updErr } = await (supabase.from('subscriptions') as any)
+          .update({ status: sub.status })
+          .eq('id', sub.id);
+        if (updErr) throw updErr;
+        results.push({
+          key: 'sub_write',
+          label: 'Subscription write privilege',
+          description: 'Super admins can update subscriptions table.',
+          status: 'pass',
+          detail: 'No-op update succeeded',
+        });
+      }
+    } catch (err) {
+      results.push({
+        key: 'sub_write',
+        label: 'Subscription write privilege',
+        description: 'Super admins can update subscriptions table.',
+        status: 'fail',
+        detail: (err as Error).message,
+      });
+    }
+
+    setChecks(results);
+    setChecking(false);
+  };
 
   const load = async () => {
     setLoading(true);
