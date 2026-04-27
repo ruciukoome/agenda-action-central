@@ -282,7 +282,13 @@ export default function SuperAdmin() {
   return (
     <AppLayout title="Super Admin">
       <div className="container mx-auto px-4 py-6 space-y-6">
-        <p className="text-muted-foreground">Platform-wide management</p>
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <p className="text-muted-foreground">Platform-wide management</p>
+          <Button variant="outline" size="sm" onClick={() => navigate('/super-admin/users')}>
+            <Users className="h-4 w-4 mr-2" />
+            Users & Roles
+          </Button>
+        </div>
 
         <AccessPermissionsCard
           user={user}
