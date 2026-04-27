@@ -16,6 +16,7 @@ import Settings from './pages/Settings';
 import Onboarding from './pages/Onboarding';
 import OrganizationSettings from './pages/OrganizationSettings';
 import SuperAdmin from './pages/SuperAdmin';
+import UsersAndRoles from './pages/UsersAndRoles';
 import { useIdleTimeout } from './hooks/useIdleTimeout';
 import { useAuth } from '@/lib/auth';
 import { AuthGuard } from '@/components/AuthGuard';
@@ -54,6 +55,7 @@ function AppContent() {
         
         <Route path="/organization" element={<AuthGuard><OrgGuard><OrganizationSettings /></OrgGuard></AuthGuard>} />
         <Route path="/super-admin" element={<AuthGuard><SuperAdmin /></AuthGuard>} />
+        <Route path="/super-admin/users" element={<AuthGuard><UsersAndRoles /></AuthGuard>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       {toastsEnabled && (
