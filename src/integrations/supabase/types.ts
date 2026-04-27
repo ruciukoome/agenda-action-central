@@ -353,7 +353,7 @@ export type Database = {
         | "Checkoff & Personal Loans"
       action_priority: "high" | "medium" | "low"
       action_progress: "Not Started" | "25%" | "50%" | "75%" | "100%"
-      app_role: "super_admin"
+      app_role: "super_admin" | "admin" | "moderator"
       org_role: "admin" | "member"
       subscription_plan: "free" | "basic" | "premium"
       subscription_status: "active" | "expired" | "cancelled"
@@ -508,7 +508,7 @@ export const Constants = {
       ],
       action_priority: ["high", "medium", "low"],
       action_progress: ["Not Started", "25%", "50%", "75%", "100%"],
-      app_role: ["super_admin"],
+      app_role: ["super_admin", "admin", "moderator"],
       org_role: ["admin", "member"],
       subscription_plan: ["free", "basic", "premium"],
       subscription_status: ["active", "expired", "cancelled"],
