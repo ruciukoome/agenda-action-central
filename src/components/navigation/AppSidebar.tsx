@@ -8,6 +8,7 @@ import {
   Settings,
   Building2,
   Shield,
+  Users,
   LogOut,
   Target,
 } from "lucide-react";
@@ -129,14 +130,24 @@ export function AppSidebar() {
                 </SidebarMenuItem>
               )}
               {isSuperAdmin && (
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Super Admin">
-                    <NavLink to="/super-admin" className={linkClass("/super-admin")}>
-                      <Shield className="h-4 w-4 shrink-0" />
-                      {!collapsed && <span>Super Admin</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                <>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild tooltip="Super Admin">
+                      <NavLink to="/super-admin" end className={linkClass("/super-admin")}>
+                        <Shield className="h-4 w-4 shrink-0" />
+                        {!collapsed && <span>Super Admin</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild tooltip="Users & Roles">
+                      <NavLink to="/super-admin/users" className={linkClass("/super-admin/users")}>
+                        <Users className="h-4 w-4 shrink-0" />
+                        {!collapsed && <span>Users & Roles</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </>
               )}
             </SidebarMenu>
           </SidebarGroupContent>
