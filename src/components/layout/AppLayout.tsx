@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/navigation/AppSidebar";
 import { UserMenu } from "@/components/navigation/UserMenu";
+import { OrgSwitcher } from "@/components/navigation/OrgSwitcher";
 import { useOrganization } from "@/contexts/OrganizationContext";
 
 interface AppLayoutProps {
@@ -36,6 +37,7 @@ export function AppLayout({ children, title, actions }: AppLayoutProps) {
               )}
             </div>
             <div className="flex items-center gap-2">
+              <OrgSwitcher />
               {actions}
               <UserMenu />
             </div>

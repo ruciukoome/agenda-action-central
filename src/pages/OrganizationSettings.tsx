@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { MemberManagement } from '@/components/organization/MemberManagement';
+import { PendingInvitations } from '@/components/organization/PendingInvitations';
 import { Loader2 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 
@@ -53,6 +54,7 @@ export default function OrganizationSettings() {
           </Card>
 
           <MemberManagement />
+          <PendingInvitations />
         </div>
       </div>
     </AppLayout>

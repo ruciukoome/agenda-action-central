@@ -20,10 +20,11 @@ export default function Onboarding() {
   const [inviteCode, setInviteCode] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // If the user already belongs to an org (or is a super admin), skip onboarding
+  // Note: users with existing orgs can still visit this page to create or join another org.
+  // Only redirect away if super admin and no org (super admin doesn't need an org).
   useEffect(() => {
-    if (!orgLoading && (organization || isSuperAdmin)) {
-      navigate('/app', { replace: true });
+    if (!orgLoading && isSuperAdmin && !organization) {
+      navigate('/super-admin', { replace: true });
     }
   }, [orgLoading, organization, isSuperAdmin, navigate]);
 
