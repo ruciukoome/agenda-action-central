@@ -73,7 +73,13 @@ export function MemberManagement() {
         throw new Error(message);
       }
       if (data?.error) throw new Error(data.error);
-      toast.success('Member added successfully');
+      if (data?.status === 'invited') {
+        toast.success('Invitation sent', {
+          description: `${email.trim()} will be added when they sign up.`,
+        });
+      } else {
+        toast.success('Member added successfully');
+      }
       setEmail('');
       setRole('member');
       await loadMembers();
