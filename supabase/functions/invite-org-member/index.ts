@@ -71,49 +71,50 @@ Deno.serve(async (req) => {
     if (listErr) throw listErr;
     const target = usersList.users.find((u) => u.email?.toLowerCase() === email.toLowerCase());
 
-    if (!target) {
-      return new Response(JSON.stringify({ error: 'No user found with this email. They must sign up first.' }), {
-        status: 404,
+    if (target) {
+      // Check if already a member of this org
+      const { data: existing } = await admin
+        .from('organization_members')
+        .select('id')
+        .eq('user_id', target.id)
+        .eq('organization_id', organizationId)
+        .maybeSingle();
+
+      if (existing) {
+        return new Response(JSON.stringify({ error: 'User is already a member of this organization' }), {
+          status: 409,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const { error: insertErr } = await admin
+        .from('organization_members')
+        .insert({ organization_id: organizationId, user_id: target.id, role });
+
+      if (insertErr) throw insertErr;
+
+      return new Response(JSON.stringify({ success: true, status: 'added', userId: target.id }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Check if already a member
-    const { data: existing } = await admin
-      .from('organization_members')
-      .select('id')
-      .eq('user_id', target.id)
-      .eq('organization_id', organizationId)
-      .maybeSingle();
+    // No user yet — create a pending invitation
+    const { error: invErr } = await admin
+      .from('pending_invitations')
+      .upsert(
+        {
+          organization_id: organizationId,
+          email: email.toLowerCase(),
+          role,
+          invited_by: user.id,
+          accepted_at: null,
+        },
+        { onConflict: 'organization_id,email' }
+      );
 
-    if (existing) {
-      return new Response(JSON.stringify({ error: 'User is already a member of this organization' }), {
-        status: 409,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    if (invErr) throw invErr;
 
-    // Check if user belongs to another org
-    const { data: otherOrg } = await admin
-      .from('organization_members')
-      .select('id')
-      .eq('user_id', target.id)
-      .maybeSingle();
-
-    if (otherOrg) {
-      return new Response(JSON.stringify({ error: 'User already belongs to another organization' }), {
-        status: 409,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const { error: insertErr } = await admin
-      .from('organization_members')
-      .insert({ organization_id: organizationId, user_id: target.id, role });
-
-    if (insertErr) throw insertErr;
-
-    return new Response(JSON.stringify({ success: true, userId: target.id }), {
+    return new Response(JSON.stringify({ success: true, status: 'invited' }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (err) {
