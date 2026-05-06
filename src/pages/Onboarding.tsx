@@ -20,10 +20,18 @@ export default function Onboarding() {
   const [inviteCode, setInviteCode] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Note: users with existing orgs can still visit this page to create or join another org.
-  // Only redirect away if super admin and no org (super admin doesn't need an org).
+  // Redirect users who already belong to an organization to the dashboard.
+  // Super admins without an org go to the super admin page.
+  // Users can still reach this page intentionally (e.g. via the org switcher's
+  // "Create or join another" action) using ?add=1.
   useEffect(() => {
-    if (!orgLoading && isSuperAdmin && !organization) {
+    if (orgLoading) return;
+    const params = new URLSearchParams(window.location.search);
+    const wantsToAdd = params.get('add') === '1';
+    if (wantsToAdd) return;
+    if (organization) {
+      navigate('/dashboard', { replace: true });
+    } else if (isSuperAdmin) {
       navigate('/super-admin', { replace: true });
     }
   }, [orgLoading, organization, isSuperAdmin, navigate]);
