@@ -95,7 +95,7 @@ serve(async (req) => {
       console.log(`Sending reminder email to ${action.ownerEmail} for action: ${action.description}`);
       
       try {
-        const emailResult = await sendEmailWithSendGrid(
+        const emailResult = await sendEmailWithResend(
           action.ownerEmail,
           "ACTION DUE TOMORROW - " + action.description.substring(0, 50) + (action.description.length > 50 ? "..." : ""),
           emailHtml,
