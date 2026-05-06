@@ -234,81 +234,31 @@ To unsubscribe: https://actioncentral.platinumcredit.co.ke/unsubscribe
   return { emailHtml, emailText };
 }
 
-// Function to send email using SendGrid API with improved deliverability
-async function sendEmailWithSendGrid(to: string, subject: string, htmlContent: string, textContent: string): Promise<any> {
-  const response = await fetch("https://api.sendgrid.com/v3/mail/send", {
+// Function to send email using Resend via Lovable connector gateway
+async function sendEmailWithResend(to: string, subject: string, htmlContent: string, textContent: string): Promise<any> {
+  const response = await fetch("https://connector-gateway.lovable.dev/resend/emails", {
     method: "POST",
     headers: {
-      "Authorization": `Bearer ${sendGridApiKey}`,
-      "Content-Type": "application/json"
+      "Authorization": `Bearer ${lovableApiKey}`,
+      "X-Connection-Api-Key": resendApiKey,
+      "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      personalizations: [
-        {
-          to: [{ email: to }],
-          subject: subject,
-          // Adding custom headers to improve deliverability
-          headers: {
-            "List-Unsubscribe": "<https://actioncentral.platinumcredit.co.ke/unsubscribe>",
-            "Precedence": "Bulk",
-            "X-Auto-Response-Suppress": "OOF, AutoReply"
-          }
-        }
-      ],
-      from: { 
-        email: "joseph.odhiambo@platinumcredit.co.ke", 
-        name: "Action Central" 
-      },
-      reply_to: {
-        email: "no-reply@platinumcredit.co.ke",
-        name: "Action Central"
-      },
-      content: [
-        {
-          type: "text/plain",
-          value: textContent
-        },
-        {
-          type: "text/html",
-          value: htmlContent
-        }
-      ],
-      // Adding message identifiers for tracking and threading
-      message_id: `due-reminder-${Date.now()}@platinumcredit.co.ke`,
-      // Adding hardcoded unsubscribe group ID as requested
-      asm: {
-        group_id: 31666,
-        groups_to_display: [31666]
-      },
-      // Adding mail settings to improve deliverability
-      mail_settings: {
-        bypass_list_management: {
-          enable: false
-        },
-        footer: {
-          enable: true
-        },
-        sandbox_mode: {
-          enable: false
-        }
-      },
-      tracking_settings: {
-        click_tracking: { enable: true },
-        open_tracking: { enable: true },
-        subscription_tracking: { enable: true }
-      },
-      // Adding a category to help with tracking/analytics
-      categories: ["action_due_reminder"]
-    })
+      from: FROM_ADDRESS,
+      to: [to],
+      reply_to: "info@nafarrosolutions.com",
+      subject,
+      html: htmlContent,
+      text: textContent,
+    }),
   });
 
-  // Log response information for debugging
   const responseText = await response.text();
-  console.log("SendGrid API response status:", response.status);
-  console.log("SendGrid API response text:", responseText);
+  console.log("Resend API response status:", response.status);
+  console.log("Resend API response text:", responseText);
 
   if (!response.ok) {
-    throw new Error(`SendGrid API error: ${response.status} - ${responseText}`);
+    throw new Error(`Resend API error: ${response.status} - ${responseText}`);
   }
 
   return { success: true };
