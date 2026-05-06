@@ -21,7 +21,9 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 // Get environment variables
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const sendGridApiKey = Deno.env.get("SENDGRID_API_KEY")!;
+const lovableApiKey = Deno.env.get("LOVABLE_API_KEY")!;
+const resendApiKey = Deno.env.get("RESEND_API_KEY")!;
+const FROM_ADDRESS = "Action Central <info@nafarrosolutions.com>";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
