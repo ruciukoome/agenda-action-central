@@ -54,7 +54,7 @@ export function OrgSwitcher() {
           );
         })}
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => navigate('/onboarding')} className="gap-2">
+        <DropdownMenuItem onClick={() => navigate('/onboarding?add=1')} className="gap-2">
           <Plus className="h-4 w-4" />
           Create or join another
         </DropdownMenuItem>
