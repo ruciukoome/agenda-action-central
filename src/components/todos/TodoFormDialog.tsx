@@ -43,16 +43,24 @@ export function TodoFormDialog({ open, onOpenChange, initial, onSubmit }: TodoFo
     e.preventDefault();
     if (!title.trim()) return;
     setSaving(true);
-    await onSubmit({
-      title: title.trim(),
-      description: description.trim() || null,
-      status,
-      priority,
-      category: category.trim() || null,
-      dueDate: dueDate ? dueDate.toISOString() : null,
-    });
-    setSaving(false);
-    onOpenChange(false);
+    try {
+      await onSubmit({
+        title: title.trim(),
+        description: description.trim() || null,
+        status,
+        priority,
+        category: category.trim() || null,
+        dueDate: dueDate ? dueDate.toISOString() : null,
+      });
+    } finally {
+      setSaving(false);
+      onOpenChange(false);
+      // Radix can leave pointer-events: none on body after a popover inside a
+      // dialog closes — clear it so the page stays interactive.
+      setTimeout(() => {
+        document.body.style.pointerEvents = "";
+      }, 0);
+    }
   };
 
   return (

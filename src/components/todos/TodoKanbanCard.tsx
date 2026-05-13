@@ -41,10 +41,10 @@ export function TodoKanbanCard({ todo, onEdit, onDelete, onMove }: TodoKanbanCar
   const next = idx < STATUS_FLOW.length - 1 ? STATUS_FLOW[idx + 1] : null;
 
   return (
-    <Card className="group p-3 bg-card hover:shadow-[var(--shadow-card)] transition-all hover:-translate-y-0.5 border border-border/60">
+    <Card className="group p-3 bg-card hover:shadow-[var(--shadow-card)] transition-all hover:-translate-y-0.5 border border-border/60 overflow-hidden">
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold leading-tight truncate">{todo.title}</p>
+          <p className="text-sm font-semibold leading-tight break-words">{todo.title}</p>
           {todo.category && (
             <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground mt-0.5">
               <Tag className="h-2.5 w-2.5" />

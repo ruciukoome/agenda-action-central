@@ -43,8 +43,9 @@ const settingsItems = [
 ];
 
 export function AppSidebar() {
-  const { state } = useSidebar();
-  const collapsed = state === "collapsed";
+  const { state, isMobile } = useSidebar();
+  // On mobile the sidebar opens as a full sheet — always show labels there.
+  const collapsed = !isMobile && state === "collapsed";
   const location = useLocation();
   const { signOut, session } = useAuth();
   const { organization, isOrgAdmin, isSuperAdmin } = useOrganization();
