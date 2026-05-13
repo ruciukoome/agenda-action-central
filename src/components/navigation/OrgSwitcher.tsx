@@ -21,9 +21,9 @@ export function OrgSwitcher() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="max-w-[220px] gap-2">
+        <Button variant="outline" size="sm" className="max-w-[120px] sm:max-w-[220px] gap-1 sm:gap-2 px-2 sm:px-3">
           <Building2 className="h-4 w-4 shrink-0" />
-          <span className="truncate">{organization?.name ?? 'Select organization'}</span>
+          <span className="truncate hidden xs:inline sm:inline">{organization?.name ?? 'Select organization'}</span>
           <ChevronsUpDown className="h-3 w-3 ml-auto opacity-50 shrink-0" />
         </Button>
       </DropdownMenuTrigger>
