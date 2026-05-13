@@ -42,8 +42,8 @@ export function TodoKanbanCard({ todo, onEdit, onDelete, onMove }: TodoKanbanCar
 
   return (
     <Card className="group p-3 bg-card hover:shadow-[var(--shadow-card)] transition-all hover:-translate-y-0.5 border border-border/60 overflow-hidden">
-      <div className="flex items-start justify-between gap-2 mb-2">
-        <div className="min-w-0 flex-1">
+      <div className="space-y-2 mb-2">
+        <div className="min-w-0">
           <p className="text-sm font-semibold leading-tight break-words">{todo.title}</p>
           {todo.category && (
             <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground mt-0.5">
@@ -52,7 +52,7 @@ export function TodoKanbanCard({ todo, onEdit, onDelete, onMove }: TodoKanbanCar
             </span>
           )}
         </div>
-        <div className="flex items-center gap-1 shrink-0">
+        <div className="flex items-center justify-between gap-1">
           <span
             className={cn(
               "text-[10px] font-medium px-1.5 py-0.5 rounded-full border capitalize",
