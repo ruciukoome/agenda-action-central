@@ -68,34 +68,34 @@ export function TodoBoard() {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-        <div className="flex items-center gap-2 flex-1">
+    <div className="space-y-4 min-w-0">
+      <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
           <ListTodo className="h-5 w-5 text-primary" />
-          <h2 className="text-lg font-semibold">My To-Do List</h2>
-          <span className="text-xs text-muted-foreground hidden sm:inline">
+          <h2 className="text-lg font-semibold leading-tight">My To-Do List</h2>
+          <span className="text-xs text-muted-foreground">
             {stats.total} total · {stats.inProgress} in progress · {stats.done} done
           </span>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="relative">
+        <div className="flex flex-col xs:flex-row items-stretch xs:items-center gap-2 w-full lg:w-auto">
+          <div className="relative flex-1 lg:flex-none">
             <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search to-dos…"
-              className="pl-8 w-full sm:w-56"
+              className="pl-8 w-full lg:w-56"
             />
           </div>
-          <Button onClick={handleCreate} size="sm">
+          <Button onClick={handleCreate} size="sm" className="shrink-0">
             <Plus className="h-4 w-4 mr-1" /> New To-Do
           </Button>
         </div>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-3">
+      <div className="grid gap-3 grid-cols-1 xl:grid-cols-3">
         {COLUMNS.map((col) => (
-          <Card key={col.key} className="border-border/60 bg-muted/30">
+          <Card key={col.key} className="border-border/60 bg-muted/30 min-w-0">
             <div className={cn("flex items-center justify-between px-3 py-2 rounded-t-lg", col.headerClass)}>
               <div className="flex items-center gap-2">
                 <span className={cn("h-2 w-2 rounded-full", col.dotClass)} />
