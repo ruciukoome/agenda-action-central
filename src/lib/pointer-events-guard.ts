@@ -26,3 +26,8 @@ export function scheduleBodyPointerEventsReset() {
     window.setTimeout(clearStaleBodyPointerEvents, delay);
   });
 }
+
+export function hasOpenPointerLockLayer() {
+  if (typeof document === 'undefined') return false;
+  return Boolean(document.querySelector(OPEN_INTERACTION_LAYER_SELECTOR));
+}
