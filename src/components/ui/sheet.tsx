@@ -4,6 +4,7 @@ import { X } from "lucide-react"
 import * as React from "react"
 
 import { cn } from "@/lib/utils"
+import { scheduleBodyPointerEventsReset } from "@/lib/pointer-events-guard"
 
 const Sheet = SheetPrimitive.Root
 
@@ -54,11 +55,15 @@ interface SheetContentProps
 const SheetContent = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Content>,
   SheetContentProps
->(({ side = "right", className, children, ...props }, ref) => (
+>(({ side = "right", className, children, onCloseAutoFocus, ...props }, ref) => (
   <SheetPortal>
     <SheetOverlay />
     <SheetPrimitive.Content
       ref={ref}
+      onCloseAutoFocus={(event) => {
+        onCloseAutoFocus?.(event)
+        scheduleBodyPointerEventsReset()
+      }}
       className={cn(sheetVariants({ side }), className)}
       {...props}
     >

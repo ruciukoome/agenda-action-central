@@ -104,31 +104,31 @@ export default function MyActions() {
 
   return (
     <AppLayout title="My Actions">
-      <div className="container mx-auto px-4 py-6 space-y-8">
+      <div className="container mx-auto px-3 sm:px-4 py-6 space-y-8 min-w-0">
         {/* Assigned Actions Kanban */}
         <section className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-            <div className="flex items-center gap-2 flex-1">
+          <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
               <ClipboardList className="h-5 w-5 text-primary" />
-              <h2 className="text-lg font-semibold">Assigned Action Items</h2>
-              <span className="text-xs text-muted-foreground hidden sm:inline">
+              <h2 className="text-lg font-semibold leading-tight">Assigned Action Items</h2>
+              <span className="text-xs text-muted-foreground">
                 {actions.length} total
               </span>
             </div>
-            <div className="relative">
+            <div className="relative w-full lg:w-auto">
               <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search actions…"
-                className="pl-8 w-full sm:w-56"
+                className="pl-8 w-full lg:w-56"
               />
             </div>
           </div>
 
-          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-5">
+          <div className="grid gap-3 grid-cols-1 xl:grid-cols-3 2xl:grid-cols-5">
             {ACTION_COLUMNS.map((col) => (
-              <Card key={col.key} className="border-border/60 bg-muted/30">
+              <Card key={col.key} className="border-border/60 bg-muted/30 min-w-0">
                 <div className={cn("flex items-center justify-between px-3 py-2 rounded-t-lg", col.headerClass)}>
                   <div className="flex items-center gap-2">
                     <span className={cn("h-2 w-2 rounded-full", col.dotClass)} />

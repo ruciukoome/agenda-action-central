@@ -23,6 +23,7 @@ import { AuthGuard } from '@/components/AuthGuard';
 import { OrgGuard } from '@/components/OrgGuard';
 import { ToastSettingsProvider, useToastSettings } from '@/contexts/ToastSettingsContext';
 import { OrganizationProvider } from '@/contexts/OrganizationContext';
+import { PointerEventsGuard } from '@/components/PointerEventsGuard';
 
 function AppContent() {
   const { user } = useAuth();
@@ -31,6 +32,7 @@ function AppContent() {
   
   return (
     <>
+      <PointerEventsGuard />
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/app" element={<OrgGuard><Index /></OrgGuard>} />

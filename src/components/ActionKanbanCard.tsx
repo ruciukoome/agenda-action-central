@@ -37,7 +37,7 @@ export function ActionKanbanCard({ action, onEdit, onUpdated }: ActionKanbanCard
       onClick={() => onEdit(action)}
       className="group cursor-pointer p-3 bg-card hover:shadow-[var(--shadow-card)] transition-all hover:-translate-y-0.5 border border-border/60"
     >
-      <div className="flex items-start justify-between gap-2 mb-2">
+      <div className="space-y-2 mb-2">
         <div className="flex items-center gap-2 min-w-0">
           <Avatar className="h-7 w-7 shrink-0">
             <AvatarFallback className="text-xs bg-gradient-to-br from-primary/80 to-primary text-primary-foreground">
@@ -53,7 +53,7 @@ export function ActionKanbanCard({ action, onEdit, onUpdated }: ActionKanbanCard
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-1 shrink-0">
+        <div className="flex items-center justify-between gap-1">
           <span
             className={cn(
               "text-[10px] font-medium px-1.5 py-0.5 rounded-full border capitalize",
