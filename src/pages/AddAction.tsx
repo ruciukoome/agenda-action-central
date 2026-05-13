@@ -15,7 +15,11 @@ export default function AddAction() {
       toast.success("Action created", {
         description: "Your new action item has been created successfully.",
       });
-      navigate("/app");
+      document.body.style.pointerEvents = "";
+      setTimeout(() => {
+        document.body.style.pointerEvents = "";
+        navigate("/app");
+      }, 0);
     } catch (error) {
       console.error("Failed to create action:", error);
       toast.error("Error", {

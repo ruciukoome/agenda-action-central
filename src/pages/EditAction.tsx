@@ -60,7 +60,12 @@ export default function EditAction() {
 
       const returnTo = localStorage.getItem("EDIT_RETURN_TO") || "/managed-actions";
       localStorage.removeItem("EDIT_RETURN_TO");
-      navigate(returnTo);
+      // Reset pointer-events that Radix may leave on body after popover/dialog close
+      document.body.style.pointerEvents = "";
+      setTimeout(() => {
+        document.body.style.pointerEvents = "";
+        navigate(returnTo);
+      }, 0);
     } catch (error) {
       console.error("Failed to update action:", error);
       toast.error("Error", {
