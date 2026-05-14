@@ -42,8 +42,6 @@ export async function sendActionNotification(
       return { error: "Invalid recipient email address" };
     }
     
-    // Prepare request information for logging
-    const edgeFunctionUrl = "https://mdwrmfqjxakhpwmfyvft.supabase.co/functions/v1/send-action-notification";
     console.info("[Email Service] Sending request from:", senderEmail);
     console.info("[Email Service] Sending to recipient:", action.ownerEmail);
     console.info("[Email Service] Type:", type);
