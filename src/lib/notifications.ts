@@ -64,27 +64,20 @@ export async function sendActionNotification(
     
     console.info("[Email Service] Payload:", JSON.stringify(payload));
 
-    // Make the request with proper authorization
-    const response = await fetch(edgeFunctionUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${session.access_token}`
-      },
-      body: JSON.stringify(payload)
-    });
+    // Invoke the edge function via the Supabase client (uses correct project URL)
+    const { data: responseData, error: invokeError } = await supabase.functions.invoke(
+      'send-action-notification',
+      { body: payload }
+    );
 
-    console.info("[Email Service] Response status:", response.status);
-    
-    let responseData;
-    try {
-      responseData = await response.json();
-      console.info("[Email Service] Response data:", responseData);
-    } catch (parseError) {
-      console.error("[Email Service] Failed to parse response:", parseError);
-      responseData = { error: "Failed to parse response" };
+    if (invokeError) {
+      console.error("[Email Service] Invoke error:", invokeError);
+      throw new Error(invokeError.message || "Failed to send notification");
     }
-    
+
+    console.info("[Email Service] Response data:", responseData);
+
+    const response = { ok: true, status: 200 };
     if (!response.ok) {
       throw new Error(responseData.error || responseData.message || `Failed to send notification. Status: ${response.status}`);
     }
