@@ -34,7 +34,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { email, organizationId, role } = await req.json();
+    const { email, organizationId, role, resend: isResend = false, invitationId } = await req.json();
     if (!email || !organizationId || !['admin', 'member'].includes(role)) {
       return new Response(JSON.stringify({ error: 'Invalid input' }), {
         status: 400,

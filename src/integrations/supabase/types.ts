@@ -177,7 +177,11 @@ export type Database = {
           email: string
           id: string
           invited_by: string
+          last_resend_error: string | null
+          last_resend_status: string | null
+          last_resent_at: string | null
           organization_id: string
+          resend_count: number
           role: Database["public"]["Enums"]["org_role"]
         }
         Insert: {
@@ -186,7 +190,11 @@ export type Database = {
           email: string
           id?: string
           invited_by: string
+          last_resend_error?: string | null
+          last_resend_status?: string | null
+          last_resent_at?: string | null
           organization_id: string
+          resend_count?: number
           role?: Database["public"]["Enums"]["org_role"]
         }
         Update: {
@@ -195,7 +203,11 @@ export type Database = {
           email?: string
           id?: string
           invited_by?: string
+          last_resend_error?: string | null
+          last_resend_status?: string | null
+          last_resent_at?: string | null
           organization_id?: string
+          resend_count?: number
           role?: Database["public"]["Enums"]["org_role"]
         }
         Relationships: [
