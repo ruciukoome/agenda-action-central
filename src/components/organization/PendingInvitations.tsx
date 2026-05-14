@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/lib/toast-wrapper';
-import { Loader2, MailOpen, Trash2 } from 'lucide-react';
+import { Loader2, MailOpen, Send, Trash2 } from 'lucide-react';
 
 interface PendingInvite {
   id: string;
@@ -14,12 +14,17 @@ interface PendingInvite {
   role: 'admin' | 'member';
   created_at: string;
   accepted_at: string | null;
+  last_resent_at: string | null;
+  last_resend_status: string | null;
+  last_resend_error: string | null;
+  resend_count: number | null;
 }
 
 export function PendingInvitations({ refreshKey = 0 }: { refreshKey?: number }) {
   const { organization, isOrgAdmin } = useOrganization();
   const [invites, setInvites] = useState<PendingInvite[]>([]);
   const [loading, setLoading] = useState(true);
+  const [resendingId, setResendingId] = useState<string | null>(null);
 
   const load = async () => {
     if (!organization) return;
@@ -27,7 +32,7 @@ export function PendingInvitations({ refreshKey = 0 }: { refreshKey?: number }) 
     try {
       const { data, error } = await supabase
         .from('pending_invitations')
-        .select('id, email, role, created_at, accepted_at')
+        .select('id, email, role, created_at, accepted_at, last_resent_at, last_resend_status, last_resend_error, resend_count')
         .eq('organization_id', organization.id)
         .is('accepted_at', null)
         .order('created_at', { ascending: false });
@@ -57,6 +62,48 @@ export function PendingInvitations({ refreshKey = 0 }: { refreshKey?: number }) 
     }
   };
 
+  const handleResend = async (inv: PendingInvite) => {
+    if (!organization) return;
+    setResendingId(inv.id);
+    try {
+      const { data, error } = await supabase.functions.invoke('invite-org-member', {
+        body: {
+          email: inv.email,
+          organizationId: organization.id,
+          role: inv.role,
+          resend: true,
+          invitationId: inv.id,
+        },
+      });
+      if (error) {
+        let message = error.message;
+        try {
+          const ctx = (error as unknown as { context?: Response }).context;
+          if (ctx && typeof ctx.json === 'function') {
+            const body = await ctx.json();
+            if (body?.error) message = body.error;
+          }
+        } catch {
+          // ignore
+        }
+        throw new Error(message);
+      }
+      if (data?.error) throw new Error(data.error);
+      if (data?.email === 'sent') {
+        toast.success('Invitation resent', { description: `Email delivered to ${inv.email}` });
+      } else if (data?.email === 'failed') {
+        toast.error('Resend failed', { description: data?.emailError || 'Email provider rejected the send.' });
+      } else {
+        toast.success('Resend recorded', { description: 'Email provider not configured — attempt logged.' });
+      }
+      await load();
+    } catch (err) {
+      toast.error('Failed to resend', { description: (err as Error).message });
+    } finally {
+      setResendingId(null);
+    }
+  };
+
   if (!organization || !isOrgAdmin) return null;
 
   return (
@@ -82,6 +129,7 @@ export function PendingInvitations({ refreshKey = 0 }: { refreshKey?: number }) 
                 <TableHead>Email</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Invited</TableHead>
+                <TableHead>Last Resend</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -95,16 +143,64 @@ export function PendingInvitations({ refreshKey = 0 }: { refreshKey?: number }) 
                   <TableCell className="text-muted-foreground text-sm">
                     {new Date(inv.created_at).toLocaleDateString()}
                   </TableCell>
+                  <TableCell className="text-sm">
+                    {inv.last_resent_at ? (
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-muted-foreground">
+                          {new Date(inv.last_resent_at).toLocaleString()}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            variant={
+                              inv.last_resend_status === 'sent'
+                                ? 'default'
+                                : inv.last_resend_status === 'failed'
+                                ? 'destructive'
+                                : 'secondary'
+                            }
+                            className="text-xs"
+                          >
+                            {inv.last_resend_status ?? 'unknown'}
+                          </Badge>
+                          {inv.resend_count ? (
+                            <span className="text-xs text-muted-foreground">×{inv.resend_count}</span>
+                          ) : null}
+                        </div>
+                        {inv.last_resend_status === 'failed' && inv.last_resend_error && (
+                          <span className="text-xs text-destructive truncate max-w-[220px]" title={inv.last_resend_error}>
+                            {inv.last_resend_error}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="sm" onClick={() => handleRevoke(inv.id)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+                    <div className="flex justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={resendingId === inv.id}
+                        onClick={() => handleResend(inv)}
+                        title="Resend invitation email"
+                      >
+                        {resendingId === inv.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Send className="h-4 w-4" />
+                        )}
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => handleRevoke(inv.id)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
               {invites.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center text-muted-foreground py-6">
+                  <TableCell colSpan={5} className="text-center text-muted-foreground py-6">
                     No pending invitations
                   </TableCell>
                 </TableRow>
