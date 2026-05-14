@@ -42,8 +42,6 @@ export async function sendActionNotification(
       return { error: "Invalid recipient email address" };
     }
     
-    // Prepare request information for logging
-    const edgeFunctionUrl = "https://mdwrmfqjxakhpwmfyvft.supabase.co/functions/v1/send-action-notification";
     console.info("[Email Service] Sending request from:", senderEmail);
     console.info("[Email Service] Sending to recipient:", action.ownerEmail);
     console.info("[Email Service] Type:", type);
@@ -66,29 +64,21 @@ export async function sendActionNotification(
     
     console.info("[Email Service] Payload:", JSON.stringify(payload));
 
-    // Make the request with proper authorization
-    const response = await fetch(edgeFunctionUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${session.access_token}`
-      },
-      body: JSON.stringify(payload)
-    });
+    // Invoke the edge function via the Supabase client (uses correct project URL)
+    const { data: responseData, error: invokeError } = await supabase.functions.invoke(
+      'send-action-notification',
+      { body: payload }
+    );
 
-    console.info("[Email Service] Response status:", response.status);
-    
-    let responseData;
-    try {
-      responseData = await response.json();
-      console.info("[Email Service] Response data:", responseData);
-    } catch (parseError) {
-      console.error("[Email Service] Failed to parse response:", parseError);
-      responseData = { error: "Failed to parse response" };
+    if (invokeError) {
+      console.error("[Email Service] Invoke error:", invokeError);
+      throw new Error(invokeError.message || "Failed to send notification");
     }
-    
-    if (!response.ok) {
-      throw new Error(responseData.error || responseData.message || `Failed to send notification. Status: ${response.status}`);
+
+    console.info("[Email Service] Response data:", responseData);
+
+    if ((responseData as any)?.error) {
+      throw new Error((responseData as any).error);
     }
 
     console.log("Notification sent successfully:", responseData);

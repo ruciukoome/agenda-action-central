@@ -114,9 +114,80 @@ Deno.serve(async (req) => {
 
     if (invErr) throw invErr;
 
-    return new Response(JSON.stringify({ success: true, status: 'invited' }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    // Look up org name for the email
+    const { data: orgRow } = await admin
+      .from('organizations')
+      .select('name')
+      .eq('id', organizationId)
+      .maybeSingle();
+    const orgName = orgRow?.name || 'an organization';
+
+    // Send invitation email via Resend (Lovable connector gateway)
+    let emailStatus: 'sent' | 'skipped' | 'failed' = 'skipped';
+    let emailError: string | undefined;
+    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+    const resendApiKey = Deno.env.get('RESEND_API_KEY');
+    if (lovableApiKey && resendApiKey) {
+      try {
+        const appUrl = req.headers.get('origin') || 'https://actioncentral.platinumcredit.co.ke';
+        const subject = `You're invited to join ${orgName} on ActionPoint`;
+        const html = `
+          <div style="font-family:Arial,sans-serif;line-height:1.6;color:#333;max-width:600px;margin:0 auto;">
+            <div style="background-color:#0070f3;color:white;padding:20px;text-align:center;">
+              <h2 style="margin:0;">You've been invited to ActionPoint</h2>
+            </div>
+            <div style="padding:20px;">
+              <p>Hello,</p>
+              <p><strong>${user.email}</strong> has invited you to join <strong>${orgName}</strong> as a <strong>${role}</strong> on ActionPoint.</p>
+              <p>To accept this invitation, please sign up using this email address (<strong>${email}</strong>). You'll be added to the organization automatically when you create your account.</p>
+              <p style="margin:24px 0;">
+                <a href="${appUrl}" style="background-color:#0070f3;color:white;padding:10px 20px;text-decoration:none;border-radius:4px;display:inline-block;">Sign up to ActionPoint</a>
+              </p>
+              <p style="font-size:12px;color:#666;border-top:1px solid #eee;padding-top:15px;margin-top:30px;">
+                If you weren't expecting this invitation, you can safely ignore this email.
+              </p>
+            </div>
+          </div>
+        `;
+        const text = `${user.email} invited you to join ${orgName} as a ${role} on ActionPoint.\n\nSign up at ${appUrl} using ${email} and you'll be added to the organization automatically.`;
+
+        const resendRes = await fetch('https://connector-gateway.lovable.dev/resend/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${lovableApiKey}`,
+            'X-Connection-Api-Key': resendApiKey,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            from: 'ActionPoint <info@nafarrosolutions.com>',
+            to: [email],
+            reply_to: 'info@nafarrosolutions.com',
+            subject,
+            html,
+            text,
+          }),
+        });
+        const resendText = await resendRes.text();
+        console.log('Resend invite response:', resendRes.status, resendText);
+        if (!resendRes.ok) {
+          emailStatus = 'failed';
+          emailError = `Resend ${resendRes.status}: ${resendText}`;
+        } else {
+          emailStatus = 'sent';
+        }
+      } catch (e) {
+        emailStatus = 'failed';
+        emailError = (e as Error).message;
+        console.error('Invitation email error:', e);
+      }
+    } else {
+      console.warn('LOVABLE_API_KEY or RESEND_API_KEY missing — skipping invitation email');
+    }
+
+    return new Response(
+      JSON.stringify({ success: true, status: 'invited', email: emailStatus, emailError }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   } catch (err) {
     console.error('invite-org-member error:', err);
     return new Response(JSON.stringify({ error: (err as Error).message }), {
