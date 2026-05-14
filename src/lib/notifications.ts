@@ -77,9 +77,8 @@ export async function sendActionNotification(
 
     console.info("[Email Service] Response data:", responseData);
 
-    const response = { ok: true, status: 200 };
-    if (!response.ok) {
-      throw new Error(responseData.error || responseData.message || `Failed to send notification. Status: ${response.status}`);
+    if ((responseData as any)?.error) {
+      throw new Error((responseData as any).error);
     }
 
     console.log("Notification sent successfully:", responseData);
