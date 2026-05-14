@@ -186,8 +186,43 @@ Deno.serve(async (req) => {
       console.warn('LOVABLE_API_KEY or RESEND_API_KEY missing — skipping invitation email');
     }
 
+    // Persist resend tracking on the pending invitation row
+    try {
+      const updates: Record<string, unknown> = {
+        last_resent_at: new Date().toISOString(),
+        last_resend_status: emailStatus,
+        last_resend_error: emailError ?? null,
+      };
+      let q = admin.from('pending_invitations').update(updates).eq('organization_id', organizationId);
+      q = invitationId ? q.eq('id', invitationId) : q.eq('email', email.toLowerCase());
+      if (isResend) {
+        // bump resend_count via a follow-up RPC-style increment using current value
+        const { data: row } = await admin
+          .from('pending_invitations')
+          .select('id, resend_count')
+          .eq('organization_id', organizationId)
+          .eq(invitationId ? 'id' : 'email', invitationId ?? email.toLowerCase())
+          .maybeSingle();
+        if (row) {
+          updates.resend_count = (row.resend_count ?? 0) + 1;
+          await admin.from('pending_invitations').update(updates).eq('id', row.id);
+        } else {
+          await q;
+        }
+      } else {
+        await q;
+      }
+    } catch (e) {
+      console.error('Failed to update invitation resend tracking:', e);
+    }
+
     return new Response(
-      JSON.stringify({ success: true, status: 'invited', email: emailStatus, emailError }),
+      JSON.stringify({
+        success: true,
+        status: isResend ? 'resent' : 'invited',
+        email: emailStatus,
+        emailError,
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (err) {
