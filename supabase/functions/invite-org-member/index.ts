@@ -34,7 +34,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { email, organizationId, role } = await req.json();
+    const { email, organizationId, role, resend: isResend = false, invitationId } = await req.json();
     if (!email || !organizationId || !['admin', 'member'].includes(role)) {
       return new Response(JSON.stringify({ error: 'Invalid input' }), {
         status: 400,
@@ -66,53 +66,55 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Find user by email via admin API
-    const { data: usersList, error: listErr } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
-    if (listErr) throw listErr;
-    const target = usersList.users.find((u) => u.email?.toLowerCase() === email.toLowerCase());
+    if (!isResend) {
+      // Find user by email via admin API
+      const { data: usersList, error: listErr } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+      if (listErr) throw listErr;
+      const target = usersList.users.find((u) => u.email?.toLowerCase() === email.toLowerCase());
 
-    if (target) {
-      // Check if already a member of this org
-      const { data: existing } = await admin
-        .from('organization_members')
-        .select('id')
-        .eq('user_id', target.id)
-        .eq('organization_id', organizationId)
-        .maybeSingle();
+      if (target) {
+        // Check if already a member of this org
+        const { data: existing } = await admin
+          .from('organization_members')
+          .select('id')
+          .eq('user_id', target.id)
+          .eq('organization_id', organizationId)
+          .maybeSingle();
 
-      if (existing) {
-        return new Response(JSON.stringify({ error: 'User is already a member of this organization' }), {
-          status: 409,
+        if (existing) {
+          return new Response(JSON.stringify({ error: 'User is already a member of this organization' }), {
+            status: 409,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        const { error: insertErr } = await admin
+          .from('organization_members')
+          .insert({ organization_id: organizationId, user_id: target.id, role });
+
+        if (insertErr) throw insertErr;
+
+        return new Response(JSON.stringify({ success: true, status: 'added', userId: target.id }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
 
-      const { error: insertErr } = await admin
-        .from('organization_members')
-        .insert({ organization_id: organizationId, user_id: target.id, role });
+      // No user yet — create a pending invitation
+      const { error: invErr } = await admin
+        .from('pending_invitations')
+        .upsert(
+          {
+            organization_id: organizationId,
+            email: email.toLowerCase(),
+            role,
+            invited_by: user.id,
+            accepted_at: null,
+          },
+          { onConflict: 'organization_id,email' }
+        );
 
-      if (insertErr) throw insertErr;
-
-      return new Response(JSON.stringify({ success: true, status: 'added', userId: target.id }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      if (invErr) throw invErr;
     }
-
-    // No user yet — create a pending invitation
-    const { error: invErr } = await admin
-      .from('pending_invitations')
-      .upsert(
-        {
-          organization_id: organizationId,
-          email: email.toLowerCase(),
-          role,
-          invited_by: user.id,
-          accepted_at: null,
-        },
-        { onConflict: 'organization_id,email' }
-      );
-
-    if (invErr) throw invErr;
 
     // Look up org name for the email
     const { data: orgRow } = await admin
@@ -184,8 +186,43 @@ Deno.serve(async (req) => {
       console.warn('LOVABLE_API_KEY or RESEND_API_KEY missing — skipping invitation email');
     }
 
+    // Persist resend tracking on the pending invitation row
+    try {
+      const updates: Record<string, unknown> = {
+        last_resent_at: new Date().toISOString(),
+        last_resend_status: emailStatus,
+        last_resend_error: emailError ?? null,
+      };
+      let q = admin.from('pending_invitations').update(updates).eq('organization_id', organizationId);
+      q = invitationId ? q.eq('id', invitationId) : q.eq('email', email.toLowerCase());
+      if (isResend) {
+        // bump resend_count via a follow-up RPC-style increment using current value
+        const { data: row } = await admin
+          .from('pending_invitations')
+          .select('id, resend_count')
+          .eq('organization_id', organizationId)
+          .eq(invitationId ? 'id' : 'email', invitationId ?? email.toLowerCase())
+          .maybeSingle();
+        if (row) {
+          updates.resend_count = (row.resend_count ?? 0) + 1;
+          await admin.from('pending_invitations').update(updates).eq('id', row.id);
+        } else {
+          await q;
+        }
+      } else {
+        await q;
+      }
+    } catch (e) {
+      console.error('Failed to update invitation resend tracking:', e);
+    }
+
     return new Response(
-      JSON.stringify({ success: true, status: 'invited', email: emailStatus, emailError }),
+      JSON.stringify({
+        success: true,
+        status: isResend ? 'resent' : 'invited',
+        email: emailStatus,
+        emailError,
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (err) {
