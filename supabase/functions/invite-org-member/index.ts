@@ -66,53 +66,55 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Find user by email via admin API
-    const { data: usersList, error: listErr } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
-    if (listErr) throw listErr;
-    const target = usersList.users.find((u) => u.email?.toLowerCase() === email.toLowerCase());
+    if (!isResend) {
+      // Find user by email via admin API
+      const { data: usersList, error: listErr } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+      if (listErr) throw listErr;
+      const target = usersList.users.find((u) => u.email?.toLowerCase() === email.toLowerCase());
 
-    if (target) {
-      // Check if already a member of this org
-      const { data: existing } = await admin
-        .from('organization_members')
-        .select('id')
-        .eq('user_id', target.id)
-        .eq('organization_id', organizationId)
-        .maybeSingle();
+      if (target) {
+        // Check if already a member of this org
+        const { data: existing } = await admin
+          .from('organization_members')
+          .select('id')
+          .eq('user_id', target.id)
+          .eq('organization_id', organizationId)
+          .maybeSingle();
 
-      if (existing) {
-        return new Response(JSON.stringify({ error: 'User is already a member of this organization' }), {
-          status: 409,
+        if (existing) {
+          return new Response(JSON.stringify({ error: 'User is already a member of this organization' }), {
+            status: 409,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        const { error: insertErr } = await admin
+          .from('organization_members')
+          .insert({ organization_id: organizationId, user_id: target.id, role });
+
+        if (insertErr) throw insertErr;
+
+        return new Response(JSON.stringify({ success: true, status: 'added', userId: target.id }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
 
-      const { error: insertErr } = await admin
-        .from('organization_members')
-        .insert({ organization_id: organizationId, user_id: target.id, role });
+      // No user yet — create a pending invitation
+      const { error: invErr } = await admin
+        .from('pending_invitations')
+        .upsert(
+          {
+            organization_id: organizationId,
+            email: email.toLowerCase(),
+            role,
+            invited_by: user.id,
+            accepted_at: null,
+          },
+          { onConflict: 'organization_id,email' }
+        );
 
-      if (insertErr) throw insertErr;
-
-      return new Response(JSON.stringify({ success: true, status: 'added', userId: target.id }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      if (invErr) throw invErr;
     }
-
-    // No user yet — create a pending invitation
-    const { error: invErr } = await admin
-      .from('pending_invitations')
-      .upsert(
-        {
-          organization_id: organizationId,
-          email: email.toLowerCase(),
-          role,
-          invited_by: user.id,
-          accepted_at: null,
-        },
-        { onConflict: 'organization_id,email' }
-      );
-
-    if (invErr) throw invErr;
 
     // Look up org name for the email
     const { data: orgRow } = await admin
