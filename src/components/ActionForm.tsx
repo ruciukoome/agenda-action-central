@@ -116,6 +116,7 @@ export function ActionForm({ actionToEdit, draftId, initialDraft, onSave, onSave
       description: values.description,
       department: values.department as Department,
       meetingDate: values.meetingDate.toISOString(),
+      meetingTitle: values.meetingTitle,
       priority: values.priority as Priority,
       ownerEmail: values.ownerEmail,
       completed: values.completed,
@@ -127,28 +128,49 @@ export function ActionForm({ actionToEdit, draftId, initialDraft, onSave, onSave
       ccEmails: values.ccEmails ? parseEmailList(values.ccEmails) : [],
       bccEmails: values.bccEmails ? parseEmailList(values.bccEmails) : [],
     };
-    
-    // In a real implementation, this would save to a database
+
     onSave(actionData);
-    
+
     // Send email notification
     try {
       const notificationType = actionToEdit ? "updated" : "assigned";
       const result = await sendActionNotification(
-        actionData, 
-        notificationType, 
+        actionData,
+        notificationType,
         actionData.ccEmails,
         actionData.bccEmails
       );
-      
+
       if (result && !result.error) {
         setEmailSent(true);
       }
     } catch (error) {
       console.error("Failed to send email notification:", error);
     }
-    
-    navigate("/");
+  };
+
+  const handleSaveDraft = async () => {
+    if (!onSaveDraft) return;
+    const v = form.getValues();
+    const draftPayload: Partial<ActionItem> = {
+      meetingTitle: v.meetingTitle || undefined,
+      description: v.description || undefined,
+      department: v.department as Department | undefined,
+      meetingDate: v.meetingDate ? v.meetingDate.toISOString() : undefined,
+      priority: v.priority as Priority | undefined,
+      ownerEmail: v.ownerEmail || undefined,
+      progressStatus: v.progressStatus as ProgressStatus | undefined,
+      notes: v.notes || undefined,
+      dueDate: v.dueDate ? v.dueDate.toISOString() : undefined,
+      ccEmails: v.ccEmails ? parseEmailList(v.ccEmails) : [],
+      bccEmails: v.bccEmails ? parseEmailList(v.bccEmails) : [],
+    };
+    setSavingDraft(true);
+    try {
+      await onSaveDraft(draftPayload);
+    } finally {
+      setSavingDraft(false);
+    }
   };
   
   return (
