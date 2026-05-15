@@ -17,6 +17,7 @@ import Onboarding from './pages/Onboarding';
 import OrganizationSettings from './pages/OrganizationSettings';
 import SuperAdmin from './pages/SuperAdmin';
 import UsersAndRoles from './pages/UsersAndRoles';
+import Drafts from './pages/Drafts';
 import { useIdleTimeout } from './hooks/useIdleTimeout';
 import { useAuth } from '@/lib/auth';
 import { AuthGuard } from '@/components/AuthGuard';
