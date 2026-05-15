@@ -28,6 +28,7 @@ export interface ActionItem {
   description: string;
   department: Department;
   meetingDate: string; // ISO format date string
+  meetingTitle?: string;
   priority: Priority;
   ownerEmail: string;
   completed: boolean;

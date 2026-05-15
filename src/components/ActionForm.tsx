@@ -19,12 +19,15 @@ import { format } from "date-fns";
 import { ActionItem, Department, Priority, ProgressStatus, parseEmailList, formatEmailList } from "@/types/action";
 import { getDepartments, getPriorities, getProgressStatuses } from "@/data/mockActions";
 import { sendActionNotification } from "@/lib/notifications";
+import { useRecentMeetingTitles } from "@/hooks/useRecentMeetingTitles";
+import { Loader2, FileText } from "lucide-react";
 
 const formSchema = z
   .object({
+    meetingTitle: z.string().min(1, "Meeting title is required"),
     description: z.string().min(5, "Description must be at least 5 characters"),
-    department: z.string(),
-    meetingDate: z.date(),
+    department: z.string().min(1, "Department is required"),
+    meetingDate: z.date({ required_error: "Meeting date is required" }),
     priority: z.enum(["high", "medium", "low"]),
     ownerEmail: z.string().email("Please enter a valid email address"),
     completed: z.boolean().default(false),
@@ -54,27 +57,37 @@ type FormValues = z.infer<typeof formSchema>;
 
 interface ActionFormProps {
   actionToEdit?: ActionItem;
+  draftId?: string;
+  initialDraft?: Partial<ActionItem>;
   onSave: (action: ActionItem) => void;
+  onSaveDraft?: (values: Partial<ActionItem>) => Promise<void> | void;
+  onOpenDrafts?: () => void;
+  draftCount?: number;
 }
 
-export function ActionForm({ actionToEdit, onSave }: ActionFormProps) {
+export function ActionForm({ actionToEdit, draftId, initialDraft, onSave, onSaveDraft, onOpenDrafts, draftCount }: ActionFormProps) {
   const navigate = useNavigate();
   const [emailSent, setEmailSent] = useState(false);
-  
-  const defaultValues: Partial<FormValues> = actionToEdit ? {
-    description: actionToEdit.description,
-    department: actionToEdit.department,
-    meetingDate: new Date(actionToEdit.meetingDate),
-    priority: actionToEdit.priority as Priority,
-    ownerEmail: actionToEdit.ownerEmail,
-    completed: actionToEdit.completed,
-    progressStatus: actionToEdit.progressStatus as ProgressStatus,
-    notes: actionToEdit.notes,
-    dueDate: actionToEdit.dueDate ? new Date(actionToEdit.dueDate) : undefined,
-    ccEmails: actionToEdit.ccEmails ? formatEmailList(actionToEdit.ccEmails) : "",
-    bccEmails: actionToEdit.bccEmails ? formatEmailList(actionToEdit.bccEmails) : "",
+  const [savingDraft, setSavingDraft] = useState(false);
+  const recentTitles = useRecentMeetingTitles();
+
+  const source = actionToEdit || initialDraft;
+  const defaultValues: Partial<FormValues> = source ? {
+    meetingTitle: source.meetingTitle || "",
+    description: source.description || "",
+    department: (source.department as string) || "",
+    meetingDate: source.meetingDate ? new Date(source.meetingDate) : new Date(),
+    priority: (source.priority as Priority) || "medium",
+    ownerEmail: source.ownerEmail || "",
+    completed: source.completed ?? false,
+    progressStatus: (source.progressStatus as ProgressStatus) || "Not Started",
+    notes: source.notes || "",
+    dueDate: source.dueDate ? new Date(source.dueDate) : undefined,
+    ccEmails: source.ccEmails ? formatEmailList(source.ccEmails) : "",
+    bccEmails: source.bccEmails ? formatEmailList(source.bccEmails) : "",
     allowCompletionException: false,
   } : {
+    meetingTitle: "",
     meetingDate: new Date(),
     priority: "medium" as Priority,
     completed: false,
@@ -103,6 +116,7 @@ export function ActionForm({ actionToEdit, onSave }: ActionFormProps) {
       description: values.description,
       department: values.department as Department,
       meetingDate: values.meetingDate.toISOString(),
+      meetingTitle: values.meetingTitle,
       priority: values.priority as Priority,
       ownerEmail: values.ownerEmail,
       completed: values.completed,
@@ -114,28 +128,49 @@ export function ActionForm({ actionToEdit, onSave }: ActionFormProps) {
       ccEmails: values.ccEmails ? parseEmailList(values.ccEmails) : [],
       bccEmails: values.bccEmails ? parseEmailList(values.bccEmails) : [],
     };
-    
-    // In a real implementation, this would save to a database
+
     onSave(actionData);
-    
+
     // Send email notification
     try {
       const notificationType = actionToEdit ? "updated" : "assigned";
       const result = await sendActionNotification(
-        actionData, 
-        notificationType, 
+        actionData,
+        notificationType,
         actionData.ccEmails,
         actionData.bccEmails
       );
-      
+
       if (result && !result.error) {
         setEmailSent(true);
       }
     } catch (error) {
       console.error("Failed to send email notification:", error);
     }
-    
-    navigate("/");
+  };
+
+  const handleSaveDraft = async () => {
+    if (!onSaveDraft) return;
+    const v = form.getValues();
+    const draftPayload: Partial<ActionItem> = {
+      meetingTitle: v.meetingTitle || undefined,
+      description: v.description || undefined,
+      department: v.department as Department | undefined,
+      meetingDate: v.meetingDate ? v.meetingDate.toISOString() : undefined,
+      priority: v.priority as Priority | undefined,
+      ownerEmail: v.ownerEmail || undefined,
+      progressStatus: v.progressStatus as ProgressStatus | undefined,
+      notes: v.notes || undefined,
+      dueDate: v.dueDate ? v.dueDate.toISOString() : undefined,
+      ccEmails: v.ccEmails ? parseEmailList(v.ccEmails) : [],
+      bccEmails: v.bccEmails ? parseEmailList(v.bccEmails) : [],
+    };
+    setSavingDraft(true);
+    try {
+      await onSaveDraft(draftPayload);
+    } finally {
+      setSavingDraft(false);
+    }
   };
   
   return (
@@ -143,14 +178,50 @@ export function ActionForm({ actionToEdit, onSave }: ActionFormProps) {
       <form onSubmit={form.handleSubmit(handleSubmit)}>
         <Card className="w-full">
           <CardHeader>
-            <CardTitle>{actionToEdit ? "Edit Action Item" : "Create New Action Item"}</CardTitle>
-            <CardDescription>
-              {actionToEdit 
-                ? "Update the details of this action item" 
-                : "Add a new action item from your meeting"}
-            </CardDescription>
+            <div className="flex items-start justify-between gap-3">
+              <div className="space-y-1.5">
+                <CardTitle>{actionToEdit ? "Edit Action Item" : draftId ? "Resume Draft" : "Create New Action Item"}</CardTitle>
+                <CardDescription>
+                  {actionToEdit
+                    ? "Update the details of this action item"
+                    : "Add a new action item from your meeting"}
+                </CardDescription>
+              </div>
+              {onOpenDrafts && (
+                <Button type="button" variant="outline" size="sm" onClick={onOpenDrafts}>
+                  <FileText className="w-4 h-4 mr-2" />
+                  Drafts{typeof draftCount === "number" && draftCount > 0 ? ` (${draftCount})` : ""}
+                </Button>
+              )}
+            </div>
           </CardHeader>
           <CardContent className="space-y-6">
+            <FormField
+              control={form.control}
+              name="meetingTitle"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Meeting Title</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="e.g. Weekly Ops Sync — May 15"
+                      list="recent-meeting-titles"
+                      {...field}
+                    />
+                  </FormControl>
+                  <datalist id="recent-meeting-titles">
+                    {recentTitles.map((t) => (
+                      <option key={t} value={t} />
+                    ))}
+                  </datalist>
+                  <FormDescription>
+                    Group related action items under one meeting. Pick a recent meeting or type a new one.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <FormField
               control={form.control}
               name="description"
@@ -471,17 +542,36 @@ export function ActionForm({ actionToEdit, onSave }: ActionFormProps) {
               )}
             />
           </CardContent>
-          <CardFooter className="flex justify-between">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => navigate("/")}
+          <CardFooter className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-between">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => navigate("/app")}
+              className="w-full sm:w-auto"
             >
               <X className="w-4 h-4 mr-2" /> Cancel
             </Button>
-            <Button type="submit">
-              <Check className="w-4 h-4 mr-2" /> {actionToEdit ? "Update" : "Create"} Action
-            </Button>
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center w-full sm:w-auto">
+              {onSaveDraft && !actionToEdit && (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={handleSaveDraft}
+                  disabled={savingDraft}
+                  className="w-full sm:w-auto"
+                >
+                  {savingDraft ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <FileText className="w-4 h-4 mr-2" />
+                  )}
+                  {draftId ? "Update Draft" : "Save as Draft"}
+                </Button>
+              )}
+              <Button type="submit" className="w-full sm:w-auto">
+                <Check className="w-4 h-4 mr-2" /> {actionToEdit ? "Update" : draftId ? "Submit" : "Create"} Action
+              </Button>
+            </div>
           </CardFooter>
         </Card>
       </form>

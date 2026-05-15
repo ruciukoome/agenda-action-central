@@ -14,6 +14,67 @@ export type Database = {
   }
   public: {
     Tables: {
+      action_drafts: {
+        Row: {
+          bcc_emails: string[] | null
+          cc_emails: string[] | null
+          created_at: string
+          department: Database["public"]["Enums"]["action_department"] | null
+          description: string | null
+          due_date: string | null
+          id: string
+          meeting_date: string | null
+          meeting_title: string | null
+          notes: string | null
+          organization_id: string | null
+          owner_email: string | null
+          priority: Database["public"]["Enums"]["action_priority"] | null
+          progress_status: Database["public"]["Enums"]["action_progress"] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bcc_emails?: string[] | null
+          cc_emails?: string[] | null
+          created_at?: string
+          department?: Database["public"]["Enums"]["action_department"] | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          meeting_date?: string | null
+          meeting_title?: string | null
+          notes?: string | null
+          organization_id?: string | null
+          owner_email?: string | null
+          priority?: Database["public"]["Enums"]["action_priority"] | null
+          progress_status?:
+            | Database["public"]["Enums"]["action_progress"]
+            | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bcc_emails?: string[] | null
+          cc_emails?: string[] | null
+          created_at?: string
+          department?: Database["public"]["Enums"]["action_department"] | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          meeting_date?: string | null
+          meeting_title?: string | null
+          notes?: string | null
+          organization_id?: string | null
+          owner_email?: string | null
+          priority?: Database["public"]["Enums"]["action_priority"] | null
+          progress_status?:
+            | Database["public"]["Enums"]["action_progress"]
+            | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       action_tokens: {
         Row: {
           action_id: string
@@ -58,6 +119,7 @@ export type Database = {
           due_date: string | null
           id: string
           meeting_date: string
+          meeting_title: string | null
           notes: string | null
           organization_id: string | null
           owner_email: string
@@ -74,6 +136,7 @@ export type Database = {
           due_date?: string | null
           id?: string
           meeting_date: string
+          meeting_title?: string | null
           notes?: string | null
           organization_id?: string | null
           owner_email: string
@@ -90,6 +153,7 @@ export type Database = {
           due_date?: string | null
           id?: string
           meeting_date?: string
+          meeting_title?: string | null
           notes?: string | null
           organization_id?: string | null
           owner_email?: string

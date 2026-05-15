@@ -35,6 +35,7 @@ export function ActionsTable({
         <TableRow key={i}>
           <TableCell><Skeleton className="h-4 w-4" /></TableCell>
           <TableCell><Skeleton className="h-4 w-full" /></TableCell>
+          <TableCell><Skeleton className="h-4 w-24" /></TableCell>
           <TableCell><Skeleton className="h-4 w-20" /></TableCell>
           <TableCell><Skeleton className="h-4 w-24" /></TableCell>
           <TableCell><Skeleton className="h-4 w-16" /></TableCell>
@@ -66,6 +67,7 @@ export function ActionsTable({
               />
             </TableHead>
             <TableHead>Description</TableHead>
+            <TableHead>Meeting</TableHead>
             <TableHead>Department</TableHead>
             <TableHead>Meeting Date</TableHead>
             <TableHead>Priority</TableHead>
@@ -78,7 +80,7 @@ export function ActionsTable({
             renderSkeletons()
           ) : actions.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={7} className="text-center py-6">
+              <TableCell colSpan={8} className="text-center py-6">
                 No actions found
               </TableCell>
             </TableRow>
@@ -93,6 +95,7 @@ export function ActionsTable({
                   />
                 </TableCell>
                 <TableCell className="font-medium">{action.description}</TableCell>
+                <TableCell className="text-sm text-muted-foreground">{action.meetingTitle || "—"}</TableCell>
                 <TableCell>{action.department}</TableCell>
                 <TableCell>{formatDate(action.meetingDate)}</TableCell>
                 <TableCell>

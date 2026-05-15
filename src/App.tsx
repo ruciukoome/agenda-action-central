@@ -17,6 +17,7 @@ import Onboarding from './pages/Onboarding';
 import OrganizationSettings from './pages/OrganizationSettings';
 import SuperAdmin from './pages/SuperAdmin';
 import UsersAndRoles from './pages/UsersAndRoles';
+import Drafts from './pages/Drafts';
 import { useIdleTimeout } from './hooks/useIdleTimeout';
 import { useAuth } from '@/lib/auth';
 import { AuthGuard } from '@/components/AuthGuard';
@@ -49,6 +50,7 @@ function AppContent() {
         <Route path="/manage-actions" element={<AuthGuard><OrgGuard><ManagedActions /></OrgGuard></AuthGuard>} />
         <Route path="/action-items" element={<AuthGuard><OrgGuard><MyActions /></OrgGuard></AuthGuard>} />
         <Route path="/add-action" element={<AuthGuard><OrgGuard><AddAction /></OrgGuard></AuthGuard>} />
+        <Route path="/drafts" element={<AuthGuard><OrgGuard><Drafts /></OrgGuard></AuthGuard>} />
         <Route path="/add" element={<AuthGuard><OrgGuard><AddAction /></OrgGuard></AuthGuard>} />
         <Route path="/edit-action/:id" element={<AuthGuard><OrgGuard><EditAction /></OrgGuard></AuthGuard>} />
         <Route path="/edit/:id" element={<AuthGuard><OrgGuard><EditAction /></OrgGuard></AuthGuard>} />
