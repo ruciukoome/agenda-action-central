@@ -55,27 +55,37 @@ type FormValues = z.infer<typeof formSchema>;
 
 interface ActionFormProps {
   actionToEdit?: ActionItem;
+  draftId?: string;
+  initialDraft?: Partial<ActionItem>;
   onSave: (action: ActionItem) => void;
+  onSaveDraft?: (values: Partial<ActionItem>) => Promise<void> | void;
+  onOpenDrafts?: () => void;
+  draftCount?: number;
 }
 
-export function ActionForm({ actionToEdit, onSave }: ActionFormProps) {
+export function ActionForm({ actionToEdit, draftId, initialDraft, onSave, onSaveDraft, onOpenDrafts, draftCount }: ActionFormProps) {
   const navigate = useNavigate();
   const [emailSent, setEmailSent] = useState(false);
-  
-  const defaultValues: Partial<FormValues> = actionToEdit ? {
-    description: actionToEdit.description,
-    department: actionToEdit.department,
-    meetingDate: new Date(actionToEdit.meetingDate),
-    priority: actionToEdit.priority as Priority,
-    ownerEmail: actionToEdit.ownerEmail,
-    completed: actionToEdit.completed,
-    progressStatus: actionToEdit.progressStatus as ProgressStatus,
-    notes: actionToEdit.notes,
-    dueDate: actionToEdit.dueDate ? new Date(actionToEdit.dueDate) : undefined,
-    ccEmails: actionToEdit.ccEmails ? formatEmailList(actionToEdit.ccEmails) : "",
-    bccEmails: actionToEdit.bccEmails ? formatEmailList(actionToEdit.bccEmails) : "",
+  const [savingDraft, setSavingDraft] = useState(false);
+  const recentTitles = useRecentMeetingTitles();
+
+  const source = actionToEdit || initialDraft;
+  const defaultValues: Partial<FormValues> = source ? {
+    meetingTitle: source.meetingTitle || "",
+    description: source.description || "",
+    department: (source.department as string) || "",
+    meetingDate: source.meetingDate ? new Date(source.meetingDate) : new Date(),
+    priority: (source.priority as Priority) || "medium",
+    ownerEmail: source.ownerEmail || "",
+    completed: source.completed ?? false,
+    progressStatus: (source.progressStatus as ProgressStatus) || "Not Started",
+    notes: source.notes || "",
+    dueDate: source.dueDate ? new Date(source.dueDate) : undefined,
+    ccEmails: source.ccEmails ? formatEmailList(source.ccEmails) : "",
+    bccEmails: source.bccEmails ? formatEmailList(source.bccEmails) : "",
     allowCompletionException: false,
   } : {
+    meetingTitle: "",
     meetingDate: new Date(),
     priority: "medium" as Priority,
     completed: false,
