@@ -178,14 +178,50 @@ export function ActionForm({ actionToEdit, draftId, initialDraft, onSave, onSave
       <form onSubmit={form.handleSubmit(handleSubmit)}>
         <Card className="w-full">
           <CardHeader>
-            <CardTitle>{actionToEdit ? "Edit Action Item" : "Create New Action Item"}</CardTitle>
-            <CardDescription>
-              {actionToEdit 
-                ? "Update the details of this action item" 
-                : "Add a new action item from your meeting"}
-            </CardDescription>
+            <div className="flex items-start justify-between gap-3">
+              <div className="space-y-1.5">
+                <CardTitle>{actionToEdit ? "Edit Action Item" : draftId ? "Resume Draft" : "Create New Action Item"}</CardTitle>
+                <CardDescription>
+                  {actionToEdit
+                    ? "Update the details of this action item"
+                    : "Add a new action item from your meeting"}
+                </CardDescription>
+              </div>
+              {onOpenDrafts && (
+                <Button type="button" variant="outline" size="sm" onClick={onOpenDrafts}>
+                  <FileText className="w-4 h-4 mr-2" />
+                  Drafts{typeof draftCount === "number" && draftCount > 0 ? ` (${draftCount})` : ""}
+                </Button>
+              )}
+            </div>
           </CardHeader>
           <CardContent className="space-y-6">
+            <FormField
+              control={form.control}
+              name="meetingTitle"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Meeting Title</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="e.g. Weekly Ops Sync — May 15"
+                      list="recent-meeting-titles"
+                      {...field}
+                    />
+                  </FormControl>
+                  <datalist id="recent-meeting-titles">
+                    {recentTitles.map((t) => (
+                      <option key={t} value={t} />
+                    ))}
+                  </datalist>
+                  <FormDescription>
+                    Group related action items under one meeting. Pick a recent meeting or type a new one.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <FormField
               control={form.control}
               name="description"
