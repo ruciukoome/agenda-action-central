@@ -22,9 +22,10 @@ import { sendActionNotification } from "@/lib/notifications";
 
 const formSchema = z
   .object({
+    meetingTitle: z.string().min(1, "Meeting title is required"),
     description: z.string().min(5, "Description must be at least 5 characters"),
-    department: z.string(),
-    meetingDate: z.date(),
+    department: z.string().min(1, "Department is required"),
+    meetingDate: z.date({ required_error: "Meeting date is required" }),
     priority: z.enum(["high", "medium", "low"]),
     ownerEmail: z.string().email("Please enter a valid email address"),
     completed: z.boolean().default(false),
