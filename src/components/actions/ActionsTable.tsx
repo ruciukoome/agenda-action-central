@@ -66,6 +66,7 @@ export function ActionsTable({
               />
             </TableHead>
             <TableHead>Description</TableHead>
+            <TableHead>Meeting</TableHead>
             <TableHead>Department</TableHead>
             <TableHead>Meeting Date</TableHead>
             <TableHead>Priority</TableHead>
