@@ -542,17 +542,36 @@ export function ActionForm({ actionToEdit, draftId, initialDraft, onSave, onSave
               )}
             />
           </CardContent>
-          <CardFooter className="flex justify-between">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => navigate("/")}
+          <CardFooter className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-between">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => navigate("/app")}
+              className="w-full sm:w-auto"
             >
               <X className="w-4 h-4 mr-2" /> Cancel
             </Button>
-            <Button type="submit">
-              <Check className="w-4 h-4 mr-2" /> {actionToEdit ? "Update" : "Create"} Action
-            </Button>
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center w-full sm:w-auto">
+              {onSaveDraft && !actionToEdit && (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={handleSaveDraft}
+                  disabled={savingDraft}
+                  className="w-full sm:w-auto"
+                >
+                  {savingDraft ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <FileText className="w-4 h-4 mr-2" />
+                  )}
+                  {draftId ? "Update Draft" : "Save as Draft"}
+                </Button>
+              )}
+              <Button type="submit" className="w-full sm:w-auto">
+                <Check className="w-4 h-4 mr-2" /> {actionToEdit ? "Update" : draftId ? "Submit" : "Create"} Action
+              </Button>
+            </div>
           </CardFooter>
         </Card>
       </form>
