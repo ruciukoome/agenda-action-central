@@ -46,6 +46,7 @@ export async function createAction(action: Omit<ActionItem, 'id' | 'createdAt' |
     description: action.description,
     department: action.department,
     meeting_date: action.meetingDate,
+    meeting_title: action.meetingTitle || null,
     priority: action.priority,
     owner_email: action.ownerEmail,
     completed: action.completed,
