@@ -36,6 +36,7 @@ const mainItems = [
   { title: "Action Items", url: "/app", icon: KanbanSquare },
   { title: "My Actions", url: "/my-actions", icon: ClipboardList },
   { title: "Add Action", url: "/add-action", icon: PlusCircle },
+  { title: "My Drafts", url: "/drafts", icon: FileText },
   { title: "Manage Actions", url: "/managed-actions", icon: ListChecks },
 ];
 
