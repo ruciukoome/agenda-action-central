@@ -79,7 +79,7 @@ export function ActionsTable({
             renderSkeletons()
           ) : actions.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={7} className="text-center py-6">
+              <TableCell colSpan={8} className="text-center py-6">
                 No actions found
               </TableCell>
             </TableRow>
@@ -94,6 +94,7 @@ export function ActionsTable({
                   />
                 </TableCell>
                 <TableCell className="font-medium">{action.description}</TableCell>
+                <TableCell className="text-sm text-muted-foreground">{action.meetingTitle || "—"}</TableCell>
                 <TableCell>{action.department}</TableCell>
                 <TableCell>{formatDate(action.meetingDate)}</TableCell>
                 <TableCell>
