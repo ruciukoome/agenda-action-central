@@ -10,6 +10,7 @@ export interface DbAction {
   description: string;
   department: Department;
   meeting_date: string;
+  meeting_title?: string | null;
   priority: Priority;
   owner_email: string;
   completed: boolean;
@@ -30,6 +31,7 @@ export function mapDbActionToActionItem(action: DbAction): ActionItem {
     description: action.description,
     department: action.department,
     meetingDate: action.meeting_date,
+    meetingTitle: action.meeting_title || undefined,
     priority: action.priority,
     ownerEmail: action.owner_email,
     completed: action.completed,
@@ -49,6 +51,7 @@ export function mapActionItemToDbAction(action: ActionItem, userId?: string): Om
     description: action.description,
     department: action.department,
     meeting_date: action.meetingDate,
+    meeting_title: action.meetingTitle || null,
     priority: action.priority,
     owner_email: action.ownerEmail,
     completed: action.completed,
