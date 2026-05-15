@@ -11,6 +11,7 @@ import {
   Users,
   LogOut,
   Target,
+  FileText,
 } from "lucide-react";
 import {
   Sidebar,
