@@ -1,73 +1,36 @@
-The screenshot shows a **Kanban-style board** with columns by progress status (Not Started, 25%, 50%, 75%, Complete), plus stat cards across the top and a large search bar. This is in addition to having the sidebar on the left side. I'll redesign the Action Items area to match while keeping all existing data, filters, navigation, and edit flows working.
+## Goal
 
-### Layout to Build
+Let you capture multiple action items in a single meeting, group/filter them by meeting title, and pause any in-progress entry as a private draft so you can come back to it after handling a more urgent one.
 
-```text
-┌─────────────────────────────────────────────────────────────┐
-│  Action Items          [ 🔍  Search actions...        ]      │
-├─────────────────────────────────────────────────────────────┤
-│ ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐                 │
-│ │Total   │ │In Prog │ │Complete│ │ Due    │   (stat cards)  │
-│ │  58    │ │  25%   │ │  32%   │ │ Soon 4 │                 │
-│ └────────┘ └────────┘ └────────┘ └────────┘                 │
-├─────────────────────────────────────────────────────────────┤
-│ Not Started │  25%   │  50%   │  75%   │ Complete           │
-│ ┌────────┐  │┌──────┐│┌──────┐│┌──────┐│┌──────┐            │
-│ │ card   │  ││ card │││ card │││ card │││ card │            │
-│ │ 👤dept │  ││ 👤   │││ 👤   │││ 👤   │││ 👤   │            │
-│ │ Due... │  ││Due...│││Due...│││Due...│││Due...│            │
-│ └────────┘  │└──────┘│└──────┘│└──────┘│└──────┘            │
-│ ┌────────┐  │┌──────┐│                                      │
-│ │ card   │  ││ card ││  (scrollable columns)                │
-│ └────────┘  │└──────┘│                                      │
-└─────────────────────────────────────────────────────────────┘
-```
+## What changes for you
 
-### Changes
+1. **Meeting Title field** on the Add/Edit Action form (required, with autocomplete from your recent meeting titles).
+2. **Drafts**: a new "Save as draft" button next to the existing Create button. Drafts are private to you (no emails sent, no notifications) until you finalize them.
+3. **Drafts panel** accessible from the Add Action page header and from the sidebar ("My Drafts" with a count badge). Lets you switch between drafts mid-meeting, resume any draft, or delete it.
+4. **Grouping by meeting** on My Actions / Managed Actions: a new "Meeting" column and a "Group by meeting" toggle. Filter by meeting title in the existing filter bar.
+5. **Submit a draft** = same as today's create flow: inserts into `actions`, sends owner email, removes the draft.
 
-**1. Replace `ActionDashboard.tsx` grid with a Kanban board**
+UI stays consistent with the existing AppLayout, sidebar, table, and form styling — same shadcn components and tokens.
 
-- Top row: prominent search input (gradient/glassmorphism styling like screenshot).
-- Stats strip: 4 cards — Total, In Progress %, Completed %, Due Soon count — using brand gradient + `--shadow-glow`.
-- Board: 5 columns grouped by `progressStatus` ("Not Started", "25%", "50%", "75%", "100%/Complete"). Each column has a colored pill header with count badge, matching the soft pastels in the screenshot (blue, indigo, teal/green, pink/purple).
-- Keep existing `ActionFilters` (priority/department/completion) collapsed below the search as a "More filters" toggle, so functionality stays.
-- "New Action" button preserved in header row.
+## Technical section
 
-**2. Create `ActionKanbanCard.tsx` (compact variant)**
+### Database (one migration)
+- `actions.meeting_title text` — nullable initially for back-compat; new entries require it from the form.
+- New table `action_drafts`:
+  - same shape as `actions` (description, department, meeting_date, meeting_title, priority, owner_email, progress_status, notes, due_date, cc_emails text[], bcc_emails text[])
+  - `user_id uuid not null`, `organization_id uuid`, timestamps
+  - all fields nullable except `user_id` so partial drafts save fine
+- RLS on `action_drafts`: user can SELECT/INSERT/UPDATE/DELETE only where `user_id = auth.uid()` (private to me, as chosen).
+- Index `actions(meeting_title)` and `action_drafts(user_id, updated_at desc)`.
 
-- Replaces `ActionCard` only inside the board. White rounded card with subtle shadow.
-- Shows: avatar circle (initial of ownerEmail), department name (bold), Due date (small grey), small priority pill in the corner.
-- Click → same `onEdit(action)` → navigates to `/edit/:id` (unchanged).
-- Keep original `ActionCard.tsx` untouched in case it's used elsewhere.
+### Frontend
+- `ActionForm.tsx`: add `meetingTitle` field (Combobox with recent titles fetched via a small `useRecentMeetingTitles` hook). Add second submit button "Save as draft" wired to a new `onSaveDraft` prop.
+- New `src/lib/drafts/` module: `createDraft`, `updateDraft`, `listDrafts`, `deleteDraft`, `promoteDraftToAction` (calls existing `createAction` then deletes draft).
+- `AddAction.tsx`: load `?draftId=` from URL to resume; show a Drafts sheet/sidebar pinned to the page header.
+- New page `src/pages/Drafts.tsx` + sidebar entry "My Drafts" with unread-style count badge.
+- `ActionsTable.tsx` + filters: add "Meeting" column and meeting filter dropdown; optional group-by-meeting view.
 
-**3. Tweak `Index.tsx**`
-
-- Remove the 7-col grid (5 + 2 with EmailIntegrationCard). Move `EmailIntegrationCard` below the board, full-width or tucked into a collapsible side panel, so the board gets full horizontal space (essential for 5 columns at 1100px viewport).
-- Keep `View Dashboard` button, org name, header.
-
-**4. Styling**
-
-- Use existing tokens: `--gradient-hero`, `--shadow-glow`, `--shadow-card` and Tailwind `bg-gradient-to-br`.
-- Column header colors: `bg-blue-100/60`, `bg-indigo-100/60`, `bg-violet-100/60`, `bg-teal-100/60`, `bg-pink-100/60` with matching dark text — pastel feel from screenshot.
-- Backdrop blur + soft purple ambient glow behind the board on `/app`.
-
-### Functionality Preserved
-
-- All filters (search, priority, department, progress, completion) still apply — search moves to top bar; rest in collapsible panel.
-- Edit click still calls `onEditAction` → `/edit/:id`.
-- Loading skeletons → column-shaped skeletons.
-- Empty state per column ("No items") + global empty state if zero results.
-- Polling, auth, org scoping unchanged.
-- `ActionStatusBadge`, `ActionItem` type, fetch/update logic — untouched.
-
-### Files
-
-- **Edit** `src/components/ActionDashboard.tsx` — full rewrite to Kanban layout.
-- **Create** `src/components/ActionKanbanCard.tsx` — compact card.
-- **Edit** `src/pages/Index.tsx` — drop side column, give board full width, move EmailIntegrationCard below.
-
-### Responsive
-
-- ≥1024px: 5 columns side-by-side.
-- 768–1023px: horizontal scroll for columns (preserves Kanban feel).
-- <768px: stacked single column with column header dividers.
+### Out of scope (can be follow-ups)
+- A full Meetings entity / Meetings page (you chose lightweight).
+- Sharing drafts across the org.
+- Bulk submit at end of meeting.
