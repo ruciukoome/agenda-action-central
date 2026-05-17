@@ -58,7 +58,9 @@ export default function EditAction() {
         description: "The action has been updated successfully.",
       });
 
-      const returnTo = localStorage.getItem("EDIT_RETURN_TO") || "/managed-actions";
+      const allowedReturnPaths = ["/managed-actions", "/my-actions", "/dashboard", "/app"];
+      const raw = localStorage.getItem("EDIT_RETURN_TO") || "";
+      const returnTo = allowedReturnPaths.includes(raw) ? raw : "/managed-actions";
       localStorage.removeItem("EDIT_RETURN_TO");
       // Reset pointer-events that Radix may leave on body after popover/dialog close
       document.body.style.pointerEvents = "";

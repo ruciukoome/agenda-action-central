@@ -42,10 +42,7 @@ export async function sendActionNotification(
       return { error: "Invalid recipient email address" };
     }
     
-    console.info("[Email Service] Sending request from:", senderEmail);
-    console.info("[Email Service] Sending to recipient:", action.ownerEmail);
-    console.info("[Email Service] Type:", type);
-    console.info("[Email Service] Due date in notification:", action.dueDate || "Not set");
+    console.info("[Email Service] Sending notification, type:", type);
     
     // Prepare the payload that will be sent to the edge function
     const payload = {
@@ -62,7 +59,7 @@ export async function sendActionNotification(
       bccEmails: bccEmails || action.bccEmails || []
     };
     
-    console.info("[Email Service] Payload:", JSON.stringify(payload));
+    console.info("[Email Service] Payload prepared for action:", action.id);
 
     // Invoke the edge function via the Supabase client (uses correct project URL)
     const { data: responseData, error: invokeError } = await supabase.functions.invoke(

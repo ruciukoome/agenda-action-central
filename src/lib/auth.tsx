@@ -56,7 +56,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
-        console.log('Auth state changed:', event, currentSession?.user?.email);
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         setIsLoading(false);
@@ -65,7 +64,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
-      console.log('Initial session check:', currentSession?.user?.email);
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
       setIsLoading(false);
@@ -75,7 +73,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    console.log('Attempting sign in for:', email);
     setIsLoading(true);
     try {
       // Clean up any stale auth state first
@@ -112,7 +109,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw error;
       }
       
-      console.log('Sign in successful:', data?.user?.email);
       navigate('/app');
     } catch (error) {
       console.error('Sign in exception:', error);
@@ -124,7 +120,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signUp = async (email: string, password: string) => {
-    console.log('Attempting sign up for:', email);
     setIsLoading(true);
     try {
       // Clean up any stale auth state first
@@ -159,8 +154,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw error;
       }
 
-      console.log('Sign up result:', data);
-
       // If no session was returned, email confirmation is required
       const needsEmailConfirmation = !data.session;
       return { needsEmailConfirmation };
@@ -174,7 +167,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
-    console.log('Signing out');
     setIsLoading(true);
     try {
       // Clean up auth state first
