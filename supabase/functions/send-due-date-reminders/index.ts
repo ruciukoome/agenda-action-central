@@ -36,6 +36,18 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Require CRON_SECRET for invocation (sent by pg_cron job)
+  const cronSecret = Deno.env.get("CRON_SECRET");
+  const authHeader = req.headers.get("Authorization") || "";
+  const provided = authHeader.replace(/^Bearer\s+/i, "");
+  if (!cronSecret || provided !== cronSecret) {
+    console.warn("Unauthorized due-date-reminders invocation");
+    return new Response(
+      JSON.stringify({ error: "Unauthorized" }),
+      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
   try {
     console.log("Starting due date reminder check");
     
