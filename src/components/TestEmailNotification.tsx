@@ -38,7 +38,6 @@ export function TestEmailNotification() {
       }
       
       const userEmail = session.user.email;
-      console.log("Sending test email to:", userEmail);
       
       // Create a test action item with valid types
       const testAction: ActionItem = {
@@ -55,8 +54,6 @@ export function TestEmailNotification() {
         updatedAt: new Date().toISOString(),
         dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 1 week from now
       };
-      
-      console.log("Test action created with owner email:", testAction.ownerEmail);
       
       // Send test notification
       const response = await sendActionNotification(testAction, "assigned");

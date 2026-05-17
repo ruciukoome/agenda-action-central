@@ -163,12 +163,27 @@ serve(async (req) => {
 
 // Function to generate HTML email content
 function generateDueDateReminderEmail(action: any): { emailHtml: string, emailText: string } {
-  const dueDate = new Date(action.dueDate).toLocaleDateString('en-US', {
+  const esc = (v: unknown): string =>
+    String(v ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+
+  const dueDateRaw = new Date(action.dueDate).toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
     day: 'numeric'
   });
+  const dueDate = esc(dueDateRaw);
+  const desc = esc(action.description);
+  const dept = esc(action.department);
+  const pri = esc(action.priority);
+  const priClass = esc(String(action.priority ?? "").replace(/[^a-z0-9-]/gi, ""));
+  const progress = esc(action.progressStatus);
+  const notesHtml = action.notes ? `<p><strong>Notes:</strong> ${esc(action.notes)}</p>` : '';
 
   const emailHtml = `
     <!DOCTYPE html>
@@ -202,12 +217,12 @@ function generateDueDateReminderEmail(action: any): { emailHtml: string, emailTe
           <p>Hello,</p>
           <p>This is a reminder that you have an action item due <strong>tomorrow</strong>.</p>
           
-          <h3>${action.description}</h3>
+          <h3>${desc}</h3>
           <p><strong>Due Date:</strong> ${dueDate}</p>
-          <p><strong>Department:</strong> ${action.department}</p>
-          <p><strong>Priority:</strong> <span class="priority-${action.priority}">${action.priority}</span></p>
-          <p><strong>Current Progress:</strong> ${action.progressStatus}</p>
-          ${action.notes ? `<p><strong>Notes:</strong> ${action.notes}</p>` : ''}
+          <p><strong>Department:</strong> ${dept}</p>
+          <p><strong>Priority:</strong> <span class="priority-${priClass}">${pri}</span></p>
+          <p><strong>Current Progress:</strong> ${progress}</p>
+          ${notesHtml}
           
           <p>Please log in to the Action Central system to update your progress or mark this item as complete.</p>
           <a href="https://actioncentral.platinumcredit.co.ke" class="button">Access Action Central</a>
@@ -228,7 +243,7 @@ This is a reminder that you have an action item due TOMORROW.
 
 ${action.description}
 
-Due Date: ${dueDate}
+Due Date: ${dueDateRaw}
 Department: ${action.department}
 Priority: ${action.priority}
 Current Progress: ${action.progressStatus}

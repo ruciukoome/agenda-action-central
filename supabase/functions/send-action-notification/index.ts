@@ -31,6 +31,15 @@ const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
 const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+// HTML escaping helper to prevent injection in email templates
+const esc = (v: unknown): string =>
+  String(v ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
 // Request handler
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -41,12 +50,27 @@ serve(async (req) => {
 
   // Process request
   console.log("Processing email notification request");
-  console.log("Request headers:", JSON.stringify(req.headers, null, 2));
 
   try {
+    // Require authenticated caller — prevents anonymous abuse of the org's email domain
+    const authHeader = req.headers.get("Authorization") || "";
+    if (!authHeader.toLowerCase().startsWith("bearer ")) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    const token = authHeader.replace(/^Bearer\s+/i, "");
+    const { data: claims, error: authError } = await supabase.auth.getClaims(token);
+    if (authError || !claims?.claims?.sub) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Parse request data
     const payload = await req.json();
-    console.log("Received request data:", JSON.stringify(payload));
 
     // Extract data from payload
     const { action, type, senderEmail, ccEmails = [], bccEmails = [] } = payload;
@@ -177,22 +201,34 @@ function generateEmailContent(action: any, type: NotificationType) {
     </html>
   `;
 
+  // Escape all user-controlled fields once for safe HTML interpolation
+  const descRaw = String(action.description ?? "");
+  const desc = esc(descRaw);
+  const descShort = esc(descRaw.substring(0, 50) + (descRaw.length > 50 ? '...' : ''));
+  const dept = esc(action.department);
+  const pri = esc(action.priority);
+  const priClass = esc(String(action.priority ?? "").replace(/[^a-z0-9-]/gi, ""));
+  const due = esc(formatDate(action.dueDate));
+  const progress = esc(action.progressStatus);
+  const notesHtml = action.notes ? `<p><strong>Notes:</strong> ${esc(action.notes)}</p>` : '';
+  const notesText = action.notes ? `Notes: ${String(action.notes)}` : '';
+
   let subject = "";
   let content = "";
   let plainTextContent = "";
 
   switch (type) {
     case "assigned":
-      subject = `New Action Item Assigned: ${action.description.substring(0, 50)}${action.description.length > 50 ? '...' : ''}`;
+      subject = `New Action Item Assigned: ${descRaw.substring(0, 50)}${descRaw.length > 50 ? '...' : ''}`;
       content = `
         <p>Hello,</p>
         <p>You've been assigned a new action item in Action Central.</p>
         
-        <h3>${action.description}</h3>
-        <p><strong>Department:</strong> ${action.department}</p>
-        <p><strong>Priority:</strong> <span class="priority-${action.priority}">${action.priority}</span></p>
-        <p><strong>Due Date:</strong> ${formatDate(action.dueDate)}</p>
-        ${action.notes ? `<p><strong>Notes:</strong> ${action.notes}</p>` : ''}
+        <h3>${desc}</h3>
+        <p><strong>Department:</strong> ${dept}</p>
+        <p><strong>Priority:</strong> <span class="priority-${priClass}">${pri}</span></p>
+        <p><strong>Due Date:</strong> ${due}</p>
+        ${notesHtml}
         
         <div class="reply-instruction">
           <p><strong>Kindly reply to this email for updates of your action point</strong></p>
@@ -203,12 +239,12 @@ Hello,
 
 You've been assigned a new action item in Action Central.
 
-${action.description}
+${descRaw}
 
 Department: ${action.department}
 Priority: ${action.priority}
 Due Date: ${formatDate(action.dueDate)}
-${action.notes ? `Notes: ${action.notes}` : ''}
+${notesText}
 
 Kindly reply to this email for updates of your action point.
 
@@ -220,17 +256,17 @@ To unsubscribe: https://actioncentral.platinumcredit.co.ke/unsubscribe
       break;
       
     case "updated":
-      subject = `Action Item Updated: ${action.description.substring(0, 50)}${action.description.length > 50 ? '...' : ''}`;
+      subject = `Action Item Updated: ${descRaw.substring(0, 50)}${descRaw.length > 50 ? '...' : ''}`;
       content = `
         <p>Hello,</p>
         <p>An action item assigned to you has been updated.</p>
         
-        <h3>${action.description}</h3>
-        <p><strong>Department:</strong> ${action.department}</p>
-        <p><strong>Priority:</strong> <span class="priority-${action.priority}">${action.priority}</span></p>
-        <p><strong>Due Date:</strong> ${formatDate(action.dueDate)}</p>
-        <p><strong>Current Progress:</strong> ${action.progressStatus}</p>
-        ${action.notes ? `<p><strong>Notes:</strong> ${action.notes}</p>` : ''}
+        <h3>${desc}</h3>
+        <p><strong>Department:</strong> ${dept}</p>
+        <p><strong>Priority:</strong> <span class="priority-${priClass}">${pri}</span></p>
+        <p><strong>Due Date:</strong> ${due}</p>
+        <p><strong>Current Progress:</strong> ${progress}</p>
+        ${notesHtml}
         
         <div class="reply-instruction">
           <p><strong>Kindly reply to this email for updates of your action point</strong></p>
@@ -241,13 +277,13 @@ Hello,
 
 An action item assigned to you has been updated.
 
-${action.description}
+${descRaw}
 
 Department: ${action.department}
 Priority: ${action.priority}
 Due Date: ${formatDate(action.dueDate)}
 Current Progress: ${action.progressStatus}
-${action.notes ? `Notes: ${action.notes}` : ''}
+${notesText}
 
 Kindly reply to this email for updates of your action point.
 
@@ -259,17 +295,17 @@ To unsubscribe: https://actioncentral.platinumcredit.co.ke/unsubscribe
       break;
       
     case "due_soon":
-      subject = `REMINDER: Action Item Due Soon: ${action.description.substring(0, 50)}${action.description.length > 50 ? '...' : ''}`;
+      subject = `REMINDER: Action Item Due Soon: ${descRaw.substring(0, 50)}${descRaw.length > 50 ? '...' : ''}`;
       content = `
         <p>Hello,</p>
         <p>This is a reminder that you have an action item due soon.</p>
         
-        <h3>${action.description}</h3>
-        <p><strong>Due Date:</strong> ${formatDate(action.dueDate)}</p>
-        <p><strong>Department:</strong> ${action.department}</p>
-        <p><strong>Priority:</strong> <span class="priority-${action.priority}">${action.priority}</span></p>
-        <p><strong>Current Progress:</strong> ${action.progressStatus}</p>
-        ${action.notes ? `<p><strong>Notes:</strong> ${action.notes}</p>` : ''}
+        <h3>${desc}</h3>
+        <p><strong>Due Date:</strong> ${due}</p>
+        <p><strong>Department:</strong> ${dept}</p>
+        <p><strong>Priority:</strong> <span class="priority-${priClass}">${pri}</span></p>
+        <p><strong>Current Progress:</strong> ${progress}</p>
+        ${notesHtml}
         
         <div class="reply-instruction">
           <p><strong>Kindly reply to this email for updates of your action point</strong></p>
@@ -280,13 +316,13 @@ Hello,
 
 This is a reminder that you have an action item due soon.
 
-${action.description}
+${descRaw}
 
 Due Date: ${formatDate(action.dueDate)}
 Department: ${action.department}
 Priority: ${action.priority}
 Current Progress: ${action.progressStatus}
-${action.notes ? `Notes: ${action.notes}` : ''}
+${notesText}
 
 Kindly reply to this email for updates of your action point.
 
@@ -298,17 +334,17 @@ To unsubscribe: https://actioncentral.platinumcredit.co.ke/unsubscribe
       break;
       
     case "overdue":
-      subject = `OVERDUE: Action Item Past Due Date: ${action.description.substring(0, 50)}${action.description.length > 50 ? '...' : ''}`;
+      subject = `OVERDUE: Action Item Past Due Date: ${descRaw.substring(0, 50)}${descRaw.length > 50 ? '...' : ''}`;
       content = `
         <p>Hello,</p>
         <p>An action item assigned to you is now overdue.</p>
         
-        <h3>${action.description}</h3>
-        <p><strong>Due Date:</strong> ${formatDate(action.dueDate)} (OVERDUE)</p>
-        <p><strong>Department:</strong> ${action.department}</p>
-        <p><strong>Priority:</strong> <span class="priority-${action.priority}">${action.priority}</span></p>
-        <p><strong>Current Progress:</strong> ${action.progressStatus}</p>
-        ${action.notes ? `<p><strong>Notes:</strong> ${action.notes}</p>` : ''}
+        <h3>${desc}</h3>
+        <p><strong>Due Date:</strong> ${due} (OVERDUE)</p>
+        <p><strong>Department:</strong> ${dept}</p>
+        <p><strong>Priority:</strong> <span class="priority-${priClass}">${pri}</span></p>
+        <p><strong>Current Progress:</strong> ${progress}</p>
+        ${notesHtml}
         
         <div class="reply-instruction">
           <p><strong>Kindly reply to this email for updates of your action point</strong></p>
@@ -319,13 +355,13 @@ Hello,
 
 An action item assigned to you is now overdue.
 
-${action.description}
+${descRaw}
 
 Due Date: ${formatDate(action.dueDate)} (OVERDUE)
 Department: ${action.department}
 Priority: ${action.priority}
 Current Progress: ${action.progressStatus}
-${action.notes ? `Notes: ${action.notes}` : ''}
+${notesText}
 
 Kindly reply to this email for updates of your action point.
 
@@ -337,16 +373,16 @@ To unsubscribe: https://actioncentral.platinumcredit.co.ke/unsubscribe
       break;
       
     default:
-      subject = `Action Central: ${action.description.substring(0, 50)}${action.description.length > 50 ? '...' : ''}`;
+      subject = `Action Central: ${descRaw.substring(0, 50)}${descRaw.length > 50 ? '...' : ''}`;
       content = `
         <p>Hello,</p>
         <p>There's been an update to your action item.</p>
         
-        <h3>${action.description}</h3>
-        <p><strong>Department:</strong> ${action.department}</p>
-        <p><strong>Priority:</strong> <span class="priority-${action.priority}">${action.priority}</span></p>
-        <p><strong>Due Date:</strong> ${formatDate(action.dueDate)}</p>
-        ${action.notes ? `<p><strong>Notes:</strong> ${action.notes}</p>` : ''}
+        <h3>${desc}</h3>
+        <p><strong>Department:</strong> ${dept}</p>
+        <p><strong>Priority:</strong> <span class="priority-${priClass}">${pri}</span></p>
+        <p><strong>Due Date:</strong> ${due}</p>
+        ${notesHtml}
         
         <div class="reply-instruction">
           <p><strong>Kindly reply to this email for updates of your action point</strong></p>
@@ -357,12 +393,12 @@ Hello,
 
 There's been an update to your action item.
 
-${action.description}
+${descRaw}
 
 Department: ${action.department}
 Priority: ${action.priority}
 Due Date: ${formatDate(action.dueDate)}
-${action.notes ? `Notes: ${action.notes}` : ''}
+${notesText}
 
 Kindly reply to this email for updates of your action point.
 
