@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useEffect } from 'react';
+import DOMPurify from 'dompurify';
 import { generateActionAssignedEmailContent, generateActionDueEmailContent } from "@/utils/emailUtils";
 
 interface EmailPreviewProps {
@@ -63,7 +64,7 @@ export function EmailPreview({ action }: EmailPreviewProps) {
               <div className="space-y-1">
                 <Label>Content</Label>
                 <div className="rounded-md border p-4 text-sm">
-                  <div dangerouslySetInnerHTML={{ __html: assignedEmailContent }} />
+                  <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(assignedEmailContent) }} />
                 </div>
               </div>
             </div>
@@ -88,7 +89,7 @@ export function EmailPreview({ action }: EmailPreviewProps) {
               <div className="space-y-1">
                 <Label>Content</Label>
                 <div className="rounded-md border p-4 text-sm">
-                  <div dangerouslySetInnerHTML={{ __html: dueEmailContent }} />
+                  <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(dueEmailContent) }} />
                 </div>
               </div>
             </div>
