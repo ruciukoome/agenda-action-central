@@ -31,6 +31,15 @@ const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
 const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+// HTML escaping helper to prevent injection in email templates
+const esc = (v: unknown): string =>
+  String(v ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
 // Request handler
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -41,12 +50,27 @@ serve(async (req) => {
 
   // Process request
   console.log("Processing email notification request");
-  console.log("Request headers:", JSON.stringify(req.headers, null, 2));
 
   try {
+    // Require authenticated caller — prevents anonymous abuse of the org's email domain
+    const authHeader = req.headers.get("Authorization") || "";
+    if (!authHeader.toLowerCase().startsWith("bearer ")) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    const token = authHeader.replace(/^Bearer\s+/i, "");
+    const { data: claims, error: authError } = await supabase.auth.getClaims(token);
+    if (authError || !claims?.claims?.sub) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Parse request data
     const payload = await req.json();
-    console.log("Received request data:", JSON.stringify(payload));
 
     // Extract data from payload
     const { action, type, senderEmail, ccEmails = [], bccEmails = [] } = payload;
