@@ -243,7 +243,7 @@ This is a reminder that you have an action item due TOMORROW.
 
 ${action.description}
 
-Due Date: ${dueDate}
+Due Date: ${dueDateRaw}
 Department: ${action.department}
 Priority: ${action.priority}
 Current Progress: ${action.progressStatus}
