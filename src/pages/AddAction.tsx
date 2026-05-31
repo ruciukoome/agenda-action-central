@@ -119,7 +119,27 @@ export default function AddAction() {
 
   return (
     <AppLayout title={draftId ? "Resume Draft" : "Add New Action Item"}>
-      <div className="container max-w-3xl py-6">
+      <div className="container max-w-3xl py-6 space-y-6">
+        <div className="relative overflow-hidden rounded-2xl p-6 sm:p-7 text-white shadow-lg bg-gradient-to-br from-fuchsia-500 via-violet-500 to-indigo-500">
+          <div className="absolute -top-16 -right-16 h-48 w-48 rounded-full bg-white/10 blur-3xl" />
+          <div className="absolute -bottom-16 -left-10 h-48 w-48 rounded-full bg-pink-400/30 blur-3xl" />
+          <div className="relative flex items-start gap-4">
+            <div className="rounded-2xl bg-white/20 backdrop-blur p-3 ring-1 ring-white/30 shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+            </div>
+            <div className="min-w-0 flex-1">
+              <span className="text-xs font-medium uppercase tracking-wider text-white/80">
+                {draftId ? "Resuming draft" : "New action item"}
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mt-1">
+                {draftId ? "Pick up where you left off" : "Capture a new action"}
+              </h2>
+              <p className="text-sm text-white/85 mt-1 max-w-xl">
+                Add details, assign an owner, and save as a draft if you need to pause.
+              </p>
+            </div>
+          </div>
+        </div>
         <ActionForm
           key={draftId || "new"}
           draftId={draftId}
