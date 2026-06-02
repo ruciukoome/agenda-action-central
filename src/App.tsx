@@ -12,6 +12,7 @@ import NotFound from './pages/NotFound';
 import MyActions from './pages/MyActions';
 import UpdateTask from './pages/UpdateTask';
 import UpdateSuccess from './pages/UpdateSuccess';
+import RespondAction from './pages/RespondAction';
 import Settings from './pages/Settings';
 import Onboarding from './pages/Onboarding';
 import OrganizationSettings from './pages/OrganizationSettings';
