@@ -76,14 +76,16 @@ serve(async (req) => {
 
     const FROM_ADDRESS = "Action Central <info@nafarrosolutions.com>";
 
-    // ---- Generate secure update token for the owner (only for real UUID action ids) ----
+    // ---- Generate secure token for owner (used for update + accept/reject) ----
     const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     const isRealAction = UUID_RE.test(String(action.id));
     let updateUrl: string | undefined;
+    let acceptUrl: string | undefined;
+    let rejectUrl: string | undefined;
 
     if (isRealAction) {
       const token = generateToken();
-      const expiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+      const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
       const { error: tokenError } = await supabaseAdmin
         .from("action_tokens")
@@ -114,12 +116,29 @@ serve(async (req) => {
       }
 
       updateUrl = `${APP_URL}/update-task/${action.id}?token=${token}`;
+      acceptUrl = `${APP_URL}/respond/${action.id}?token=${token}&decision=accept`;
+      rejectUrl = `${APP_URL}/respond/${action.id}?token=${token}&decision=reject`;
     } else {
       console.warn("Skipping update-link token: action.id is not a UUID:", action.id);
     }
 
-    // ---- Build owner email (with secure link) ----
-    const ownerEmail = generateEmailContent(action, type, { isOwner: true, updateUrl });
+    // ---- Build ICS calendar invite (all recipients as attendees) ----
+    const allAttendees = [
+      action.ownerEmail,
+      ...(ccEmails || []),
+      ...(bccEmails || []),
+    ].filter((e) => typeof e === "string" && e.includes("@"));
+    const uniqueAttendees = [...new Set(allAttendees)];
+
+    const icsBase64 = buildIcsBase64(action, uniqueAttendees);
+    const icsAttachment = {
+      filename: "invite.ics",
+      content: icsBase64,
+      content_type: "text/calendar; method=REQUEST; charset=UTF-8",
+    };
+
+    // ---- Build owner email (with secure link + accept/reject + ICS) ----
+    const ownerEmail = generateEmailContent(action, type, { isOwner: true, updateUrl, acceptUrl, rejectUrl });
     const ownerResp = await fetch("https://connector-gateway.lovable.dev/resend/emails", {
       method: "POST",
       headers: {
@@ -134,6 +153,7 @@ serve(async (req) => {
         subject: ownerEmail.subject,
         html: ownerEmail.htmlContent,
         text: ownerEmail.textContent,
+        attachments: [icsAttachment],
       }),
     });
 
@@ -142,14 +162,13 @@ serve(async (req) => {
       throw new Error(`Resend (owner) error: ${ownerResp.status} - ${t}`);
     }
 
-    // ---- Build follower email (no link) for CC + BCC ----
+    // ---- Build follower email (no link, with ICS) for CC + BCC ----
     const followers = [...new Set([...(ccEmails || []), ...(bccEmails || [])]
       .filter((e) => typeof e === "string" && e.includes("@") && e !== action.ownerEmail))];
 
     let followerCount = 0;
     if (followers.length > 0) {
       const followerEmail = generateEmailContent(action, type, { isOwner: false });
-      // Send individually to each follower via BCC so addresses aren't exposed.
       const followerResp = await fetch("https://connector-gateway.lovable.dev/resend/emails", {
         method: "POST",
         headers: {
@@ -165,6 +184,7 @@ serve(async (req) => {
           subject: followerEmail.subject,
           html: followerEmail.htmlContent,
           text: followerEmail.textContent,
+          attachments: [icsAttachment],
         }),
       });
       if (!followerResp.ok) {
@@ -191,7 +211,7 @@ serve(async (req) => {
 function generateEmailContent(
   action: any,
   type: NotificationType,
-  opts: { isOwner: boolean; updateUrl?: string }
+  opts: { isOwner: boolean; updateUrl?: string; acceptUrl?: string; rejectUrl?: string }
 ) {
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return "Not set";
@@ -244,20 +264,29 @@ function generateEmailContent(
   const notesHtml = action.notes ? `<p><strong>Notes:</strong> ${esc(action.notes)}</p>` : '';
   const notesText = action.notes ? `Notes: ${String(action.notes)}` : '';
 
+  const acceptRejectCta = opts.isOwner && opts.acceptUrl && opts.rejectUrl ? `
+    <div class="cta-wrap">
+      <a class="cta-btn" style="background:#16a34a;margin-right:8px" href="${esc(opts.acceptUrl)}">Accept task</a>
+      <a class="cta-btn" style="background:#dc2626" href="${esc(opts.rejectUrl)}">Reject task</a>
+    </div>
+  ` : '';
+
   const ownerCta = opts.isOwner && opts.updateUrl ? `
+    ${acceptRejectCta}
     <div class="cta-wrap">
       <a class="cta-btn" href="${esc(opts.updateUrl)}">Update this action</a>
     </div>
     <div class="info-box">
-      <p style="margin:0"><strong>Only you (the action owner) can update this item.</strong> Use the secure button above — it expires in 14 days and can only be used once. Replying to this email will not update the action.</p>
+      <p style="margin:0"><strong>Only you (the action owner) can act on this item.</strong> Use the secure buttons above — the link expires in 30 days. A calendar invite (invite.ics) is attached so you can add it to your calendar. Replying to this email will not update the action.</p>
     </div>
   ` : '';
 
   const followerNotice = !opts.isOwner ? `
     <div class="viewer-box">
-      <p style="margin:0"><strong>You are receiving this as a follower (CC/BCC).</strong> This is for your awareness only — only the action owner (${esc(action.ownerEmail)}) can update its progress. Replying to this email will not change the action.</p>
+      <p style="margin:0"><strong>You are receiving this as a follower (CC/BCC).</strong> A calendar invite (invite.ics) is attached for your awareness. Only the action owner (${esc(action.ownerEmail)}) can update its progress. Replying to this email will not change the action.</p>
     </div>
   ` : '';
+
 
   let titleVerb = "";
   let intro = "";
@@ -332,4 +361,66 @@ Platinum Credit Limited
     htmlContent: baseTemplate(subject, content),
     textContent: plainText,
   };
+}
+
+// ---- ICS calendar invite builder ----
+function buildIcsBase64(action: any, attendees: string[]): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const toIcsDate = (d: Date) =>
+    `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}Z`;
+
+  const startSource = action.meetingDate || action.dueDate || new Date().toISOString();
+  const start = new Date(startSource);
+  const end = new Date(start.getTime() + 60 * 60 * 1000);
+
+  const icsEscape = (s: string) =>
+    String(s ?? "")
+      .replace(/\\/g, "\\\\")
+      .replace(/\n/g, "\\n")
+      .replace(/,/g, "\\,")
+      .replace(/;/g, "\\;");
+
+  const fold = (line: string) => {
+    const out: string[] = [];
+    let l = line;
+    while (l.length > 73) {
+      out.push(l.slice(0, 73));
+      l = " " + l.slice(73);
+    }
+    out.push(l);
+    return out.join("\r\n");
+  };
+
+  const desc = String(action.description ?? "Action item");
+  const summary = desc.length > 80 ? desc.slice(0, 77) + "..." : desc;
+  const notes = action.notes ? `\\n\\nNotes: ${icsEscape(action.notes)}` : "";
+  const fullDesc = `${icsEscape(desc)}${notes}\\n\\nDepartment: ${icsEscape(action.department || "")}\\nPriority: ${icsEscape(action.priority || "")}`;
+
+  const lines: string[] = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Action Central//EN",
+    "METHOD:REQUEST",
+    "CALSCALE:GREGORIAN",
+    "BEGIN:VEVENT",
+    `UID:${action.id}@actioncentral`,
+    `DTSTAMP:${toIcsDate(new Date())}`,
+    `DTSTART:${toIcsDate(start)}`,
+    `DTEND:${toIcsDate(end)}`,
+    `SUMMARY:${icsEscape(summary)}`,
+    `DESCRIPTION:${fullDesc}`,
+    `ORGANIZER;CN=Action Central:mailto:${action.ownerEmail}`,
+    ...attendees.map(
+      (a) =>
+        `ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=TRUE;CN=${a}:mailto:${a}`
+    ),
+    "STATUS:CONFIRMED",
+    "SEQUENCE:0",
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ];
+
+  const ics = lines.map(fold).join("\r\n");
+  // base64-encode for Resend attachments
+  return btoa(unescape(encodeURIComponent(ics)));
 }

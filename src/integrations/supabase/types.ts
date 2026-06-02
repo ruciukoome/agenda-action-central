@@ -126,6 +126,8 @@ export type Database = {
           notes: string | null
           organization_id: string | null
           owner_email: string
+          owner_responded_at: string | null
+          owner_response: Database["public"]["Enums"]["owner_response_status"]
           priority: Database["public"]["Enums"]["action_priority"]
           progress_status: Database["public"]["Enums"]["action_progress"]
           updated_at: string
@@ -143,6 +145,8 @@ export type Database = {
           notes?: string | null
           organization_id?: string | null
           owner_email: string
+          owner_responded_at?: string | null
+          owner_response?: Database["public"]["Enums"]["owner_response_status"]
           priority: Database["public"]["Enums"]["action_priority"]
           progress_status?: Database["public"]["Enums"]["action_progress"]
           updated_at?: string
@@ -160,6 +164,8 @@ export type Database = {
           notes?: string | null
           organization_id?: string | null
           owner_email?: string
+          owner_responded_at?: string | null
+          owner_response?: Database["public"]["Enums"]["owner_response_status"]
           priority?: Database["public"]["Enums"]["action_priority"]
           progress_status?: Database["public"]["Enums"]["action_progress"]
           updated_at?: string
@@ -473,6 +479,7 @@ export type Database = {
       action_progress: "Not Started" | "25%" | "50%" | "75%" | "100%"
       app_role: "super_admin" | "admin" | "moderator"
       org_role: "admin" | "member"
+      owner_response_status: "pending" | "accepted" | "rejected"
       subscription_plan: "free" | "basic" | "premium"
       subscription_status: "active" | "expired" | "cancelled"
       todo_priority: "low" | "medium" | "high"
@@ -628,6 +635,7 @@ export const Constants = {
       action_progress: ["Not Started", "25%", "50%", "75%", "100%"],
       app_role: ["super_admin", "admin", "moderator"],
       org_role: ["admin", "member"],
+      owner_response_status: ["pending", "accepted", "rejected"],
       subscription_plan: ["free", "basic", "premium"],
       subscription_status: ["active", "expired", "cancelled"],
       todo_priority: ["low", "medium", "high"],

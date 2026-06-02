@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.get-org-members-info]
 verify_jwt = false
+
+[functions.respond-action]
+verify_jwt = false
