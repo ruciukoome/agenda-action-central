@@ -1,0 +1,1 @@
+ALTER TABLE public.action_tokens ADD COLUMN IF NOT EXISTS action_data jsonb;

@@ -77,6 +77,7 @@ export type Database = {
       }
       action_tokens: {
         Row: {
+          action_data: Json | null
           action_id: string
           created_at: string
           expires_at: string
@@ -85,6 +86,7 @@ export type Database = {
           used: boolean
         }
         Insert: {
+          action_data?: Json | null
           action_id: string
           created_at?: string
           expires_at: string
@@ -93,6 +95,7 @@ export type Database = {
           used?: boolean
         }
         Update: {
+          action_data?: Json | null
           action_id?: string
           created_at?: string
           expires_at?: string
@@ -420,6 +423,7 @@ export type Database = {
       get_action_token_by_id_and_token: {
         Args: { p_action_id: string; p_token: string }
         Returns: {
+          action_data: Json | null
           action_id: string
           created_at: string
           expires_at: string
