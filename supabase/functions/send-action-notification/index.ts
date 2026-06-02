@@ -362,3 +362,65 @@ Platinum Credit Limited
     textContent: plainText,
   };
 }
+
+// ---- ICS calendar invite builder ----
+function buildIcsBase64(action: any, attendees: string[]): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const toIcsDate = (d: Date) =>
+    `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}Z`;
+
+  const startSource = action.meetingDate || action.dueDate || new Date().toISOString();
+  const start = new Date(startSource);
+  const end = new Date(start.getTime() + 60 * 60 * 1000);
+
+  const icsEscape = (s: string) =>
+    String(s ?? "")
+      .replace(/\\/g, "\\\\")
+      .replace(/\n/g, "\\n")
+      .replace(/,/g, "\\,")
+      .replace(/;/g, "\\;");
+
+  const fold = (line: string) => {
+    const out: string[] = [];
+    let l = line;
+    while (l.length > 73) {
+      out.push(l.slice(0, 73));
+      l = " " + l.slice(73);
+    }
+    out.push(l);
+    return out.join("\r\n");
+  };
+
+  const desc = String(action.description ?? "Action item");
+  const summary = desc.length > 80 ? desc.slice(0, 77) + "..." : desc;
+  const notes = action.notes ? `\\n\\nNotes: ${icsEscape(action.notes)}` : "";
+  const fullDesc = `${icsEscape(desc)}${notes}\\n\\nDepartment: ${icsEscape(action.department || "")}\\nPriority: ${icsEscape(action.priority || "")}`;
+
+  const lines: string[] = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Action Central//EN",
+    "METHOD:REQUEST",
+    "CALSCALE:GREGORIAN",
+    "BEGIN:VEVENT",
+    `UID:${action.id}@actioncentral`,
+    `DTSTAMP:${toIcsDate(new Date())}`,
+    `DTSTART:${toIcsDate(start)}`,
+    `DTEND:${toIcsDate(end)}`,
+    `SUMMARY:${icsEscape(summary)}`,
+    `DESCRIPTION:${fullDesc}`,
+    `ORGANIZER;CN=Action Central:mailto:${action.ownerEmail}`,
+    ...attendees.map(
+      (a) =>
+        `ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=TRUE;CN=${a}:mailto:${a}`
+    ),
+    "STATUS:CONFIRMED",
+    "SEQUENCE:0",
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ];
+
+  const ics = lines.map(fold).join("\r\n");
+  // base64-encode for Resend attachments
+  return btoa(unescape(encodeURIComponent(ics)));
+}
