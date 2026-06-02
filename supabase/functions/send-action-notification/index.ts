@@ -264,20 +264,29 @@ function generateEmailContent(
   const notesHtml = action.notes ? `<p><strong>Notes:</strong> ${esc(action.notes)}</p>` : '';
   const notesText = action.notes ? `Notes: ${String(action.notes)}` : '';
 
+  const acceptRejectCta = opts.isOwner && opts.acceptUrl && opts.rejectUrl ? `
+    <div class="cta-wrap">
+      <a class="cta-btn" style="background:#16a34a;margin-right:8px" href="${esc(opts.acceptUrl)}">Accept task</a>
+      <a class="cta-btn" style="background:#dc2626" href="${esc(opts.rejectUrl)}">Reject task</a>
+    </div>
+  ` : '';
+
   const ownerCta = opts.isOwner && opts.updateUrl ? `
+    ${acceptRejectCta}
     <div class="cta-wrap">
       <a class="cta-btn" href="${esc(opts.updateUrl)}">Update this action</a>
     </div>
     <div class="info-box">
-      <p style="margin:0"><strong>Only you (the action owner) can update this item.</strong> Use the secure button above — it expires in 14 days and can only be used once. Replying to this email will not update the action.</p>
+      <p style="margin:0"><strong>Only you (the action owner) can act on this item.</strong> Use the secure buttons above — the link expires in 30 days. A calendar invite (invite.ics) is attached so you can add it to your calendar. Replying to this email will not update the action.</p>
     </div>
   ` : '';
 
   const followerNotice = !opts.isOwner ? `
     <div class="viewer-box">
-      <p style="margin:0"><strong>You are receiving this as a follower (CC/BCC).</strong> This is for your awareness only — only the action owner (${esc(action.ownerEmail)}) can update its progress. Replying to this email will not change the action.</p>
+      <p style="margin:0"><strong>You are receiving this as a follower (CC/BCC).</strong> A calendar invite (invite.ics) is attached for your awareness. Only the action owner (${esc(action.ownerEmail)}) can update its progress. Replying to this email will not change the action.</p>
     </div>
   ` : '';
+
 
   let titleVerb = "";
   let intro = "";
