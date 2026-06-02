@@ -1,37 +1,33 @@
-
 /**
  * EDGE FUNCTION: ACTION NOTIFICATION SENDER
  * ----------------------------------------
- * This edge function sends email notifications for action items
- * 
- * Functionality:
- * - Sends notification emails when actions are assigned or updated
- * - Uses SendGrid for reliable email delivery with proper authentication
- * - Implements SPF, DKIM and other anti-spam practices
- * - Encourages email replies for updates
- * 
- * Environment variables:
- * - SENDGRID_API_KEY: API key for SendGrid email service
+ * Sends notification emails for action items.
+ * - Owner receives a secure, one-time update link.
+ * - CC/BCC recipients receive a separate "view-only" notification (no link).
+ * - Replies are NOT used to update actions.
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// Define CORS headers for browser access
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Define notification types
 type NotificationType = "assigned" | "updated" | "due_soon" | "overdue";
 
-// Create Supabase client
 const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
-const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
-const supabase = createClient(supabaseUrl, supabaseKey);
+const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
+const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 
-// HTML escaping helper to prevent injection in email templates
+// Client for verifying the caller's JWT
+const supabaseAuth = createClient(supabaseUrl, anonKey);
+// Client with service role for inserting tokens (server-side only)
+const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
+
+const APP_URL = Deno.env.get("APP_URL") || "https://actioncentral.platinumcredit.co.ke";
+
 const esc = (v: unknown): string =>
   String(v ?? "")
     .replace(/&/g, "&amp;")
@@ -40,61 +36,83 @@ const esc = (v: unknown): string =>
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
 
-// Request handler
+function generateToken(): string {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    console.log("Handling OPTIONS request");
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Process request
-  console.log("Processing email notification request");
-
   try {
-    // Require authenticated caller — prevents anonymous abuse of the org's email domain
     const authHeader = req.headers.get("Authorization") || "";
     if (!authHeader.toLowerCase().startsWith("bearer ")) {
-      return new Response(
-        JSON.stringify({ success: false, error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ success: false, error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
-    const token = authHeader.replace(/^Bearer\s+/i, "");
-    const { data: claims, error: authError } = await supabase.auth.getClaims(token);
+    const jwt = authHeader.replace(/^Bearer\s+/i, "");
+    const { data: claims, error: authError } = await supabaseAuth.auth.getClaims(jwt);
     if (authError || !claims?.claims?.sub) {
-      return new Response(
-        JSON.stringify({ success: false, error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ success: false, error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Parse request data
     const payload = await req.json();
+    const { action, type, ccEmails = [], bccEmails = [] } = payload as {
+      action: any; type: NotificationType; ccEmails?: string[]; bccEmails?: string[];
+    };
 
-    // Extract data from payload
-    const { action, type, senderEmail, ccEmails = [], bccEmails = [] } = payload;
-    
-    if (!action || !action.ownerEmail) {
-      throw new Error("Missing required data: action or owner email");
+    if (!action || !action.ownerEmail || !action.id) {
+      throw new Error("Missing required data: action, action.id, or owner email");
     }
 
-    console.log(`Preparing to send ${type} notification for action: ${action.id}`);
-    
-    // Check Resend API key (via Lovable connector gateway)
     const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
     if (!lovableApiKey) throw new Error("LOVABLE_API_KEY is not configured");
     if (!resendApiKey) throw new Error("RESEND_API_KEY is not configured");
 
     const FROM_ADDRESS = "Action Central <info@nafarrosolutions.com>";
-    console.log(`Sending email from: ${FROM_ADDRESS} to: ${action.ownerEmail}`);
 
-    // Generate email content based on notification type
-    const { subject, htmlContent, textContent } = generateEmailContent(action, type);
+    // ---- Generate secure update token for the owner ----
+    const token = generateToken();
+    const expiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
 
-    // Send email via Resend through Lovable connector gateway
-    const response = await fetch("https://connector-gateway.lovable.dev/resend/emails", {
+    const { error: tokenError } = await supabaseAdmin
+      .from("action_tokens")
+      .insert({
+        action_id: action.id,
+        token,
+        used: false,
+        expires_at: expiresAt,
+        action_data: {
+          id: action.id,
+          description: action.description,
+          department: action.department,
+          meeting_date: action.meetingDate,
+          priority: action.priority,
+          owner_email: action.ownerEmail,
+          completed: action.completed,
+          progress_status: action.progressStatus,
+          notes: action.notes || '',
+          created_at: action.createdAt,
+          updated_at: action.updatedAt,
+          due_date: action.dueDate,
+        },
+      } as any);
+
+    if (tokenError) {
+      console.error("Failed to create action token:", tokenError);
+      throw new Error(`Failed to create update token: ${tokenError.message}`);
+    }
+
+    const updateUrl = `${APP_URL}/update-task/${action.id}?token=${token}`;
+
+    // ---- Build owner email (with secure link) ----
+    const ownerEmail = generateEmailContent(action, type, { isOwner: true, updateUrl });
+    const ownerResp = await fetch("https://connector-gateway.lovable.dev/resend/emails", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${lovableApiKey}`,
@@ -104,107 +122,112 @@ serve(async (req) => {
       body: JSON.stringify({
         from: FROM_ADDRESS,
         to: [action.ownerEmail],
-        cc: ccEmails.length > 0 ? ccEmails : undefined,
-        bcc: bccEmails.length > 0 ? bccEmails : undefined,
         reply_to: "info@nafarrosolutions.com",
-        subject,
-        html: htmlContent,
-        text: textContent,
+        subject: ownerEmail.subject,
+        html: ownerEmail.htmlContent,
+        text: ownerEmail.textContent,
       }),
     });
 
-    const responseText = await response.text();
-    console.log("Resend API response status:", response.status);
-    console.log("Resend API response text:", responseText);
-
-    if (!response.ok) {
-      throw new Error(`Resend API error: ${response.status} - ${responseText}`);
+    if (!ownerResp.ok) {
+      const t = await ownerResp.text();
+      throw new Error(`Resend (owner) error: ${ownerResp.status} - ${t}`);
     }
 
-    console.log(`Email sent successfully via Resend, status: ${response.status}`);
+    // ---- Build follower email (no link) for CC + BCC ----
+    const followers = [...new Set([...(ccEmails || []), ...(bccEmails || [])]
+      .filter((e) => typeof e === "string" && e.includes("@") && e !== action.ownerEmail))];
 
-    // Return success response
-    return new Response(
-      JSON.stringify({ success: true, message: "Email notification sent" }),
-      { 
-        status: 200, 
-        headers: { ...corsHeaders, "Content-Type": "application/json" } 
+    let followerCount = 0;
+    if (followers.length > 0) {
+      const followerEmail = generateEmailContent(action, type, { isOwner: false });
+      // Send individually to each follower via BCC so addresses aren't exposed.
+      const followerResp = await fetch("https://connector-gateway.lovable.dev/resend/emails", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${lovableApiKey}`,
+          "X-Connection-Api-Key": resendApiKey,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from: FROM_ADDRESS,
+          to: ["info@nafarrosolutions.com"],
+          bcc: followers,
+          reply_to: "info@nafarrosolutions.com",
+          subject: followerEmail.subject,
+          html: followerEmail.htmlContent,
+          text: followerEmail.textContent,
+        }),
+      });
+      if (!followerResp.ok) {
+        const t = await followerResp.text();
+        console.error(`Resend (followers) error: ${followerResp.status} - ${t}`);
+      } else {
+        followerCount = followers.length;
       }
+    }
+
+    return new Response(
+      JSON.stringify({ success: true, message: "Email notification sent", ownerSent: true, followerCount }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error sending notification:", error);
-    
-    // Return error response
     return new Response(
       JSON.stringify({ success: false, error: error.message }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, "Content-Type": "application/json" } 
-      }
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
 
-// Helper function to generate email content without action update link
-function generateEmailContent(action: any, type: NotificationType) {
+function generateEmailContent(
+  action: any,
+  type: NotificationType,
+  opts: { isOwner: boolean; updateUrl?: string }
+) {
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return "Not set";
     return new Date(dateString).toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
     });
   };
 
-  // Common styling for all email templates
   const styles = `
-    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; }
-    .header { background-color: #0070f3; color: white; padding: 20px; text-align: center; }
-    .content { padding: 20px; }
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; background:#ffffff; }
+    .header { background-color: #0284c7; color: #ffffff; padding: 22px; text-align: center; }
+    .content { padding: 24px; }
     .footer { font-size: 12px; color: #666; border-top: 1px solid #eee; padding: 20px; text-align: center; }
     .priority-high { color: #e53e3e; font-weight: bold; }
     .priority-medium { color: #dd6b20; font-weight: bold; }
     .priority-low { color: #38a169; font-weight: bold; }
-    .reply-instruction { background-color: #f7f7f7; padding: 15px; border-left: 4px solid #0070f3; margin: 20px 0; }
+    .cta-wrap { text-align:center; margin: 28px 0; }
+    .cta-btn { display:inline-block; background:#0284c7; color:#ffffff !important; text-decoration:none; padding: 14px 26px; border-radius: 8px; font-weight: bold; }
+    .info-box { background-color: #f1f5f9; padding: 14px 16px; border-left: 4px solid #0284c7; margin: 20px 0; border-radius: 4px; }
+    .viewer-box { background-color: #fff7ed; padding: 14px 16px; border-left: 4px solid #f59e0b; margin: 20px 0; border-radius: 4px; }
     .unsubscribe { font-size: 11px; color: #999; margin-top: 20px; }
-    @media only screen and (max-width: 480px) {
-      .content { padding: 10px; }
-      .header { padding: 10px; }
-      h2 { font-size: 20px; }
-    }
   `;
 
-  // Base template for all emails
   const baseTemplate = (title: string, content: string) => `
     <!DOCTYPE html>
-    <html>
-      <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-        <title>${title}</title>
-        <style>${styles}</style>
-      </head>
-      <body>
-        <div class="header">
-          <h2>${title}</h2>
-        </div>
-        <div class="content">
-          ${content}
-        </div>
-        <div class="footer">
-          <p>This is an automated message from the Action Central system.</p>
-          <p>Platinum Credit Limited</p>
-          <p class="unsubscribe">You can <a href="https://actioncentral.platinumcredit.co.ke/unsubscribe">unsubscribe</a> from these notifications at any time.</p>
-        </div>
-      </body>
-    </html>
+    <html><head>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+      <title>${title}</title>
+      <style>${styles}</style>
+    </head><body>
+      <div class="header"><h2>${title}</h2></div>
+      <div class="content">${content}</div>
+      <div class="footer">
+        <p>This is an automated message from the Action Central system.</p>
+        <p>Platinum Credit Limited</p>
+        <p class="unsubscribe">Please do not reply to this email — replies are not monitored.</p>
+      </div>
+    </body></html>
   `;
 
-  // Escape all user-controlled fields once for safe HTML interpolation
   const descRaw = String(action.description ?? "");
   const desc = esc(descRaw);
-  const descShort = esc(descRaw.substring(0, 50) + (descRaw.length > 50 ? '...' : ''));
+  const shortDesc = descRaw.substring(0, 50) + (descRaw.length > 50 ? '...' : '');
   const dept = esc(action.department);
   const pri = esc(action.priority);
   const priClass = esc(String(action.priority ?? "").replace(/[^a-z0-9-]/gi, ""));
@@ -213,205 +236,92 @@ function generateEmailContent(action: any, type: NotificationType) {
   const notesHtml = action.notes ? `<p><strong>Notes:</strong> ${esc(action.notes)}</p>` : '';
   const notesText = action.notes ? `Notes: ${String(action.notes)}` : '';
 
-  let subject = "";
-  let content = "";
-  let plainTextContent = "";
+  const ownerCta = opts.isOwner && opts.updateUrl ? `
+    <div class="cta-wrap">
+      <a class="cta-btn" href="${esc(opts.updateUrl)}">Update this action</a>
+    </div>
+    <div class="info-box">
+      <p style="margin:0"><strong>Only you (the action owner) can update this item.</strong> Use the secure button above — it expires in 14 days and can only be used once. Replying to this email will not update the action.</p>
+    </div>
+  ` : '';
+
+  const followerNotice = !opts.isOwner ? `
+    <div class="viewer-box">
+      <p style="margin:0"><strong>You are receiving this as a follower (CC/BCC).</strong> This is for your awareness only — only the action owner (${esc(action.ownerEmail)}) can update its progress. Replying to this email will not change the action.</p>
+    </div>
+  ` : '';
+
+  let titleVerb = "";
+  let intro = "";
+  let subjectPrefix = "";
 
   switch (type) {
     case "assigned":
-      subject = `New Action Item Assigned: ${descRaw.substring(0, 50)}${descRaw.length > 50 ? '...' : ''}`;
-      content = `
-        <p>Hello,</p>
-        <p>You've been assigned a new action item in Action Central.</p>
-        
-        <h3>${desc}</h3>
-        <p><strong>Department:</strong> ${dept}</p>
-        <p><strong>Priority:</strong> <span class="priority-${priClass}">${pri}</span></p>
-        <p><strong>Due Date:</strong> ${due}</p>
-        ${notesHtml}
-        
-        <div class="reply-instruction">
-          <p><strong>Kindly reply to this email for updates of your action point</strong></p>
-        </div>
-      `;
-      plainTextContent = `
-Hello,
-
-You've been assigned a new action item in Action Central.
-
-${descRaw}
-
-Department: ${action.department}
-Priority: ${action.priority}
-Due Date: ${formatDate(action.dueDate)}
-${notesText}
-
-Kindly reply to this email for updates of your action point.
-
-This is an automated message from the Action Central system.
-Platinum Credit Limited
-
-To unsubscribe: https://actioncentral.platinumcredit.co.ke/unsubscribe
-      `;
+      titleVerb = `New Action Item Assigned: ${shortDesc}`;
+      intro = opts.isOwner
+        ? `<p>Hello,</p><p>You've been assigned a new action item in Action Central.</p>`
+        : `<p>Hello,</p><p>A new action item has been assigned to <strong>${esc(action.ownerEmail)}</strong>. You are being notified as a follower.</p>`;
       break;
-      
     case "updated":
-      subject = `Action Item Updated: ${descRaw.substring(0, 50)}${descRaw.length > 50 ? '...' : ''}`;
-      content = `
-        <p>Hello,</p>
-        <p>An action item assigned to you has been updated.</p>
-        
-        <h3>${desc}</h3>
-        <p><strong>Department:</strong> ${dept}</p>
-        <p><strong>Priority:</strong> <span class="priority-${priClass}">${pri}</span></p>
-        <p><strong>Due Date:</strong> ${due}</p>
-        <p><strong>Current Progress:</strong> ${progress}</p>
-        ${notesHtml}
-        
-        <div class="reply-instruction">
-          <p><strong>Kindly reply to this email for updates of your action point</strong></p>
-        </div>
-      `;
-      plainTextContent = `
-Hello,
-
-An action item assigned to you has been updated.
-
-${descRaw}
-
-Department: ${action.department}
-Priority: ${action.priority}
-Due Date: ${formatDate(action.dueDate)}
-Current Progress: ${action.progressStatus}
-${notesText}
-
-Kindly reply to this email for updates of your action point.
-
-This is an automated message from the Action Central system.
-Platinum Credit Limited
-
-To unsubscribe: https://actioncentral.platinumcredit.co.ke/unsubscribe
-      `;
+      titleVerb = `Action Item Updated: ${shortDesc}`;
+      intro = opts.isOwner
+        ? `<p>Hello,</p><p>An action item assigned to you has been updated.</p>`
+        : `<p>Hello,</p><p>An action item owned by <strong>${esc(action.ownerEmail)}</strong> has been updated.</p>`;
       break;
-      
     case "due_soon":
-      subject = `REMINDER: Action Item Due Soon: ${descRaw.substring(0, 50)}${descRaw.length > 50 ? '...' : ''}`;
-      content = `
-        <p>Hello,</p>
-        <p>This is a reminder that you have an action item due soon.</p>
-        
-        <h3>${desc}</h3>
-        <p><strong>Due Date:</strong> ${due}</p>
-        <p><strong>Department:</strong> ${dept}</p>
-        <p><strong>Priority:</strong> <span class="priority-${priClass}">${pri}</span></p>
-        <p><strong>Current Progress:</strong> ${progress}</p>
-        ${notesHtml}
-        
-        <div class="reply-instruction">
-          <p><strong>Kindly reply to this email for updates of your action point</strong></p>
-        </div>
-      `;
-      plainTextContent = `
-Hello,
-
-This is a reminder that you have an action item due soon.
-
-${descRaw}
-
-Due Date: ${formatDate(action.dueDate)}
-Department: ${action.department}
-Priority: ${action.priority}
-Current Progress: ${action.progressStatus}
-${notesText}
-
-Kindly reply to this email for updates of your action point.
-
-This is an automated message from the Action Central system.
-Platinum Credit Limited
-
-To unsubscribe: https://actioncentral.platinumcredit.co.ke/unsubscribe
-      `;
+      titleVerb = `REMINDER: Action Item Due Soon: ${shortDesc}`;
+      intro = opts.isOwner
+        ? `<p>Hello,</p><p>This is a reminder that you have an action item due soon.</p>`
+        : `<p>Hello,</p><p>An action item owned by <strong>${esc(action.ownerEmail)}</strong> is due soon.</p>`;
       break;
-      
     case "overdue":
-      subject = `OVERDUE: Action Item Past Due Date: ${descRaw.substring(0, 50)}${descRaw.length > 50 ? '...' : ''}`;
-      content = `
-        <p>Hello,</p>
-        <p>An action item assigned to you is now overdue.</p>
-        
-        <h3>${desc}</h3>
-        <p><strong>Due Date:</strong> ${due} (OVERDUE)</p>
-        <p><strong>Department:</strong> ${dept}</p>
-        <p><strong>Priority:</strong> <span class="priority-${priClass}">${pri}</span></p>
-        <p><strong>Current Progress:</strong> ${progress}</p>
-        ${notesHtml}
-        
-        <div class="reply-instruction">
-          <p><strong>Kindly reply to this email for updates of your action point</strong></p>
-        </div>
-      `;
-      plainTextContent = `
-Hello,
-
-An action item assigned to you is now overdue.
-
-${descRaw}
-
-Due Date: ${formatDate(action.dueDate)} (OVERDUE)
-Department: ${action.department}
-Priority: ${action.priority}
-Current Progress: ${action.progressStatus}
-${notesText}
-
-Kindly reply to this email for updates of your action point.
-
-This is an automated message from the Action Central system.
-Platinum Credit Limited
-
-To unsubscribe: https://actioncentral.platinumcredit.co.ke/unsubscribe
-      `;
+      titleVerb = `OVERDUE: Action Item Past Due Date: ${shortDesc}`;
+      intro = opts.isOwner
+        ? `<p>Hello,</p><p>An action item assigned to you is now overdue.</p>`
+        : `<p>Hello,</p><p>An action item owned by <strong>${esc(action.ownerEmail)}</strong> is now overdue.</p>`;
       break;
-      
     default:
-      subject = `Action Central: ${descRaw.substring(0, 50)}${descRaw.length > 50 ? '...' : ''}`;
-      content = `
-        <p>Hello,</p>
-        <p>There's been an update to your action item.</p>
-        
-        <h3>${desc}</h3>
-        <p><strong>Department:</strong> ${dept}</p>
-        <p><strong>Priority:</strong> <span class="priority-${priClass}">${pri}</span></p>
-        <p><strong>Due Date:</strong> ${due}</p>
-        ${notesHtml}
-        
-        <div class="reply-instruction">
-          <p><strong>Kindly reply to this email for updates of your action point</strong></p>
-        </div>
-      `;
-      plainTextContent = `
-Hello,
+      titleVerb = `Action Central: ${shortDesc}`;
+      intro = `<p>Hello,</p><p>There's been an update to an action item.</p>`;
+  }
 
-There's been an update to your action item.
+  if (!opts.isOwner) subjectPrefix = "[FYI] ";
+
+  const subject = `${subjectPrefix}${titleVerb}`;
+
+  const details = `
+    <h3>${desc}</h3>
+    <p><strong>Department:</strong> ${dept}</p>
+    <p><strong>Priority:</strong> <span class="priority-${priClass}">${pri}</span></p>
+    <p><strong>Due Date:</strong> ${due}</p>
+    <p><strong>Current Progress:</strong> ${progress}</p>
+    ${notesHtml}
+  `;
+
+  const content = `${intro}${details}${ownerCta}${followerNotice}`;
+
+  const plainText = `
+${opts.isOwner ? '' : '[FYI] '}${titleVerb}
 
 ${descRaw}
 
 Department: ${action.department}
 Priority: ${action.priority}
 Due Date: ${formatDate(action.dueDate)}
+Current Progress: ${action.progressStatus}
 ${notesText}
 
-Kindly reply to this email for updates of your action point.
+${opts.isOwner
+  ? `Only you (the action owner) can update this action. Use the secure link below (expires in 14 days, single-use):\n${opts.updateUrl}\n\nReplying to this email will NOT update the action.`
+  : `You are receiving this as a follower (CC/BCC). Only the action owner (${action.ownerEmail}) can update progress. Replying to this email will not change the action.`}
 
 This is an automated message from the Action Central system.
 Platinum Credit Limited
-
-To unsubscribe: https://actioncentral.platinumcredit.co.ke/unsubscribe
-      `;
-  }
+  `.trim();
 
   return {
     subject,
     htmlContent: baseTemplate(subject, content),
-    textContent: plainTextContent.trim()
+    textContent: plainText,
   };
 }

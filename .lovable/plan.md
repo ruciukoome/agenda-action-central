@@ -1,36 +1,29 @@
 ## Goal
 
-Let you capture multiple action items in a single meeting, group/filter them by meeting title, and pause any in-progress entry as a private draft so you can come back to it after handling a more urgent one.
+Only the action owner can update an action point. CC/BCC recipients are followers — they get a view-only notification and cannot update. Replying to the notification email will no longer be the update mechanism; instead, the owner gets a secure one-time link in their email that opens the existing `/update-task/:id?token=...` page.
 
-## What changes for you
+## Changes
 
-1. **Meeting Title field** on the Add/Edit Action form (required, with autocomplete from your recent meeting titles).
-2. **Drafts**: a new "Save as draft" button next to the existing Create button. Drafts are private to you (no emails sent, no notifications) until you finalize them.
-3. **Drafts panel** accessible from the Add Action page header and from the sidebar ("My Drafts" with a count badge). Lets you switch between drafts mid-meeting, resume any draft, or delete it.
-4. **Grouping by meeting** on My Actions / Managed Actions: a new "Meeting" column and a "Group by meeting" toggle. Filter by meeting title in the existing filter bar.
-5. **Submit a draft** = same as today's create flow: inserts into `actions`, sends owner email, removes the draft.
+### 1. `supabase/functions/send-action-notification/index.ts`
+- For every send, generate a secure update token by inserting into `public.action_tokens` (used: false, expires in 14 days, with `action_data` snapshot — matches the shape `UpdateTask.tsx` already consumes via `get_action_token_by_id_and_token`).
+- Build two email variants:
+  - **Owner email** (To: owner): includes a prominent "Update this action" button → `{APP_URL}/update-task/{id}?token={token}`. Body text reads: "Use the secure link below to update progress. Replies to this email are not monitored."
+  - **Follower email** (To: each CC + BCC recipient): view-only summary. No update link. Body text reads: "You are receiving this as a follower (CC/BCC). Only the action owner can update progress."
+- Send the owner email and follower email as separate Resend requests so the update link is never exposed to CC/BCC.
+- Use `APP_URL` env var (fallback to `https://actioncentral.platinumcredit.co.ke`) to build the link.
+- Remove the "Kindly reply to this email for updates" instruction from all templates (assigned / updated / due_soon / overdue / default).
 
-UI stays consistent with the existing AppLayout, sidebar, table, and form styling — same shadcn components and tokens.
+### 2. `src/lib/notifications.ts`
+- No behavioral change needed in the caller — it already passes `ccEmails` / `bccEmails`. Toast message text updated to reflect that follower emails were also dispatched.
 
-## Technical section
+### 3. No DB schema changes
+- `action_tokens` table and `get_action_token_by_id_and_token` RPC already exist and are used by `UpdateTask.tsx`. The edge function will insert tokens using the service role (via `SUPABASE_SERVICE_ROLE_KEY`) — confirm the env var is available; if not, switch the supabase client init in the function to use the service role key (required for inserting tokens server-side regardless of caller).
 
-### Database (one migration)
-- `actions.meeting_title text` — nullable initially for back-compat; new entries require it from the form.
-- New table `action_drafts`:
-  - same shape as `actions` (description, department, meeting_date, meeting_title, priority, owner_email, progress_status, notes, due_date, cc_emails text[], bcc_emails text[])
-  - `user_id uuid not null`, `organization_id uuid`, timestamps
-  - all fields nullable except `user_id` so partial drafts save fine
-- RLS on `action_drafts`: user can SELECT/INSERT/UPDATE/DELETE only where `user_id = auth.uid()` (private to me, as chosen).
-- Index `actions(meeting_title)` and `action_drafts(user_id, updated_at desc)`.
+### 4. Email copy
+- Owner subject unchanged ("New Action Item Assigned: …").
+- Follower subject prefixed with "[FYI] " so recipients immediately see they are not the owner (e.g. "[FYI] New Action Item Assigned: …").
 
-### Frontend
-- `ActionForm.tsx`: add `meetingTitle` field (Combobox with recent titles fetched via a small `useRecentMeetingTitles` hook). Add second submit button "Save as draft" wired to a new `onSaveDraft` prop.
-- New `src/lib/drafts/` module: `createDraft`, `updateDraft`, `listDrafts`, `deleteDraft`, `promoteDraftToAction` (calls existing `createAction` then deletes draft).
-- `AddAction.tsx`: load `?draftId=` from URL to resume; show a Drafts sheet/sidebar pinned to the page header.
-- New page `src/pages/Drafts.tsx` + sidebar entry "My Drafts" with unread-style count badge.
-- `ActionsTable.tsx` + filters: add "Meeting" column and meeting filter dropdown; optional group-by-meeting view.
-
-### Out of scope (can be follow-ups)
-- A full Meetings entity / Meetings page (you chose lightweight).
-- Sharing drafts across the org.
-- Bulk submit at end of meeting.
+## Out of scope
+- No UI changes to the app pages.
+- No changes to the `UpdateTask` flow itself — it already validates the token, applies updates, and marks the token used.
+- No restriction changes to in-app permissions (CC/BCC users who happen to also be app users already have their own RLS-scoped views).
