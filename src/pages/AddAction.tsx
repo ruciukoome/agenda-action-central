@@ -120,7 +120,7 @@ export default function AddAction() {
   return (
     <AppLayout title={draftId ? "Resume Draft" : "Add New Action Item"}>
       <div className="container max-w-3xl py-6 space-y-6">
-        <div className="relative overflow-hidden rounded-2xl p-6 sm:p-7 text-white shadow-lg bg-gradient-to-br from-fuchsia-500 via-violet-500 to-indigo-500 bg-sky-600">
+        <div className="relative overflow-hidden rounded-2xl p-6 sm:p-7 text-white shadow-lg bg-sky-600">
           <div className="absolute -top-16 -right-16 h-48 w-48 rounded-full bg-white/10 blur-3xl" />
           <div className="absolute -bottom-16 -left-10 h-48 w-48 rounded-full bg-pink-400/30 blur-3xl" />
           <div className="relative flex items-start gap-4">

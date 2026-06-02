@@ -99,7 +99,7 @@ export default function Drafts() {
         <Button
           size="sm"
           onClick={() => navigate("/add-action")}
-          className="gap-2 bg-gradient-to-r from-fuchsia-500 to-indigo-500 hover:from-fuchsia-600 hover:to-indigo-600 text-white border-0 shadow-md"
+          className="gap-2 bg-sky-600 hover:bg-sky-700 text-white border-0 shadow-md"
         >
           <Plus className="h-4 w-4" /> New Action
         </Button>
@@ -108,7 +108,7 @@ export default function Drafts() {
       <div className="container max-w-6xl py-6 space-y-6">
         {/* Hero */}
         <Card className="overflow-hidden border-0 shadow-lg">
-          <div className="relative p-6 sm:p-8 bg-gradient-to-br from-fuchsia-500 via-violet-500 to-indigo-500 text-white bg-sky-600">
+          <div className="relative p-6 sm:p-8 bg-sky-600 text-white">
             <div className="absolute -top-16 -right-16 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
             <div className="absolute -bottom-20 -left-10 h-56 w-56 rounded-full bg-pink-400/30 blur-3xl" />
             <div className="relative flex items-start gap-4">
@@ -167,7 +167,7 @@ export default function Drafts() {
                       <ToggleGroupItem
                         value={v}
                         aria-label={label}
-                        className="data-[state=on]:bg-gradient-to-br data-[state=on]:from-fuchsia-500 data-[state=on]:to-indigo-500 data-[state=on]:text-white"
+                        className="data-[state=on]:bg-sky-600 data-[state=on]:text-white"
                       >
                         <Icon className="h-4 w-4" />
                       </ToggleGroupItem>
@@ -192,9 +192,9 @@ export default function Drafts() {
             ))}
           </div>
         ) : drafts.length === 0 ? (
-          <Card className="border-dashed border-2 border-fuchsia-200 bg-gradient-to-br from-fuchsia-50 via-white to-indigo-50">
+          <Card className="border-dashed border-2 border-sky-200 bg-sky-50/40">
             <CardContent className="py-16 flex flex-col items-center text-center">
-              <div className="rounded-full bg-gradient-to-br from-fuchsia-500 to-indigo-500 p-4 mb-4 shadow-lg">
+              <div className="rounded-full bg-sky-600 p-4 mb-4 shadow-lg">
                 <FileText className="h-7 w-7 text-white" />
               </div>
               <h3 className="font-semibold text-lg">No drafts yet</h3>
@@ -202,7 +202,7 @@ export default function Drafts() {
                 Pause any in-progress action item with "Save as Draft" and pick it up here later.
               </p>
               <Button
-                className="mt-5 gap-2 bg-gradient-to-r from-fuchsia-500 to-indigo-500 hover:from-fuchsia-600 hover:to-indigo-600 text-white border-0"
+                className="mt-5 gap-2 bg-sky-600 hover:bg-sky-700 text-white border-0"
                 onClick={() => navigate("/add-action")}
               >
                 <Plus className="h-4 w-4" /> Create your first action
@@ -318,7 +318,7 @@ function DraftsView({
             <Button size="sm" variant="ghost" onClick={() => onDelete(d.id)} className="text-muted-foreground hover:text-destructive">
               <Trash2 className="h-4 w-4" />
             </Button>
-            <Button size="sm" onClick={() => onResume(d.id)} className="bg-gradient-to-r from-fuchsia-500 to-indigo-500 hover:from-fuchsia-600 hover:to-indigo-600 text-white border-0">
+            <Button size="sm" onClick={() => onResume(d.id)} className="bg-sky-600 hover:bg-sky-700 text-white border-0">
               <Pencil className="h-4 w-4 mr-1" /> Resume
             </Button>
           </div>
@@ -381,7 +381,7 @@ function DraftsView({
             <Button
               size="sm"
               onClick={() => onResume(d.id)}
-              className="bg-gradient-to-r from-fuchsia-500 to-indigo-500 hover:from-fuchsia-600 hover:to-indigo-600 text-white border-0"
+              className="bg-sky-600 hover:bg-sky-700 text-white border-0"
             >
               <Pencil className="h-4 w-4 mr-1" /> Resume
             </Button>
