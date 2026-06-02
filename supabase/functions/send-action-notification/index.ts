@@ -76,14 +76,16 @@ serve(async (req) => {
 
     const FROM_ADDRESS = "Action Central <info@nafarrosolutions.com>";
 
-    // ---- Generate secure update token for the owner (only for real UUID action ids) ----
+    // ---- Generate secure token for owner (used for update + accept/reject) ----
     const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     const isRealAction = UUID_RE.test(String(action.id));
     let updateUrl: string | undefined;
+    let acceptUrl: string | undefined;
+    let rejectUrl: string | undefined;
 
     if (isRealAction) {
       const token = generateToken();
-      const expiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+      const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
       const { error: tokenError } = await supabaseAdmin
         .from("action_tokens")
@@ -114,12 +116,29 @@ serve(async (req) => {
       }
 
       updateUrl = `${APP_URL}/update-task/${action.id}?token=${token}`;
+      acceptUrl = `${APP_URL}/respond/${action.id}?token=${token}&decision=accept`;
+      rejectUrl = `${APP_URL}/respond/${action.id}?token=${token}&decision=reject`;
     } else {
       console.warn("Skipping update-link token: action.id is not a UUID:", action.id);
     }
 
-    // ---- Build owner email (with secure link) ----
-    const ownerEmail = generateEmailContent(action, type, { isOwner: true, updateUrl });
+    // ---- Build ICS calendar invite (all recipients as attendees) ----
+    const allAttendees = [
+      action.ownerEmail,
+      ...(ccEmails || []),
+      ...(bccEmails || []),
+    ].filter((e) => typeof e === "string" && e.includes("@"));
+    const uniqueAttendees = [...new Set(allAttendees)];
+
+    const icsBase64 = buildIcsBase64(action, uniqueAttendees);
+    const icsAttachment = {
+      filename: "invite.ics",
+      content: icsBase64,
+      content_type: "text/calendar; method=REQUEST; charset=UTF-8",
+    };
+
+    // ---- Build owner email (with secure link + accept/reject + ICS) ----
+    const ownerEmail = generateEmailContent(action, type, { isOwner: true, updateUrl, acceptUrl, rejectUrl });
     const ownerResp = await fetch("https://connector-gateway.lovable.dev/resend/emails", {
       method: "POST",
       headers: {
@@ -134,6 +153,7 @@ serve(async (req) => {
         subject: ownerEmail.subject,
         html: ownerEmail.htmlContent,
         text: ownerEmail.textContent,
+        attachments: [icsAttachment],
       }),
     });
 
@@ -142,14 +162,13 @@ serve(async (req) => {
       throw new Error(`Resend (owner) error: ${ownerResp.status} - ${t}`);
     }
 
-    // ---- Build follower email (no link) for CC + BCC ----
+    // ---- Build follower email (no link, with ICS) for CC + BCC ----
     const followers = [...new Set([...(ccEmails || []), ...(bccEmails || [])]
       .filter((e) => typeof e === "string" && e.includes("@") && e !== action.ownerEmail))];
 
     let followerCount = 0;
     if (followers.length > 0) {
       const followerEmail = generateEmailContent(action, type, { isOwner: false });
-      // Send individually to each follower via BCC so addresses aren't exposed.
       const followerResp = await fetch("https://connector-gateway.lovable.dev/resend/emails", {
         method: "POST",
         headers: {
@@ -165,6 +184,7 @@ serve(async (req) => {
           subject: followerEmail.subject,
           html: followerEmail.htmlContent,
           text: followerEmail.textContent,
+          attachments: [icsAttachment],
         }),
       });
       if (!followerResp.ok) {
