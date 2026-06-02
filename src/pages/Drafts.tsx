@@ -108,7 +108,7 @@ export default function Drafts() {
       <div className="container max-w-6xl py-6 space-y-6">
         {/* Hero */}
         <Card className="overflow-hidden border-0 shadow-lg">
-          <div className="relative p-6 sm:p-8 bg-gradient-to-br from-fuchsia-500 via-violet-500 to-indigo-500 text-white bg-sky-600">
+          <div className="relative p-6 sm:p-8 bg-sky-600 text-white">
             <div className="absolute -top-16 -right-16 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
             <div className="absolute -bottom-20 -left-10 h-56 w-56 rounded-full bg-pink-400/30 blur-3xl" />
             <div className="relative flex items-start gap-4">
