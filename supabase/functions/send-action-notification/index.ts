@@ -76,39 +76,47 @@ serve(async (req) => {
 
     const FROM_ADDRESS = "Action Central <info@nafarrosolutions.com>";
 
-    // ---- Generate secure update token for the owner ----
-    const token = generateToken();
-    const expiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+    // ---- Generate secure update token for the owner (only for real UUID action ids) ----
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const isRealAction = UUID_RE.test(String(action.id));
+    let updateUrl: string | undefined;
 
-    const { error: tokenError } = await supabaseAdmin
-      .from("action_tokens")
-      .insert({
-        action_id: action.id,
-        token,
-        used: false,
-        expires_at: expiresAt,
-        action_data: {
-          id: action.id,
-          description: action.description,
-          department: action.department,
-          meeting_date: action.meetingDate,
-          priority: action.priority,
-          owner_email: action.ownerEmail,
-          completed: action.completed,
-          progress_status: action.progressStatus,
-          notes: action.notes || '',
-          created_at: action.createdAt,
-          updated_at: action.updatedAt,
-          due_date: action.dueDate,
-        },
-      } as any);
+    if (isRealAction) {
+      const token = generateToken();
+      const expiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
 
-    if (tokenError) {
-      console.error("Failed to create action token:", tokenError);
-      throw new Error(`Failed to create update token: ${tokenError.message}`);
+      const { error: tokenError } = await supabaseAdmin
+        .from("action_tokens")
+        .insert({
+          action_id: action.id,
+          token,
+          used: false,
+          expires_at: expiresAt,
+          action_data: {
+            id: action.id,
+            description: action.description,
+            department: action.department,
+            meeting_date: action.meetingDate,
+            priority: action.priority,
+            owner_email: action.ownerEmail,
+            completed: action.completed,
+            progress_status: action.progressStatus,
+            notes: action.notes || '',
+            created_at: action.createdAt,
+            updated_at: action.updatedAt,
+            due_date: action.dueDate,
+          },
+        } as any);
+
+      if (tokenError) {
+        console.error("Failed to create action token:", tokenError);
+        throw new Error(`Failed to create update token: ${tokenError.message}`);
+      }
+
+      updateUrl = `${APP_URL}/update-task/${action.id}?token=${token}`;
+    } else {
+      console.warn("Skipping update-link token: action.id is not a UUID:", action.id);
     }
-
-    const updateUrl = `${APP_URL}/update-task/${action.id}?token=${token}`;
 
     // ---- Build owner email (with secure link) ----
     const ownerEmail = generateEmailContent(action, type, { isOwner: true, updateUrl });
