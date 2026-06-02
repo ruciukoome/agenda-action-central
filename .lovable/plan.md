@@ -1,29 +1,59 @@
 ## Goal
 
-Only the action owner can update an action point. CC/BCC recipients are followers — they get a view-only notification and cannot update. Replying to the notification email will no longer be the update mechanism; instead, the owner gets a secure one-time link in their email that opens the existing `/update-task/:id?token=...` page.
+When an action point is created and emailed, also attach an ICS calendar invite (so everyone on owner + CC + BCC can add it to their calendar), and give the owner in-app Accept / Reject buttons that update the action's status.
 
 ## Changes
 
-### 1. `supabase/functions/send-action-notification/index.ts`
-- For every send, generate a secure update token by inserting into `public.action_tokens` (used: false, expires in 14 days, with `action_data` snapshot — matches the shape `UpdateTask.tsx` already consumes via `get_action_token_by_id_and_token`).
-- Build two email variants:
-  - **Owner email** (To: owner): includes a prominent "Update this action" button → `{APP_URL}/update-task/{id}?token={token}`. Body text reads: "Use the secure link below to update progress. Replies to this email are not monitored."
-  - **Follower email** (To: each CC + BCC recipient): view-only summary. No update link. Body text reads: "You are receiving this as a follower (CC/BCC). Only the action owner can update progress."
-- Send the owner email and follower email as separate Resend requests so the update link is never exposed to CC/BCC.
-- Use `APP_URL` env var (fallback to `https://actioncentral.platinumcredit.co.ke`) to build the link.
-- Remove the "Kindly reply to this email for updates" instruction from all templates (assigned / updated / due_soon / overdue / default).
+### 1. Database (migration)
 
-### 2. `src/lib/notifications.ts`
-- No behavioral change needed in the caller — it already passes `ccEmails` / `bccEmails`. Toast message text updated to reflect that follower emails were also dispatched.
+Add to `public.actions`:
+- `owner_response` enum (`pending` | `accepted` | `rejected`) default `pending`
+- `owner_responded_at` timestamptz nullable
 
-### 3. No DB schema changes
-- `action_tokens` table and `get_action_token_by_id_and_token` RPC already exist and are used by `UpdateTask.tsx`. The edge function will insert tokens using the service role (via `SUPABASE_SERVICE_ROLE_KEY`) — confirm the env var is available; if not, switch the supabase client init in the function to use the service role key (required for inserting tokens server-side regardless of caller).
+Extend `action_tokens` purpose so a single token works for both "update" and "respond" (or add a `purpose` text column with default `'update'`). The existing `get_action_token_by_id_and_token` RPC stays compatible.
 
-### 4. Email copy
-- Owner subject unchanged ("New Action Item Assigned: …").
-- Follower subject prefixed with "[FYI] " so recipients immediately see they are not the owner (e.g. "[FYI] New Action Item Assigned: …").
+### 2. Edge function: `send-action-notification`
+
+In `supabase/functions/send-action-notification/index.ts`:
+
+- Build an ICS string (`VCALENDAR` / `VEVENT`):
+  - `UID` = `action.id@actioncentral`
+  - `SUMMARY` = action title / description (first line)
+  - `DESCRIPTION` = action description + notes
+  - `DTSTART` / `DTEND` = `meeting_date` (1h block) or `due_date` fallback
+  - `ORGANIZER` = creator
+  - `ATTENDEE` lines for owner + every CC + every BCC (all marked `REQ-PARTICIPANT`, `RSVP=TRUE`)
+  - `METHOD:REQUEST` so mail clients show Accept/Decline
+- Attach the ICS to BOTH the owner email and the followers email via Resend `attachments: [{ filename: 'invite.ics', content: base64, content_type: 'text/calendar; method=REQUEST' }]`.
+- Owner email keeps the existing tokenized "Update this action" button AND adds two new tokenized buttons:
+  - `Accept` → `{APP_URL}/respond/{actionId}?token={token}&decision=accept`
+  - `Reject` → `{APP_URL}/respond/{actionId}?token={token}&decision=reject`
+- Followers email stays FYI-only (no buttons), but now includes the ICS attachment.
+- Note in the followers email: "BCC recipients are visible to other attendees on the calendar invite." (since user chose 'everyone as attendees').
+
+### 3. New page: `/respond/:actionId`
+
+`src/pages/RespondAction.tsx`:
+- Reads `token` + `decision` from URL.
+- Calls a new edge function `respond-action` that:
+  - Validates token via `get_action_token_by_id_and_token` RPC (service role).
+  - Updates `actions.owner_response`, `owner_responded_at`, and on reject sets `progress_status='Not Started'`; on accept leaves progress untouched.
+  - Marks token `used=true`.
+- Shows a confirmation card ("Thanks — your response was recorded").
+
+Add the route to `src/App.tsx`.
+
+### 4. UI surfacing
+
+On the action detail / list view, show a small badge: `Owner: Accepted` / `Owner: Rejected` / `Awaiting owner response` based on `owner_response`.
 
 ## Out of scope
-- No UI changes to the app pages.
-- No changes to the `UpdateTask` flow itself — it already validates the token, applies updates, and marks the token used.
-- No restriction changes to in-app permissions (CC/BCC users who happen to also be app users already have their own RLS-scoped views).
+
+- Real Google Calendar / Meet integration (no live Meet link will be generated — the ICS is a static calendar invite that any client can RSVP to).
+- Two-way RSVP sync from the user's calendar back into the app. Calendar RSVPs go to the organizer's mailbox only; the in-app Accept / Reject buttons are the source of truth for `owner_response`.
+
+## Technical notes
+
+- ICS must use CRLF line endings and fold lines >75 octets.
+- For the followers email, the ICS is informational (their RSVP won't reach us); the in-app Accept/Reject is owner-only.
+- Token reuse: same token used for update-link and accept/reject buttons → bump `expires_at` to 30 days and keep `used=false` until any of the three actions consumes it. (Or issue separate tokens — simpler to use one.)
