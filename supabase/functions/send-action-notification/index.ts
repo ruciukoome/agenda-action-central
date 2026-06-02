@@ -211,7 +211,7 @@ serve(async (req) => {
 function generateEmailContent(
   action: any,
   type: NotificationType,
-  opts: { isOwner: boolean; updateUrl?: string }
+  opts: { isOwner: boolean; updateUrl?: string; acceptUrl?: string; rejectUrl?: string }
 ) {
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return "Not set";
