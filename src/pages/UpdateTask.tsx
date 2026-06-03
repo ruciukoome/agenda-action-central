@@ -193,7 +193,7 @@ export default function UpdateTask() {
     <div className="container py-8">
       <Card className="w-full max-w-lg mx-auto">
         <CardHeader>
-          <CardTitle>Update Action Item</CardTitle>
+          <h1 className="text-2xl font-semibold leading-none tracking-tight">Update Action Item</h1>
           <CardDescription>
             {action?.description}
           </CardDescription>
