@@ -55,7 +55,7 @@ export default function RespondAction() {
             {status === "success" && !isAccept && <XCircle className="h-10 w-10 text-red-600" />}
             {status === "error" && <AlertTriangle className="h-10 w-10 text-amber-600" />}
           </div>
-          <CardTitle>
+          <h1 className="text-2xl font-semibold leading-none tracking-tight">
             {status === "loading"
               ? "Recording your response…"
               : status === "success"
@@ -63,7 +63,7 @@ export default function RespondAction() {
                 ? "Action accepted"
                 : "Action rejected"
               : "Could not record response"}
-          </CardTitle>
+          </h1>
           <CardDescription>{message}</CardDescription>
         </CardHeader>
         <CardContent className="flex justify-center">

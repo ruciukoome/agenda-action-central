@@ -153,7 +153,7 @@ export default function Onboarding() {
       </div>
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Welcome to Action Central</CardTitle>
+          <h1 className="text-2xl font-semibold leading-none tracking-tight">Welcome to Action Central</h1>
           <CardDescription>
             Create a new organization or join an existing one to get started.
           </CardDescription>

@@ -173,7 +173,7 @@ export default function UpdateTask() {
         <Card className="w-full max-w-lg mx-auto">
           <CardHeader className="text-center">
             <AlertTriangle className="h-10 w-10 text-amber-500 mx-auto mb-2" />
-            <CardTitle className="text-red-500">Access Error</CardTitle>
+            <h1 className="text-2xl font-semibold leading-none tracking-tight text-red-500">Access Error</h1>
           </CardHeader>
           <CardContent>
             <p className="text-center mb-4">{error || "Invalid or expired link"}</p>
@@ -193,7 +193,7 @@ export default function UpdateTask() {
     <div className="container py-8">
       <Card className="w-full max-w-lg mx-auto">
         <CardHeader>
-          <CardTitle>Update Action Item</CardTitle>
+          <h1 className="text-2xl font-semibold leading-none tracking-tight">Update Action Item</h1>
           <CardDescription>
             {action?.description}
           </CardDescription>
