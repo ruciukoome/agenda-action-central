@@ -650,8 +650,9 @@ export function ActionForm({ actionToEdit, draftId, initialDraft, onSave, onSave
                   {draftId ? "Update Draft" : "Save as Draft"}
                 </Button>
               )}
-              <Button type="submit" className="w-full sm:w-auto">
-                <Check className="w-4 h-4 mr-2" /> {actionToEdit ? "Update" : draftId ? "Submit" : "Create"} Action
+              <Button type="submit" className="w-full sm:w-auto" disabled={submitting}>
+                {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Check className="w-4 h-4 mr-2" />}
+                {actionToEdit ? "Update" : draftId ? "Submit" : "Create"} Action
               </Button>
             </div>
           </CardFooter>
