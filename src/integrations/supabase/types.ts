@@ -122,6 +122,7 @@ export type Database = {
           due_date: string | null
           id: string
           meeting_date: string
+          meeting_id: string | null
           meeting_title: string | null
           notes: string | null
           organization_id: string | null
@@ -141,6 +142,7 @@ export type Database = {
           due_date?: string | null
           id?: string
           meeting_date: string
+          meeting_id?: string | null
           meeting_title?: string | null
           notes?: string | null
           organization_id?: string | null
@@ -160,6 +162,7 @@ export type Database = {
           due_date?: string | null
           id?: string
           meeting_date?: string
+          meeting_id?: string | null
           meeting_title?: string | null
           notes?: string | null
           organization_id?: string | null
@@ -173,7 +176,67 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "actions_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "actions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meetings: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          end_at: string
+          ics_uid: string
+          id: string
+          location: string | null
+          organization_id: string
+          start_at: string
+          timezone: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          end_at: string
+          ics_uid?: string
+          id?: string
+          location?: string | null
+          organization_id: string
+          start_at: string
+          timezone?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          end_at?: string
+          ics_uid?: string
+          id?: string
+          location?: string | null
+          organization_id?: string
+          start_at?: string
+          timezone?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meetings_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"

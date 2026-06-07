@@ -39,6 +39,22 @@ export interface ActionItem {
   dueDate?: string; // ISO format date string (optional)
   ccEmails?: string[]; // CC recipients (optional)
   bccEmails?: string[]; // BCC recipients (optional)
+  meetingId?: string | null; // Optional link to a shared meeting (for ICS calendar invites)
+}
+
+export interface Meeting {
+  id: string;
+  organizationId: string;
+  createdBy: string;
+  title: string;
+  description?: string | null;
+  location?: string | null;
+  startAt: string; // ISO
+  endAt: string;   // ISO
+  timezone: string;
+  icsUid: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // Utility functions for email parsing

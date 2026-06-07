@@ -20,6 +20,7 @@ export interface DbAction {
   updated_at: string;
   due_date?: string;
   user_id: string;
+  meeting_id?: string | null;
 }
 
 /**
@@ -39,7 +40,8 @@ export function mapDbActionToActionItem(action: DbAction): ActionItem {
     notes: action.notes || "",
     createdAt: action.created_at,
     updatedAt: action.updated_at,
-    dueDate: action.due_date
+    dueDate: action.due_date,
+    meetingId: action.meeting_id ?? null,
   };
 }
 
@@ -58,6 +60,7 @@ export function mapActionItemToDbAction(action: ActionItem, userId?: string): Om
     progress_status: action.progressStatus as any,
     notes: action.notes,
     due_date: action.dueDate,
-    user_id: userId || ''
+    user_id: userId || '',
+    meeting_id: action.meetingId ?? null,
   };
 }

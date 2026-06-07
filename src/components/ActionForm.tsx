@@ -21,6 +21,10 @@ import { getDepartments, getPriorities, getProgressStatuses } from "@/data/mockA
 import { sendActionNotification } from "@/lib/notifications";
 import { useRecentMeetingTitles } from "@/hooks/useRecentMeetingTitles";
 import { Loader2, FileText } from "lucide-react";
+import { MeetingPicker, MeetingPickerValue, defaultMeetingPickerValue } from "@/components/MeetingPicker";
+import { createMeeting } from "@/lib/meetings";
+import { useOrganization } from "@/contexts/OrganizationContext";
+import { toast } from "@/lib/toast-wrapper";
 
 const formSchema = z
   .object({
@@ -67,11 +71,22 @@ interface ActionFormProps {
 
 export function ActionForm({ actionToEdit, draftId, initialDraft, onSave, onSaveDraft, onOpenDrafts, draftCount }: ActionFormProps) {
   const navigate = useNavigate();
+  const { organization } = useOrganization();
   const [emailSent, setEmailSent] = useState(false);
   const [savingDraft, setSavingDraft] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const recentTitles = useRecentMeetingTitles();
 
   const source = actionToEdit || initialDraft;
+  const initialMeetingPicker: MeetingPickerValue = (() => {
+    const base = defaultMeetingPickerValue();
+    if (source?.meetingId) {
+      return { ...base, mode: "existing", existingMeetingId: source.meetingId };
+    }
+    return base;
+  })();
+  const [meetingPicker, setMeetingPicker] = useState<MeetingPickerValue>(initialMeetingPicker);
+
   const defaultValues: Partial<FormValues> = source ? {
     meetingTitle: source.meetingTitle || "",
     description: source.description || "",
@@ -103,49 +118,111 @@ export function ActionForm({ actionToEdit, draftId, initialDraft, onSave, onSave
   });
   
   const handleSubmit = async (values: FormValues) => {
-    const now = new Date().toISOString();
-    
-    // Check if the progress status is "100%", and if so, set completed to true
-    // Note: "Continuous" actions should not be marked as completed automatically
-    if (values.progressStatus === "100%") {
-      values.completed = true;
-    }
-    
-    const actionData: ActionItem = {
-      id: actionToEdit?.id || Date.now().toString(),
-      description: values.description,
-      department: values.department as Department,
-      meetingDate: values.meetingDate.toISOString(),
-      meetingTitle: values.meetingTitle,
-      priority: values.priority as Priority,
-      ownerEmail: values.ownerEmail,
-      completed: values.completed,
-      progressStatus: values.progressStatus as ProgressStatus,
-      notes: values.notes || "",
-      createdAt: actionToEdit?.createdAt || now,
-      updatedAt: now,
-      dueDate: values.dueDate?.toISOString(),
-      ccEmails: values.ccEmails ? parseEmailList(values.ccEmails) : [],
-      bccEmails: values.bccEmails ? parseEmailList(values.bccEmails) : [],
-    };
-
-    onSave(actionData);
-
-    // Send email notification
+    if (submitting) return;
+    setSubmitting(true);
     try {
-      const notificationType = actionToEdit ? "updated" : "assigned";
-      const result = await sendActionNotification(
-        actionData,
-        notificationType,
-        actionData.ccEmails,
-        actionData.bccEmails
-      );
+      const now = new Date().toISOString();
 
-      if (result && !result.error) {
-        setEmailSent(true);
+      // Check if the progress status is "100%", and if so, set completed to true
+      // Note: "Continuous" actions should not be marked as completed automatically
+      if (values.progressStatus === "100%") {
+        values.completed = true;
       }
-    } catch (error) {
-      console.error("Failed to send email notification:", error);
+
+      // Resolve the meeting link from the picker.
+      let meetingId: string | null | undefined = actionToEdit?.meetingId ?? null;
+
+      if (meetingPicker.mode === "task") {
+        meetingId = null;
+      } else if (meetingPicker.mode === "existing") {
+        if (!meetingPicker.existingMeetingId) {
+          toast.error("Pick a meeting", { description: "Select an existing meeting or switch mode." });
+          setSubmitting(false);
+          return;
+        }
+        meetingId = meetingPicker.existingMeetingId;
+      } else if (meetingPicker.mode === "new") {
+        if (!organization) {
+          toast.error("No organization", { description: "You must belong to an organization to schedule a meeting." });
+          setSubmitting(false);
+          return;
+        }
+        const { startDate, startTime, endDate, endTime, timezone, location, agenda } = meetingPicker.newMeeting;
+        if (!startDate || !endDate || !startTime || !endTime) {
+          toast.error("Meeting time required", { description: "Pick a start and end date/time for the meeting." });
+          setSubmitting(false);
+          return;
+        }
+        const combine = (d: Date, t: string) => {
+          const [h, m] = t.split(":").map(Number);
+          const out = new Date(d);
+          out.setHours(h || 0, m || 0, 0, 0);
+          return out;
+        };
+        const startAt = combine(startDate, startTime);
+        const endAt = combine(endDate, endTime);
+        if (endAt.getTime() <= startAt.getTime()) {
+          toast.error("Invalid time", { description: "Meeting end must be after start." });
+          setSubmitting(false);
+          return;
+        }
+        try {
+          const meeting = await createMeeting({
+            organizationId: organization.id,
+            title: values.meetingTitle || values.description.slice(0, 80),
+            description: agenda || null,
+            location: location || null,
+            startAt: startAt.toISOString(),
+            endAt: endAt.toISOString(),
+            timezone: timezone || "UTC",
+          });
+          meetingId = meeting.id;
+        } catch (e: any) {
+          toast.error("Could not create meeting", { description: e?.message || "Unknown error" });
+          setSubmitting(false);
+          return;
+        }
+      }
+
+      const actionData: ActionItem = {
+        id: actionToEdit?.id || Date.now().toString(),
+        description: values.description,
+        department: values.department as Department,
+        meetingDate: values.meetingDate.toISOString(),
+        meetingTitle: values.meetingTitle,
+        priority: values.priority as Priority,
+        ownerEmail: values.ownerEmail,
+        completed: values.completed,
+        progressStatus: values.progressStatus as ProgressStatus,
+        notes: values.notes || "",
+        createdAt: actionToEdit?.createdAt || now,
+        updatedAt: now,
+        dueDate: values.dueDate?.toISOString(),
+        ccEmails: values.ccEmails ? parseEmailList(values.ccEmails) : [],
+        bccEmails: values.bccEmails ? parseEmailList(values.bccEmails) : [],
+        meetingId: meetingId ?? null,
+      };
+
+      onSave(actionData);
+
+      // Send email notification
+      try {
+        const notificationType = actionToEdit ? "updated" : "assigned";
+        const result = await sendActionNotification(
+          actionData,
+          notificationType,
+          actionData.ccEmails,
+          actionData.bccEmails
+        );
+
+        if (result && !result.error) {
+          setEmailSent(true);
+        }
+      } catch (error) {
+        console.error("Failed to send email notification:", error);
+      }
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -428,8 +505,13 @@ export function ActionForm({ actionToEdit, draftId, initialDraft, onSave, onSave
                 )}
               />
             </div>
-            
+
             <Separator className="my-4" />
+
+            <MeetingPicker value={meetingPicker} onChange={setMeetingPicker} />
+
+            <Separator className="my-4" />
+
             
             <div className="grid gap-4 sm:grid-cols-2">
               <FormField
@@ -568,8 +650,9 @@ export function ActionForm({ actionToEdit, draftId, initialDraft, onSave, onSave
                   {draftId ? "Update Draft" : "Save as Draft"}
                 </Button>
               )}
-              <Button type="submit" className="w-full sm:w-auto">
-                <Check className="w-4 h-4 mr-2" /> {actionToEdit ? "Update" : draftId ? "Submit" : "Create"} Action
+              <Button type="submit" className="w-full sm:w-auto" disabled={submitting}>
+                {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Check className="w-4 h-4 mr-2" />}
+                {actionToEdit ? "Update" : draftId ? "Submit" : "Create"} Action
               </Button>
             </div>
           </CardFooter>

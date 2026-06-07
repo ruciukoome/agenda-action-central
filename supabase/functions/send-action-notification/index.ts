@@ -2,9 +2,11 @@
  * EDGE FUNCTION: ACTION NOTIFICATION SENDER
  * ----------------------------------------
  * Sends notification emails for action items.
- * - Owner receives a secure, one-time update link.
+ * - Owner receives a secure, one-time update link + Accept/Reject buttons.
  * - CC/BCC recipients receive a separate "view-only" notification (no link).
- * - Replies are NOT used to update actions.
+ * - If the action is linked to a meeting, a shared ICS invite is attached.
+ *   Multiple actions sharing the same meeting produce one calendar event
+ *   (stable UID) with every action's owner/CC/BCC added as attendees.
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -21,9 +23,7 @@ const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
 const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
 const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 
-// Client for verifying the caller's JWT
 const supabaseAuth = createClient(supabaseUrl, anonKey);
-// Client with service role for inserting tokens (server-side only)
 const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
 
 const APP_URL = Deno.env.get("APP_URL") || "https://actioncentral.platinumcredit.co.ke";
@@ -76,7 +76,7 @@ serve(async (req) => {
 
     const FROM_ADDRESS = "Action Central <info@nafarrosolutions.com>";
 
-    // ---- Generate secure token for owner (used for update + accept/reject) ----
+    // ---- Generate secure token for owner (update + accept/reject) ----
     const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     const isRealAction = UUID_RE.test(String(action.id));
     let updateUrl: string | undefined;
@@ -122,23 +122,68 @@ serve(async (req) => {
       console.warn("Skipping update-link token: action.id is not a UUID:", action.id);
     }
 
-    // ---- Build ICS calendar invite (all recipients as attendees) ----
-    const allAttendees = [
-      action.ownerEmail,
-      ...(ccEmails || []),
-      ...(bccEmails || []),
-    ].filter((e) => typeof e === "string" && e.includes("@"));
-    const uniqueAttendees = [...new Set(allAttendees)];
+    // ---- Optional meeting -> shared ICS invite ----
+    let icsAttachment: { filename: string; content: string; content_type: string } | null = null;
+    let meetingForEmail: any = null;
 
-    const icsBase64 = buildIcsBase64(action, uniqueAttendees);
-    const icsAttachment = {
-      filename: "invite.ics",
-      content: icsBase64,
-      content_type: "text/calendar; method=REQUEST; charset=UTF-8",
+    const meetingId = action.meetingId ?? action.meeting_id ?? null;
+    if (meetingId) {
+      const { data: meeting } = await supabaseAdmin
+        .from("meetings")
+        .select("*")
+        .eq("id", meetingId)
+        .maybeSingle();
+
+      if (meeting) {
+        meetingForEmail = meeting;
+
+        // Collect attendees from every action attached to this meeting
+        const { data: siblingActions } = await supabaseAdmin
+          .from("actions")
+          .select("owner_email, description")
+          .eq("meeting_id", meetingId);
+
+        const collected: string[] = [];
+        for (const a of (siblingActions || []) as any[]) {
+          if (a.owner_email) collected.push(a.owner_email);
+        }
+        // Include the current request's recipients (covers create-flow timing
+        // and CC/BCC which aren't persisted on the row).
+        collected.push(action.ownerEmail, ...(ccEmails || []), ...(bccEmails || []));
+
+        const attendees = [...new Set(
+          collected.filter((e) => typeof e === "string" && e.includes("@"))
+        )];
+
+        const actionDescriptions = ((siblingActions || []) as any[])
+          .map((a) => `• ${a.description}`)
+          .join("\n");
+
+        const ics = buildMeetingIcs(meeting, attendees, actionDescriptions);
+        icsAttachment = {
+          filename: "invite.ics",
+          content: btoa(unescape(encodeURIComponent(ics))),
+          content_type: "text/calendar; method=REQUEST; charset=UTF-8",
+        };
+      } else {
+        console.warn(`Meeting ${meetingId} referenced by action but not found.`);
+      }
+    }
+
+    // ---- Owner email ----
+    const ownerEmail = generateEmailContent(action, type, {
+      isOwner: true, updateUrl, acceptUrl, rejectUrl, meeting: meetingForEmail,
+    });
+    const ownerBody: Record<string, unknown> = {
+      from: FROM_ADDRESS,
+      to: [action.ownerEmail],
+      reply_to: "info@nafarrosolutions.com",
+      subject: ownerEmail.subject,
+      html: ownerEmail.htmlContent,
+      text: ownerEmail.textContent,
     };
+    if (icsAttachment) ownerBody.attachments = [icsAttachment];
 
-    // ---- Build owner email (with secure link + accept/reject + ICS) ----
-    const ownerEmail = generateEmailContent(action, type, { isOwner: true, updateUrl, acceptUrl, rejectUrl });
     const ownerResp = await fetch("https://connector-gateway.lovable.dev/resend/emails", {
       method: "POST",
       headers: {
@@ -146,15 +191,7 @@ serve(async (req) => {
         "X-Connection-Api-Key": resendApiKey,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        from: FROM_ADDRESS,
-        to: [action.ownerEmail],
-        reply_to: "info@nafarrosolutions.com",
-        subject: ownerEmail.subject,
-        html: ownerEmail.htmlContent,
-        text: ownerEmail.textContent,
-        attachments: [icsAttachment],
-      }),
+      body: JSON.stringify(ownerBody),
     });
 
     if (!ownerResp.ok) {
@@ -162,13 +199,24 @@ serve(async (req) => {
       throw new Error(`Resend (owner) error: ${ownerResp.status} - ${t}`);
     }
 
-    // ---- Build follower email (no link, with ICS) for CC + BCC ----
+    // ---- Follower email (CC + BCC) ----
     const followers = [...new Set([...(ccEmails || []), ...(bccEmails || [])]
       .filter((e) => typeof e === "string" && e.includes("@") && e !== action.ownerEmail))];
 
     let followerCount = 0;
     if (followers.length > 0) {
-      const followerEmail = generateEmailContent(action, type, { isOwner: false });
+      const followerEmail = generateEmailContent(action, type, { isOwner: false, meeting: meetingForEmail });
+      const followerBody: Record<string, unknown> = {
+        from: FROM_ADDRESS,
+        to: ["info@nafarrosolutions.com"],
+        bcc: followers,
+        reply_to: "info@nafarrosolutions.com",
+        subject: followerEmail.subject,
+        html: followerEmail.htmlContent,
+        text: followerEmail.textContent,
+      };
+      if (icsAttachment) followerBody.attachments = [icsAttachment];
+
       const followerResp = await fetch("https://connector-gateway.lovable.dev/resend/emails", {
         method: "POST",
         headers: {
@@ -176,16 +224,7 @@ serve(async (req) => {
           "X-Connection-Api-Key": resendApiKey,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          from: FROM_ADDRESS,
-          to: ["info@nafarrosolutions.com"],
-          bcc: followers,
-          reply_to: "info@nafarrosolutions.com",
-          subject: followerEmail.subject,
-          html: followerEmail.htmlContent,
-          text: followerEmail.textContent,
-          attachments: [icsAttachment],
-        }),
+        body: JSON.stringify(followerBody),
       });
       if (!followerResp.ok) {
         const t = await followerResp.text();
@@ -196,7 +235,7 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ success: true, message: "Email notification sent", ownerSent: true, followerCount }),
+      JSON.stringify({ success: true, message: "Email notification sent", ownerSent: true, followerCount, hasIcs: !!icsAttachment }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error: any) {
@@ -211,7 +250,7 @@ serve(async (req) => {
 function generateEmailContent(
   action: any,
   type: NotificationType,
-  opts: { isOwner: boolean; updateUrl?: string; acceptUrl?: string; rejectUrl?: string }
+  opts: { isOwner: boolean; updateUrl?: string; acceptUrl?: string; rejectUrl?: string; meeting?: any }
 ) {
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return "Not set";
@@ -232,6 +271,7 @@ function generateEmailContent(
     .cta-btn { display:inline-block; background:#0284c7; color:#ffffff !important; text-decoration:none; padding: 14px 26px; border-radius: 8px; font-weight: bold; }
     .info-box { background-color: #f1f5f9; padding: 14px 16px; border-left: 4px solid #0284c7; margin: 20px 0; border-radius: 4px; }
     .viewer-box { background-color: #fff7ed; padding: 14px 16px; border-left: 4px solid #f59e0b; margin: 20px 0; border-radius: 4px; }
+    .meeting-box { background-color: #ecfeff; padding: 14px 16px; border-left: 4px solid #06b6d4; margin: 20px 0; border-radius: 4px; }
     .unsubscribe { font-size: 11px; color: #999; margin-top: 20px; }
   `;
 
@@ -271,19 +311,29 @@ function generateEmailContent(
     </div>
   ` : '';
 
+  const meetingHtml = opts.meeting ? `
+    <div class="meeting-box">
+      <p style="margin:0 0 6px"><strong>📅 ${esc(opts.meeting.title)}</strong></p>
+      <p style="margin:0">${esc(new Date(opts.meeting.start_at).toLocaleString())} – ${esc(new Date(opts.meeting.end_at).toLocaleString())} (${esc(opts.meeting.timezone || 'UTC')})</p>
+      ${opts.meeting.location ? `<p style="margin:6px 0 0"><strong>Where:</strong> ${esc(opts.meeting.location)}</p>` : ''}
+      ${opts.meeting.description ? `<p style="margin:6px 0 0">${esc(opts.meeting.description)}</p>` : ''}
+      <p style="margin:8px 0 0;font-size:12px;color:#475569">A calendar invite (invite.ics) is attached.</p>
+    </div>
+  ` : '';
+
   const ownerCta = opts.isOwner && opts.updateUrl ? `
     ${acceptRejectCta}
     <div class="cta-wrap">
       <a class="cta-btn" href="${esc(opts.updateUrl)}">Update this action</a>
     </div>
     <div class="info-box">
-      <p style="margin:0"><strong>Only you (the action owner) can act on this item.</strong> Use the secure buttons above — the link expires in 30 days. A calendar invite (invite.ics) is attached so you can add it to your calendar. Replying to this email will not update the action.</p>
+      <p style="margin:0"><strong>Only you (the action owner) can act on this item.</strong> Use the secure buttons above — the link expires in 30 days. Replying to this email will not update the action.</p>
     </div>
   ` : '';
 
   const followerNotice = !opts.isOwner ? `
     <div class="viewer-box">
-      <p style="margin:0"><strong>You are receiving this as a follower (CC/BCC).</strong> A calendar invite (invite.ics) is attached for your awareness. Only the action owner (${esc(action.ownerEmail)}) can update its progress. Replying to this email will not change the action.</p>
+      <p style="margin:0"><strong>You are receiving this as a follower (CC/BCC).</strong> Only the action owner (${esc(action.ownerEmail)}) can update its progress. Replying to this email will not change the action.</p>
     </div>
   ` : '';
 
@@ -335,7 +385,7 @@ function generateEmailContent(
     ${notesHtml}
   `;
 
-  const content = `${intro}${details}${ownerCta}${followerNotice}`;
+  const content = `${intro}${meetingHtml}${details}${ownerCta}${followerNotice}`;
 
   const plainText = `
 ${opts.isOwner ? '' : '[FYI] '}${titleVerb}
@@ -348,8 +398,9 @@ Due Date: ${formatDate(action.dueDate)}
 Current Progress: ${action.progressStatus}
 ${notesText}
 
+${opts.meeting ? `Meeting: ${opts.meeting.title} — ${new Date(opts.meeting.start_at).toLocaleString()} to ${new Date(opts.meeting.end_at).toLocaleString()} (${opts.meeting.timezone || 'UTC'})\n` : ''}
 ${opts.isOwner
-  ? `Only you (the action owner) can update this action. Use the secure link below (expires in 14 days, single-use):\n${opts.updateUrl}\n\nReplying to this email will NOT update the action.`
+  ? `Only you (the action owner) can update this action. Use the secure link below (expires in 30 days, single-use):\n${opts.updateUrl}\n\nReplying to this email will NOT update the action.`
   : `You are receiving this as a follower (CC/BCC). Only the action owner (${action.ownerEmail}) can update progress. Replying to this email will not change the action.`}
 
 This is an automated message from the Action Central system.
@@ -363,15 +414,11 @@ Platinum Credit Limited
   };
 }
 
-// ---- ICS calendar invite builder ----
-function buildIcsBase64(action: any, attendees: string[]): string {
+// ---- ICS calendar invite builder, keyed by meeting UID for sharing ----
+function buildMeetingIcs(meeting: any, attendees: string[], actionList: string): string {
   const pad = (n: number) => String(n).padStart(2, "0");
   const toIcsDate = (d: Date) =>
     `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}Z`;
-
-  const startSource = action.meetingDate || action.dueDate || new Date().toISOString();
-  const start = new Date(startSource);
-  const end = new Date(start.getTime() + 60 * 60 * 1000);
 
   const icsEscape = (s: string) =>
     String(s ?? "")
@@ -391,10 +438,14 @@ function buildIcsBase64(action: any, attendees: string[]): string {
     return out.join("\r\n");
   };
 
-  const desc = String(action.description ?? "Action item");
-  const summary = desc.length > 80 ? desc.slice(0, 77) + "..." : desc;
-  const notes = action.notes ? `\\n\\nNotes: ${icsEscape(action.notes)}` : "";
-  const fullDesc = `${icsEscape(desc)}${notes}\\n\\nDepartment: ${icsEscape(action.department || "")}\\nPriority: ${icsEscape(action.priority || "")}`;
+  const start = new Date(meeting.start_at);
+  const end = new Date(meeting.end_at);
+
+  const summary = meeting.title || "Action Central meeting";
+  const descParts = [
+    meeting.description || "",
+    actionList ? `\nAction items:\n${actionList}` : "",
+  ].filter(Boolean).join("\n");
 
   const lines: string[] = [
     "BEGIN:VCALENDAR",
@@ -403,13 +454,14 @@ function buildIcsBase64(action: any, attendees: string[]): string {
     "METHOD:REQUEST",
     "CALSCALE:GREGORIAN",
     "BEGIN:VEVENT",
-    `UID:${action.id}@actioncentral`,
+    `UID:${meeting.ics_uid || `meeting-${meeting.id}@actioncentral`}`,
     `DTSTAMP:${toIcsDate(new Date())}`,
     `DTSTART:${toIcsDate(start)}`,
     `DTEND:${toIcsDate(end)}`,
     `SUMMARY:${icsEscape(summary)}`,
-    `DESCRIPTION:${fullDesc}`,
-    `ORGANIZER;CN=Action Central:mailto:${action.ownerEmail}`,
+    `DESCRIPTION:${icsEscape(descParts)}`,
+    meeting.location ? `LOCATION:${icsEscape(meeting.location)}` : "",
+    `ORGANIZER;CN=Action Central:mailto:info@nafarrosolutions.com`,
     ...attendees.map(
       (a) =>
         `ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=TRUE;CN=${a}:mailto:${a}`
@@ -418,9 +470,7 @@ function buildIcsBase64(action: any, attendees: string[]): string {
     "SEQUENCE:0",
     "END:VEVENT",
     "END:VCALENDAR",
-  ];
+  ].filter(Boolean);
 
-  const ics = lines.map(fold).join("\r\n");
-  // base64-encode for Resend attachments
-  return btoa(unescape(encodeURIComponent(ics)));
+  return lines.map(fold).join("\r\n");
 }
