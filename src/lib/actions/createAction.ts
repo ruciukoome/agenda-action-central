@@ -55,6 +55,7 @@ export async function createAction(action: Omit<ActionItem, 'id' | 'createdAt' |
     user_id: userData.user.id,
     due_date: action.dueDate ? action.dueDate : null,
     organization_id: organizationId,
+    meeting_id: action.meetingId ?? null,
   };
 
   // Log the prepared dbAction object
