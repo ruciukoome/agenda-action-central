@@ -1,59 +1,87 @@
+
 ## Goal
 
-When an action point is created and emailed, also attach an ICS calendar invite (so everyone on owner + CC + BCC can add it to their calendar), and give the owner in-app Accept / Reject buttons that update the action's status.
+Replace the current "every action auto-generates an ICS for now()" behavior with an explicit, creator-controlled choice:
 
-## Changes
+1. **Task only** — owner gets the existing notification + Accept/Reject, no calendar invite.
+2. **New meeting** — creator schedules a meeting (date, start, end, location/notes, timezone). ICS is generated and attached.
+3. **Attach to existing meeting** — creator picks a meeting they previously created (or any meeting in their organization). The same ICS UID is reused so all attached actions appear as one event in attendees' calendars, with each owner added as an attendee.
 
-### 1. Database (migration)
+Existing actions are left as-is.
 
-Add to `public.actions`:
-- `owner_response` enum (`pending` | `accepted` | `rejected`) default `pending`
-- `owner_responded_at` timestamptz nullable
+## User flow
 
-Extend `action_tokens` purpose so a single token works for both "update" and "respond" (or add a `purpose` text column with default `'update'`). The existing `get_action_token_by_id_and_token` RPC stays compatible.
+In `ActionForm`, add a "Meeting" section with a three-way selector:
 
-### 2. Edge function: `send-action-notification`
+```text
+( ) Task only — owner just gets an email + Accept/Reject
+( ) Schedule a new meeting
+( ) Attach to existing meeting
+```
 
-In `supabase/functions/send-action-notification/index.ts`:
+- Task only: no extra fields.
+- New meeting: date, start time, end time, timezone (default browser), location/notes (free text). On save, a row is inserted into `meetings` and linked to the action.
+- Existing meeting: searchable dropdown of meetings in the user's organization (title + date), ordered most recent first, with upcoming meetings on top. Picking one links the action to that meeting.
 
-- Build an ICS string (`VCALENDAR` / `VEVENT`):
-  - `UID` = `action.id@actioncentral`
-  - `SUMMARY` = action title / description (first line)
-  - `DESCRIPTION` = action description + notes
-  - `DTSTART` / `DTEND` = `meeting_date` (1h block) or `due_date` fallback
-  - `ORGANIZER` = creator
-  - `ATTENDEE` lines for owner + every CC + every BCC (all marked `REQ-PARTICIPANT`, `RSVP=TRUE`)
-  - `METHOD:REQUEST` so mail clients show Accept/Decline
-- Attach the ICS to BOTH the owner email and the followers email via Resend `attachments: [{ filename: 'invite.ics', content: base64, content_type: 'text/calendar; method=REQUEST' }]`.
-- Owner email keeps the existing tokenized "Update this action" button AND adds two new tokenized buttons:
-  - `Accept` → `{APP_URL}/respond/{actionId}?token={token}&decision=accept`
-  - `Reject` → `{APP_URL}/respond/{actionId}?token={token}&decision=reject`
-- Followers email stays FYI-only (no buttons), but now includes the ICS attachment.
-- Note in the followers email: "BCC recipients are visible to other attendees on the calendar invite." (since user chose 'everyone as attendees').
+Edit Action page gets the same controls so a creator can later attach/detach a meeting or move an action between meetings.
 
-### 3. New page: `/respond/:actionId`
+## Email + ICS behavior
 
-`src/pages/RespondAction.tsx`:
-- Reads `token` + `decision` from URL.
-- Calls a new edge function `respond-action` that:
-  - Validates token via `get_action_token_by_id_and_token` RPC (service role).
-  - Updates `actions.owner_response`, `owner_responded_at`, and on reject sets `progress_status='Not Started'`; on accept leaves progress untouched.
-  - Marks token `used=true`.
-- Shows a confirmation card ("Thanks — your response was recorded").
+`send-action-notification` edge function:
 
-Add the route to `src/App.tsx`.
+- If action has no `meeting_id`: send the current email with Accept/Reject buttons, no ICS attachment. (This removes the current broken auto-meeting.)
+- If action has a `meeting_id`: load the meeting, build ICS with:
+  - `UID` = `meeting-<meeting.id>@actionpoint` (stable, so re-sends and shared-meeting actions land on the same calendar event)
+  - `SUMMARY` = meeting title (falls back to action's meeting title)
+  - `DTSTART` / `DTEND` from meeting fields, formatted with timezone
+  - `LOCATION` and `DESCRIPTION` from meeting fields, plus a list of all linked action descriptions
+  - `ATTENDEE` lines collected from every action linked to the meeting (owner + CC + BCC), de-duplicated
+  - `ORGANIZER` = the meeting creator's email
+- Same ICS attached to every email sent for any action in the meeting; calendar clients merge by UID.
 
-### 4. UI surfacing
+Accept/Reject tokens remain per-action so each owner responds for their own task.
 
-On the action detail / list view, show a small badge: `Owner: Accepted` / `Owner: Rejected` / `Awaiting owner response` based on `owner_response`.
+## Data model
 
-## Out of scope
+New table `public.meetings`:
 
-- Real Google Calendar / Meet integration (no live Meet link will be generated — the ICS is a static calendar invite that any client can RSVP to).
-- Two-way RSVP sync from the user's calendar back into the app. Calendar RSVPs go to the organizer's mailbox only; the in-app Accept / Reject buttons are the source of truth for `owner_response`.
+- `title` (text, required)
+- `description` (text, nullable) — meeting agenda / notes
+- `location` (text, nullable)
+- `start_at` (timestamptz)
+- `end_at` (timestamptz)
+- `timezone` (text, e.g. `Africa/Nairobi`)
+- `organization_id` (uuid, FK to organizations)
+- `created_by` (uuid, references auth.users)
+- `ics_uid` (text, stable identifier used in ICS)
 
-## Technical notes
+Add `meeting_id uuid NULL` (FK to `meetings`, ON DELETE SET NULL) on `public.actions`. Existing rows stay `NULL` → treated as task-only by the new email flow, preserving their original behavior since we are leaving them as-is.
 
-- ICS must use CRLF line endings and fold lines >75 octets.
-- For the followers email, the ICS is informational (their RSVP won't reach us); the in-app Accept/Reject is owner-only.
-- Token reuse: same token used for update-link and accept/reject buttons → bump `expires_at` to 30 days and keep `used=false` until any of the three actions consumes it. (Or issue separate tokens — simpler to use one.)
+RLS:
+
+- Members of an organization can read meetings in their org.
+- Members can insert meetings into their org (`created_by = auth.uid()` and `organization_id` matches their membership).
+- Only the creator or an org admin can update/delete a meeting.
+- Standard `GRANT SELECT, INSERT, UPDATE, DELETE ... TO authenticated; GRANT ALL ... TO service_role` (no anon).
+
+## Frontend changes
+
+- `src/types/action.ts` — add `meetingId?: string` to `ActionItem`, add `Meeting` interface.
+- `src/lib/mappers.ts` — map `meeting_id` ↔ `meetingId`.
+- `src/components/ActionForm.tsx` — three-way RadioGroup, conditional meeting fields, new "pick existing meeting" combobox.
+- `src/lib/actions/createAction.ts` / `updateAction.ts` — when mode is "new meeting", insert into `meetings` first then store `meeting_id`; when "existing", just set `meeting_id`; when "task only", clear `meeting_id`.
+- New `src/hooks/useMeetings.ts` — fetch + cache org meetings for the picker.
+- New small `MeetingFieldsSection` subcomponent to keep the form readable.
+
+## Edge function changes
+
+- `supabase/functions/send-action-notification/index.ts`
+  - Drop the unconditional ICS generation.
+  - If `action.meeting_id`: fetch meeting + all sibling actions sharing that meeting, build ICS with deduped attendees, attach.
+  - If not: send task-only email (still includes Accept/Reject for owner).
+
+## Out of scope (for this iteration)
+
+- Dedicated "Meetings" page to view/manage meetings.
+- Meeting reminders, reschedules, or cancellations via ICS METHOD=CANCEL.
+- Notifying previously-invited attendees when a meeting's time changes.
