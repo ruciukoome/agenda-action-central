@@ -140,18 +140,15 @@ serve(async (req) => {
         // Collect attendees from every action attached to this meeting
         const { data: siblingActions } = await supabaseAdmin
           .from("actions")
-          .select("owner_email, cc_emails, bcc_emails, description")
+          .select("owner_email, description")
           .eq("meeting_id", meetingId);
 
         const collected: string[] = [];
         for (const a of (siblingActions || []) as any[]) {
           if (a.owner_email) collected.push(a.owner_email);
-          if (Array.isArray(a.cc_emails)) collected.push(...a.cc_emails);
-          if (Array.isArray(a.bcc_emails)) collected.push(...a.bcc_emails);
         }
-        // Include the current request's recipients in case the row hasn't been
-        // saved yet (create flow sends notification right after insert, but the
-        // sibling query may race).
+        // Include the current request's recipients (covers create-flow timing
+        // and CC/BCC which aren't persisted on the row).
         collected.push(action.ownerEmail, ...(ccEmails || []), ...(bccEmails || []));
 
         const attendees = [...new Set(
