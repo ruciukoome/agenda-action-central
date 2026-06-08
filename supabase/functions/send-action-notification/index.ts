@@ -247,7 +247,7 @@ serve(async (req) => {
 
     // ---- Owner email ----
     const ownerEmail = generateEmailContent(action, type, {
-      isOwner: true, updateUrl, acceptUrl, rejectUrl, meeting: meetingForEmail,
+      isOwner: true, updateUrl, acceptUrl, rejectUrl, meeting: meetingForEmail, assignerEmail: senderEmail,
     });
     const ownerBody: Record<string, unknown> = {
       from: FROM_ADDRESS,
@@ -280,7 +280,7 @@ serve(async (req) => {
 
     let followerCount = 0;
     if (followers.length > 0) {
-      const followerEmail = generateEmailContent(action, type, { isOwner: false, meeting: meetingForEmail });
+      const followerEmail = generateEmailContent(action, type, { isOwner: false, meeting: meetingForEmail, assignerEmail: senderEmail });
       const followerBody: Record<string, unknown> = {
         from: FROM_ADDRESS,
         to: ["info@nafarrosolutions.com"],
@@ -325,7 +325,7 @@ serve(async (req) => {
 function generateEmailContent(
   action: any,
   type: NotificationType,
-  opts: { isOwner: boolean; updateUrl?: string; acceptUrl?: string; rejectUrl?: string; meeting?: any }
+  opts: { isOwner: boolean; updateUrl?: string; acceptUrl?: string; rejectUrl?: string; meeting?: any; assignerEmail?: string }
 ) {
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return "Not set";
@@ -402,7 +402,7 @@ function generateEmailContent(
       <a class="cta-btn" href="${esc(opts.updateUrl)}">Update this action</a>
     </div>
     <div class="info-box">
-      <p style="margin:0"><strong>Only you (the action owner) can act on this item.</strong> Use the secure buttons above — the link expires in 30 days. Replying to this email will not update the action.</p>
+      <p style="margin:0"><strong>Only you (the action owner) can act on this item.</strong> Use the secure buttons above — the link expires in 30 days. Replies to this email will go to the person who assigned it${opts.assignerEmail ? ` (${esc(opts.assignerEmail)})` : ''}, not to update the action.</p>
     </div>
   ` : '';
 
