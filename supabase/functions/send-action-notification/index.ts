@@ -252,7 +252,7 @@ serve(async (req) => {
     const ownerBody: Record<string, unknown> = {
       from: FROM_ADDRESS,
       to: [action.ownerEmail],
-      reply_to: "info@nafarrosolutions.com",
+      reply_to: replyTo,
       subject: ownerEmail.subject,
       html: ownerEmail.htmlContent,
       text: ownerEmail.textContent,
@@ -285,7 +285,7 @@ serve(async (req) => {
         from: FROM_ADDRESS,
         to: ["info@nafarrosolutions.com"],
         bcc: followers,
-        reply_to: "info@nafarrosolutions.com",
+        reply_to: replyTo,
         subject: followerEmail.subject,
         html: followerEmail.htmlContent,
         text: followerEmail.textContent,
@@ -363,7 +363,7 @@ function generateEmailContent(
       <div class="footer">
         <p>This is an automated message from the Action Central system.</p>
         <p>Platinum Credit Limited</p>
-        <p class="unsubscribe">Please do not reply to this email — replies are not monitored.</p>
+        <p class="unsubscribe">Replies to this email will go to the person who assigned this action.</p>
       </div>
     </body></html>
   `;
