@@ -14,7 +14,7 @@ import { toast } from "@/lib/toast-wrapper";
 
 export async function sendActionNotification(
   action: ActionItem, 
-  type: "assigned" | "updated", 
+  type: "assigned" | "updated" | "completed", 
   ccEmails?: string[], 
   bccEmails?: string[]
 ) {
