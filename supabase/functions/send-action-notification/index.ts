@@ -48,25 +48,38 @@ serve(async (req) => {
   }
 
   try {
-    const authHeader = req.headers.get("Authorization") || "";
-    if (!authHeader.toLowerCase().startsWith("bearer ")) {
-      return new Response(JSON.stringify({ success: false, error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
-    const jwt = authHeader.replace(/^Bearer\s+/i, "");
-    const { data: claims, error: authError } = await supabaseAuth.auth.getClaims(jwt);
-    if (authError || !claims?.claims?.sub) {
-      return new Response(JSON.stringify({ success: false, error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
-
     const payload = await req.json();
-    const { action, type, ccEmails = [], bccEmails = [] } = payload as {
+    const { action, type, ccEmails = [], bccEmails = [], senderEmail, actionToken } = payload as {
       action: any; type: NotificationType; ccEmails?: string[]; bccEmails?: string[];
+      senderEmail?: string; actionToken?: string;
     };
 
     if (!action || !action.ownerEmail || !action.id) {
       throw new Error("Missing required data: action, action.id, or owner email");
+    }
+
+    // Auth: normally require a Bearer JWT. For type="completed" allow an unauthenticated
+    // call when accompanied by a valid unused action token (used by the public UpdateTask page).
+    const authHeader = req.headers.get("Authorization") || "";
+    const hasBearer = authHeader.toLowerCase().startsWith("bearer ");
+    let authorized = false;
+
+    if (hasBearer) {
+      const jwt = authHeader.replace(/^Bearer\s+/i, "");
+      const { data: claims, error: authError } = await supabaseAuth.auth.getClaims(jwt);
+      if (!authError && claims?.claims?.sub) authorized = true;
+    }
+
+    if (!authorized && type === "completed" && actionToken) {
+      const { data: tokens } = await supabaseAdmin.rpc("get_action_token_by_id_and_token", {
+        p_action_id: action.id, p_token: actionToken,
+      });
+      if (tokens && (Array.isArray(tokens) ? tokens.length > 0 : true)) authorized = true;
+    }
+
+    if (!authorized) {
+      return new Response(JSON.stringify({ success: false, error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
@@ -75,6 +88,68 @@ serve(async (req) => {
     if (!resendApiKey) throw new Error("RESEND_API_KEY is not configured");
 
     const FROM_ADDRESS = "Action Central <info@nafarrosolutions.com>";
+    const FALLBACK_REPLY_TO = "info@nafarrosolutions.com";
+    const isValidEmail = (e?: string) => typeof e === "string" && /.+@.+\..+/.test(e);
+
+    // ===== Completion notification: email the assigner only =====
+    if (type === "completed") {
+      // Look up assigner (action.user_id) email
+      let assignerEmail: string | undefined;
+      const { data: actionRow } = await supabaseAdmin
+        .from("actions").select("user_id").eq("id", action.id).maybeSingle();
+      const assignerId = (actionRow as any)?.user_id;
+      if (assignerId) {
+        const { data: userRes } = await supabaseAdmin.auth.admin.getUserById(assignerId);
+        assignerEmail = userRes?.user?.email ?? undefined;
+      }
+      if (!isValidEmail(assignerEmail)) {
+        return new Response(JSON.stringify({ success: false, error: "Assigner email not found" }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      const shortDesc = String(action.description ?? "").substring(0, 50);
+      const subject = `Action completed by ${action.ownerEmail}: ${shortDesc}`;
+      const html = `
+        <!DOCTYPE html><html><body style="font-family:Arial,sans-serif;color:#333;max-width:600px;margin:0 auto;">
+          <div style="background:#16a34a;color:#fff;padding:20px;text-align:center;"><h2>Action Completed</h2></div>
+          <div style="padding:24px;">
+            <p>Hello,</p>
+            <p><strong>${esc(action.ownerEmail)}</strong> has marked the following action as complete:</p>
+            <h3>${esc(action.description)}</h3>
+            <p><strong>Department:</strong> ${esc(action.department)}</p>
+            <p><strong>Priority:</strong> ${esc(action.priority)}</p>
+            <p><strong>Progress:</strong> ${esc(action.progressStatus)}</p>
+            ${action.notes ? `<p><strong>Notes:</strong> ${esc(action.notes)}</p>` : ""}
+            <p><strong>Completed at:</strong> ${esc(new Date().toLocaleString())}</p>
+            <p style="margin-top:20px;font-size:12px;color:#666;">Replying to this email will go directly to ${esc(action.ownerEmail)}.</p>
+          </div>
+        </body></html>`;
+      const text = `${action.ownerEmail} marked the action "${action.description}" as complete.\nProgress: ${action.progressStatus}\n${action.notes ? `Notes: ${action.notes}\n` : ""}Completed at: ${new Date().toLocaleString()}`;
+
+      const resp = await fetch("https://connector-gateway.lovable.dev/resend/emails", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${lovableApiKey}`,
+          "X-Connection-Api-Key": resendApiKey,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from: FROM_ADDRESS,
+          to: [assignerEmail],
+          reply_to: isValidEmail(action.ownerEmail) ? action.ownerEmail : FALLBACK_REPLY_TO,
+          subject, html, text,
+        }),
+      });
+      if (!resp.ok) {
+        const t = await resp.text();
+        throw new Error(`Resend (completion) error: ${resp.status} - ${t}`);
+      }
+      return new Response(JSON.stringify({ success: true, message: "Completion notification sent", assignerEmail }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    const replyTo = isValidEmail(senderEmail) ? senderEmail! : FALLBACK_REPLY_TO;
+
 
     // ---- Generate secure token for owner (update + accept/reject) ----
     const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
