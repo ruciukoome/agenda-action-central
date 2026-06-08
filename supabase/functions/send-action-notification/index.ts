@@ -17,7 +17,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-type NotificationType = "assigned" | "updated" | "due_soon" | "overdue";
+type NotificationType = "assigned" | "updated" | "due_soon" | "overdue" | "completed";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
 const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
