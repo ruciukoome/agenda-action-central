@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ActionItem, ProgressStatus } from "@/types/action";
 import { updateAction } from "@/lib/actions";
+import { sendActionNotification } from "@/lib/notifications";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -102,9 +103,14 @@ export function QuickStatusUpdate({
   const persist = async (patch: Partial<ActionItem>) => {
     setSaving(true);
     try {
+      const wasCompleted = action.completed || action.progressStatus === "100%";
       const updated = await updateAction({ ...action, ...patch });
+      const nowCompleted = updated.completed || updated.progressStatus === "100%";
       toast.success("Status updated");
       onUpdated?.(updated);
+      if (!wasCompleted && nowCompleted) {
+        sendActionNotification(updated, "completed").catch((e) => console.error(e));
+      }
     } catch (err) {
       console.error(err);
       toast.error("Failed to update status");

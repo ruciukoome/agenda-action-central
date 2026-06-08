@@ -130,6 +130,22 @@ export default function UpdateTask() {
         throw updateError;
       }
       
+      const wasCompleted = action.completed || action.progressStatus === "100%";
+      const nowCompleted = isComplete || progress === "100%";
+      if (!wasCompleted && nowCompleted) {
+        try {
+          await supabase.functions.invoke('send-action-notification', {
+            body: {
+              action: { ...action, progressStatus: progress, completed: isComplete, notes },
+              type: 'completed',
+              actionToken: token,
+            },
+          });
+        } catch (e) {
+          console.error('Completion notification failed:', e);
+        }
+      }
+
       // Mark the token as used
       const { error: tokenError } = await supabase
         .from('action_tokens')

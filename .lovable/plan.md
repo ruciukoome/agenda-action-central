@@ -1,87 +1,58 @@
+# Reply-To assigner + completion notifications
 
-## Goal
+## Goals
 
-Replace the current "every action auto-generates an ICS for now()" behavior with an explicit, creator-controlled choice:
+1. When the owner (email B) replies to an action email, the reply must go to the assigner (email A), not the shared sending mailbox (email C, `info@nafarrosolutions.com`).
+2. When an action is marked complete by the owner, the assigner gets an email notifying them.
 
-1. **Task only** — owner gets the existing notification + Accept/Reject, no calendar invite.
-2. **New meeting** — creator schedules a meeting (date, start, end, location/notes, timezone). ICS is generated and attached.
-3. **Attach to existing meeting** — creator picks a meeting they previously created (or any meeting in their organization). The same ICS UID is reused so all attached actions appear as one event in attendees' calendars, with each owner added as an attendee.
+## Changes
 
-Existing actions are left as-is.
+### 1. Reply-To becomes the assigner's email
 
-## User flow
+`send-action-notification` already receives `senderEmail` (the logged-in assigner) in its payload. Today it ignores it for `reply_to` and uses `info@nafarrosolutions.com`.
 
-In `ActionForm`, add a "Meeting" section with a three-way selector:
+- Use `senderEmail` as `reply_to` on both the owner email and the follower (CC/BCC) email when it is a valid address. Fall back to `info@nafarrosolutions.com` only if `senderEmail` is missing/invalid.
+- Keep `from` as the verified sending domain (email C) — required for deliverability/DKIM. Only `reply_to` changes.
+- Add a short line in the email body telling the owner that hitting Reply will email the person who assigned the action (the assigner's address shown).
 
-```text
-( ) Task only — owner just gets an email + Accept/Reject
-( ) Schedule a new meeting
-( ) Attach to existing meeting
-```
+### 2. Notify assigner when the action is completed
 
-- Task only: no extra fields.
-- New meeting: date, start time, end time, timezone (default browser), location/notes (free text). On save, a row is inserted into `meetings` and linked to the action.
-- Existing meeting: searchable dropdown of meetings in the user's organization (title + date), ordered most recent first, with upcoming meetings on top. Picking one links the action to that meeting.
+Trigger: an action transitions to completed (either `completed = true` or `progress_status = '100%'`) and was not already in that state.
 
-Edit Action page gets the same controls so a creator can later attach/detach a meeting or move an action between meetings.
+Two entry points must both send the notification:
 
-## Email + ICS behavior
+a. **Owner secure update flow** (`src/pages/UpdateTask.tsx`):
+   - After the successful update, if the new state is "completed" and the previous state wasn't, invoke `send-action-notification` with a new type `"completed"`.
+   - Because this page is token-gated and the visitor is not logged in, the edge function must accept this call without a user JWT for type `completed` only, and must look up the assigner's email server-side (see edge-function changes below). We will call it with the anon key from the page.
 
-`send-action-notification` edge function:
+b. **In-app updates** (`updateAction.ts` / wherever progress is edited while logged in, e.g. `QuickStatusUpdate`):
+   - After update, compare old vs new; if it just became completed, call `sendActionNotification(action, "completed")` from the client. The edge function will route the email to the assigner.
 
-- If action has no `meeting_id`: send the current email with Accept/Reject buttons, no ICS attachment. (This removes the current broken auto-meeting.)
-- If action has a `meeting_id`: load the meeting, build ICS with:
-  - `UID` = `meeting-<meeting.id>@actionpoint` (stable, so re-sends and shared-meeting actions land on the same calendar event)
-  - `SUMMARY` = meeting title (falls back to action's meeting title)
-  - `DTSTART` / `DTEND` from meeting fields, formatted with timezone
-  - `LOCATION` and `DESCRIPTION` from meeting fields, plus a list of all linked action descriptions
-  - `ATTENDEE` lines collected from every action linked to the meeting (owner + CC + BCC), de-duplicated
-  - `ORGANIZER` = the meeting creator's email
-- Same ICS attached to every email sent for any action in the meeting; calendar clients merge by UID.
+### 3. Edge function `send-action-notification` updates
 
-Accept/Reject tokens remain per-action so each owner responds for their own task.
+- Accept new `type: "completed"`.
+- For `completed`:
+  - Look up the action's `user_id` (assigner) via the service-role client, then resolve their email via `auth.admin.getUserById(user_id)`.
+  - Send a single email **to the assigner** with subject like `Action completed by {ownerEmail}: {short description}` and a summary (description, owner, progress, notes, completion timestamp). No Accept/Reject/Update CTAs. No ICS.
+  - Set `reply_to` to the owner's email (so the assigner can reply directly to the person who completed it).
+  - Skip the existing owner/follower send paths for this type.
+- Relax auth for the `completed` type only: allow the call when the JWT is missing **and** the request includes a valid, unused `actionToken` matching the action (so the public UpdateTask page can trigger it). All other types keep the current Bearer-JWT requirement.
+- For all other types: set `reply_to = senderEmail` (assigner) when valid; keep `info@nafarrosolutions.com` as the From and as the fallback reply-to.
 
-## Data model
+### 4. Email copy tweak (minor)
 
-New table `public.meetings`:
+In the owner email body, replace the line saying replies are not monitored with: "Replies to this email will go to the person who assigned this action ({assignerEmail})." Keep the "automated message" footer.
 
-- `title` (text, required)
-- `description` (text, nullable) — meeting agenda / notes
-- `location` (text, nullable)
-- `start_at` (timestamptz)
-- `end_at` (timestamptz)
-- `timezone` (text, e.g. `Africa/Nairobi`)
-- `organization_id` (uuid, FK to organizations)
-- `created_by` (uuid, references auth.users)
-- `ics_uid` (text, stable identifier used in ICS)
+## Out of scope
 
-Add `meeting_id uuid NULL` (FK to `meetings`, ON DELETE SET NULL) on `public.actions`. Existing rows stay `NULL` → treated as task-only by the new email flow, preserving their original behavior since we are leaving them as-is.
+- Changing the verified sending domain.
+- Notifying assigner on Accept/Reject (already handled separately).
+- Re-sending completion notices if the action is later re-opened and re-completed (we only fire on the not-completed → completed transition).
+- Backfilling notifications for historical completions.
 
-RLS:
+## Files touched
 
-- Members of an organization can read meetings in their org.
-- Members can insert meetings into their org (`created_by = auth.uid()` and `organization_id` matches their membership).
-- Only the creator or an org admin can update/delete a meeting.
-- Standard `GRANT SELECT, INSERT, UPDATE, DELETE ... TO authenticated; GRANT ALL ... TO service_role` (no anon).
-
-## Frontend changes
-
-- `src/types/action.ts` — add `meetingId?: string` to `ActionItem`, add `Meeting` interface.
-- `src/lib/mappers.ts` — map `meeting_id` ↔ `meetingId`.
-- `src/components/ActionForm.tsx` — three-way RadioGroup, conditional meeting fields, new "pick existing meeting" combobox.
-- `src/lib/actions/createAction.ts` / `updateAction.ts` — when mode is "new meeting", insert into `meetings` first then store `meeting_id`; when "existing", just set `meeting_id`; when "task only", clear `meeting_id`.
-- New `src/hooks/useMeetings.ts` — fetch + cache org meetings for the picker.
-- New small `MeetingFieldsSection` subcomponent to keep the form readable.
-
-## Edge function changes
-
-- `supabase/functions/send-action-notification/index.ts`
-  - Drop the unconditional ICS generation.
-  - If `action.meeting_id`: fetch meeting + all sibling actions sharing that meeting, build ICS with deduped attendees, attach.
-  - If not: send task-only email (still includes Accept/Reject for owner).
-
-## Out of scope (for this iteration)
-
-- Dedicated "Meetings" page to view/manage meetings.
-- Meeting reminders, reschedules, or cancellations via ICS METHOD=CANCEL.
-- Notifying previously-invited attendees when a meeting's time changes.
+- `supabase/functions/send-action-notification/index.ts` — new `completed` branch, conditional auth, reply-to logic, assigner lookup.
+- `src/lib/notifications.ts` — extend `type` union with `"completed"`; allow optional override of recipient resolution for completion (assigner lookup happens server-side, so client just passes the action + type).
+- `src/pages/UpdateTask.tsx` — detect completion transition, invoke edge function with action token.
+- `src/lib/actions/updateAction.ts` (and `QuickStatusUpdate.tsx` if it updates progress) — detect completion transition for logged-in updates and trigger the notification.
