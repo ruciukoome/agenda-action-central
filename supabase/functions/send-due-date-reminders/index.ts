@@ -103,6 +103,50 @@ serve(async (req) => {
         continue;
       }
 
+      // Resolve effective due_date_reminders preference for the action's owner.
+      // Owner is identified by email; map to user_id via auth admin if possible.
+      try {
+        const { data: rowMeta } = await supabase
+          .from('actions')
+          .select('user_id, organization_id')
+          .eq('id', action.id)
+          .maybeSingle();
+        // For the due-date reminder, the recipient is the owner. Look up their user_id by email.
+        const { data: ownerLookup } = await supabase.auth.admin.listUsers({
+          page: 1, perPage: 1,
+        } as any).catch(() => ({ data: null } as any));
+        // Simpler approach: query user_email_settings via email join is not possible; use
+        // get_effective_email_pref with assigner's org as fallback context. If the owner has
+        // no override, the org default applies.
+        let ownerUserId: string | null = null;
+        try {
+          // Best-effort: search auth users for this email
+          const usersResp = await fetch(
+            `${supabaseUrl}/auth/v1/admin/users?filter=${encodeURIComponent(`email.eq.${action.ownerEmail}`)}`,
+            { headers: { apikey: supabaseServiceKey, Authorization: `Bearer ${supabaseServiceKey}` } }
+          );
+          if (usersResp.ok) {
+            const j = await usersResp.json();
+            ownerUserId = j?.users?.[0]?.id ?? null;
+          }
+        } catch (_e) { /* ignore */ }
+
+        if (ownerUserId) {
+          const { data: allowed } = await supabase.rpc('get_effective_email_pref', {
+            _user_id: ownerUserId,
+            _org_id: (rowMeta as any)?.organization_id ?? null,
+            _key: 'due_date_reminders',
+          });
+          if (allowed === false) {
+            console.log(`[pref] Skipping reminder for ${action.ownerEmail} (due_date_reminders disabled)`);
+            results.push({ actionId: action.id, ownerEmail: action.ownerEmail, status: 'skipped' });
+            continue;
+          }
+        }
+      } catch (e) {
+        console.warn('[pref] Failed to check reminder preference, proceeding:', e);
+      }
+
       const { emailHtml, emailText } = generateDueDateReminderEmail(action);
       console.log(`Sending reminder email to ${action.ownerEmail} for action: ${action.description}`);
       
