@@ -82,6 +82,38 @@ serve(async (req) => {
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    // ===== Preference gating: skip silently if the assigner has disabled this type =====
+    const prefKey =
+      type === "completed" ? "completion_updates"
+      : (type === "assigned" || type === "updated") ? "assignment_notifications"
+      : null;
+
+    if (prefKey) {
+      try {
+        const { data: actionRow } = await supabaseAdmin
+          .from("actions")
+          .select("user_id, organization_id")
+          .eq("id", action.id)
+          .maybeSingle();
+        if (actionRow) {
+          const { data: allowed } = await supabaseAdmin.rpc("get_effective_email_pref", {
+            _user_id: (actionRow as any).user_id,
+            _org_id: (actionRow as any).organization_id,
+            _key: prefKey,
+          });
+          if (allowed === false) {
+            console.log(`[pref] Skipping ${type} email for action ${action.id} (${prefKey} disabled)`);
+            return new Response(
+              JSON.stringify({ success: true, skipped: true, reason: `${prefKey} disabled` }),
+              { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          }
+        }
+      } catch (e) {
+        console.warn("[pref] Failed to check email preference, proceeding:", e);
+      }
+    }
+
     const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
     if (!lovableApiKey) throw new Error("LOVABLE_API_KEY is not configured");

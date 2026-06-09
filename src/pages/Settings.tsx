@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ToastSettings } from '@/components/ToastSettings';
 import { PasswordChangeForm } from '@/components/PasswordChangeForm';
+import { EmailIntegrationCard } from '@/components/EmailIntegrationCard';
 import { useAuth } from '@/lib/auth';
 import { AppLayout } from '@/components/layout/AppLayout';
 
@@ -31,6 +32,8 @@ export default function Settings() {
           )}
 
           <PasswordChangeForm />
+
+          <EmailIntegrationCard />
 
           <ToastSettings />
         </div>
