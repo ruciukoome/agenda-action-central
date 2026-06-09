@@ -1,12 +1,12 @@
-import { useState, useEffect } from 'react';
-import { useAuth } from '@/lib/auth';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { Loader2, AlertTriangle, UserPlus, LogIn, Target, ArrowLeft, Mail } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useState, useEffect } from "react";
+import { useAuth } from "@/lib/auth";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+import { useNavigate, useLocation, Link } from "react-router-dom";
+import { Loader2, AlertTriangle, UserPlus, LogIn, Target, ArrowLeft, Mail } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Dialog,
   DialogContent,
@@ -14,12 +14,12 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [signupConfirmEmail, setSignupConfirmEmail] = useState<string | null>(null);
   const { signIn, signUp, user, isLoading } = useAuth();
@@ -29,7 +29,7 @@ export default function Auth() {
 
   useEffect(() => {
     const queryParams = new URLSearchParams(location.search);
-    if (queryParams.get('mode') === 'signup') {
+    if (queryParams.get("mode") === "signup") {
       setIsLogin(false);
     }
   }, [location]);
@@ -38,28 +38,25 @@ export default function Auth() {
     if (user) {
       const fromPath = location.state?.from?.pathname;
       // Never bounce back to landing or auth — send authed users to the app
-      const target =
-        !fromPath || fromPath === '/' || fromPath === '/auth'
-          ? '/app'
-          : fromPath;
+      const target = !fromPath || fromPath === "/" || fromPath === "/auth" ? "/app" : fromPath;
       navigate(target, { replace: true });
     }
   }, [user, navigate, location]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.altKey && e.key === 's') {
+      if (e.altKey && e.key === "s") {
         e.preventDefault();
         setIsLogin(false);
       }
-      if (e.altKey && e.key === 'l') {
+      if (e.altKey && e.key === "l") {
         e.preventDefault();
         setIsLogin(true);
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -77,10 +74,10 @@ export default function Auth() {
         } else {
           // Auto-confirmed (e.g. confirmations disabled) — go straight to onboarding
           toast({
-            title: 'Account created',
+            title: "Account created",
             description: "Let's set up your organization.",
           });
-          navigate('/onboarding', { replace: true });
+          navigate("/onboarding", { replace: true });
         }
       }
     } catch (error) {
@@ -90,25 +87,24 @@ export default function Auth() {
   };
 
   const isEmailProviderDisabled =
-    errorMessage?.includes('Email logins are disabled') ||
-    errorMessage?.includes('Email signups are disabled');
+    errorMessage?.includes("Email logins are disabled") || errorMessage?.includes("Email signups are disabled");
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden flex flex-col">
       {/* Soft gradient backdrop */}
       <div
         className="absolute inset-0 opacity-20 pointer-events-none"
-        style={{ background: 'var(--gradient-hero)' }}
+        style={{ background: "var(--gradient-hero)" }}
         aria-hidden
       />
       <div
         className="absolute -top-40 -right-40 h-96 w-96 rounded-full opacity-30 blur-3xl pointer-events-none"
-        style={{ background: 'var(--gradient-hero)' }}
+        style={{ background: "var(--gradient-hero)" }}
         aria-hidden
       />
       <div
         className="absolute -bottom-40 -left-40 h-96 w-96 rounded-full opacity-20 blur-3xl pointer-events-none"
-        style={{ background: 'var(--gradient-hero)' }}
+        style={{ background: "var(--gradient-hero)" }}
         aria-hidden
       />
 
@@ -119,7 +115,7 @@ export default function Auth() {
             <div className="h-8 w-8 rounded-lg bg-[image:var(--gradient-hero)] flex items-center justify-center">
               <Target className="h-4 w-4 text-white" />
             </div>
-            <span className="font-bold text-lg">ActionPoint</span>
+            <span className="font-bold text-lg">ActionsPoint</span>
           </Link>
           <Button variant="ghost" size="sm" asChild>
             <Link to="/" className="gap-2">
@@ -135,19 +131,13 @@ export default function Auth() {
         <div className="w-full max-w-md">
           <div className="text-center mb-8 space-y-3">
             <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-[image:var(--gradient-hero)] shadow-[var(--shadow-glow)]">
-              {isLogin ? (
-                <LogIn className="h-6 w-6 text-white" />
-              ) : (
-                <UserPlus className="h-6 w-6 text-white" />
-              )}
+              {isLogin ? <LogIn className="h-6 w-6 text-white" /> : <UserPlus className="h-6 w-6 text-white" />}
             </div>
             <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
-              {isLogin ? 'Welcome back' : 'Create your account'}
+              {isLogin ? "Welcome back" : "Create your account"}
             </h1>
             <p className="text-muted-foreground">
-              {isLogin
-                ? 'Sign in to keep your team accountable.'
-                : 'Get started — set up your workspace in minutes.'}
+              {isLogin ? "Sign in to keep your team accountable." : "Get started — set up your workspace in minutes."}
             </p>
           </div>
 
@@ -159,9 +149,7 @@ export default function Auth() {
                   type="button"
                   onClick={() => setIsLogin(true)}
                   className={`text-sm font-medium py-2 rounded-md transition-all ${
-                    isLogin
-                      ? 'bg-background shadow-sm text-foreground'
-                      : 'text-muted-foreground hover:text-foreground'
+                    isLogin ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   Sign in
@@ -170,9 +158,7 @@ export default function Auth() {
                   type="button"
                   onClick={() => setIsLogin(false)}
                   className={`text-sm font-medium py-2 rounded-md transition-all ${
-                    !isLogin
-                      ? 'bg-background shadow-sm text-foreground'
-                      : 'text-muted-foreground hover:text-foreground'
+                    !isLogin ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   Sign up
@@ -190,8 +176,8 @@ export default function Auth() {
                   <Alert>
                     <AlertTriangle className="h-4 w-4" />
                     <AlertDescription>
-                      Email authentication is currently disabled. Please enable it in your
-                      Supabase dashboard under Authentication → Providers → Email.
+                      Email authentication is currently disabled. Please enable it in your Supabase dashboard under
+                      Authentication → Providers → Email.
                     </AlertDescription>
                   </Alert>
                 )}
@@ -225,37 +211,28 @@ export default function Auth() {
                   />
                 </div>
 
-                <Button
-                  type="submit"
-                  size="lg"
-                  className="w-full"
-                  disabled={isLoading || isEmailProviderDisabled}
-                >
+                <Button type="submit" size="lg" className="w-full" disabled={isLoading || isEmailProviderDisabled}>
                   {isLoading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      {isLogin ? 'Signing in...' : 'Creating account...'}
+                      {isLogin ? "Signing in..." : "Creating account..."}
                     </>
                   ) : (
                     <>
-                      {isLogin ? (
-                        <LogIn className="mr-2 h-4 w-4" />
-                      ) : (
-                        <UserPlus className="mr-2 h-4 w-4" />
-                      )}
-                      {isLogin ? 'Sign in' : 'Create account'}
+                      {isLogin ? <LogIn className="mr-2 h-4 w-4" /> : <UserPlus className="mr-2 h-4 w-4" />}
+                      {isLogin ? "Sign in" : "Create account"}
                     </>
                   )}
                 </Button>
 
                 <p className="text-center text-sm text-muted-foreground pt-2">
-                  {isLogin ? "Don't have an account? " : 'Already have an account? '}
+                  {isLogin ? "Don't have an account? " : "Already have an account? "}
                   <button
                     type="button"
                     onClick={() => setIsLogin(!isLogin)}
                     className="font-medium text-primary hover:underline"
                   >
-                    {isLogin ? 'Sign up' : 'Sign in'}
+                    {isLogin ? "Sign up" : "Sign in"}
                   </button>
                 </p>
               </form>
@@ -275,7 +252,7 @@ export default function Auth() {
           if (!open) {
             setSignupConfirmEmail(null);
             setIsLogin(true);
-            setPassword('');
+            setPassword("");
           }
         }}
       >
@@ -286,19 +263,16 @@ export default function Auth() {
             </div>
             <DialogTitle className="text-center text-xl">Confirm your email</DialogTitle>
             <DialogDescription className="text-center pt-2">
-              We sent a confirmation link to{' '}
-              <span className="font-medium text-foreground">{signupConfirmEmail}</span>.
+              We sent a confirmation link to <span className="font-medium text-foreground">{signupConfirmEmail}</span>.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 text-sm text-muted-foreground">
             <ol className="list-decimal list-inside space-y-2">
-              <li>Open your inbox and look for the email from ActionPoint.</li>
+              <li>Open your inbox and look for the email from ActionsPoint.</li>
               <li>Click the confirmation link to activate your account.</li>
               <li>You'll be guided to set up or join your organization.</li>
             </ol>
-            <p className="text-xs">
-              Don't see it? Check your spam folder, or wait a minute and try again.
-            </p>
+            <p className="text-xs">Don't see it? Check your spam folder, or wait a minute and try again.</p>
           </div>
           <DialogFooter>
             <Button
@@ -306,7 +280,7 @@ export default function Auth() {
               onClick={() => {
                 setSignupConfirmEmail(null);
                 setIsLogin(true);
-                setPassword('');
+                setPassword("");
               }}
             >
               Got it

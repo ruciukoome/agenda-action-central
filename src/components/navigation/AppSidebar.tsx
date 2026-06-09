@@ -40,9 +40,7 @@ const mainItems = [
   { title: "Manage Actions", url: "/managed-actions", icon: ListChecks },
 ];
 
-const settingsItems = [
-  { title: "Settings", url: "/settings", icon: Settings },
-];
+const settingsItems = [{ title: "Settings", url: "/settings", icon: Settings }];
 
 export function AppSidebar() {
   const { state, isMobile } = useSidebar();
@@ -60,9 +58,7 @@ export function AppSidebar() {
   const linkClass = (path: string) =>
     cn(
       "flex items-center gap-2 w-full",
-      isActive(path)
-        ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-        : "hover:bg-sidebar-accent/50"
+      isActive(path) ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" : "hover:bg-sidebar-accent/50",
     );
 
   const handleSignOut = async () => {
@@ -83,9 +79,7 @@ export function AppSidebar() {
           <div className="h-8 w-8 rounded-lg bg-[image:var(--gradient-hero)] flex items-center justify-center shrink-0">
             <Target className="h-4 w-4 text-white" />
           </div>
-          {!collapsed && (
-            <span className="font-bold text-base truncate">ActionPoint</span>
-          )}
+          {!collapsed && <span className="font-bold text-base truncate">ActionsPoint</span>}
         </NavLink>
       </SidebarHeader>
 
