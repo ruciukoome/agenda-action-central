@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.get_effective_email_pref(uuid, uuid, text) FROM anon, PUBLIC;
