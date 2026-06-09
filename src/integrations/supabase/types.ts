@@ -244,6 +244,44 @@ export type Database = {
           },
         ]
       }
+      organization_email_settings: {
+        Row: {
+          assignment_notifications: boolean
+          completion_updates: boolean
+          due_date_reminders: boolean
+          organization_id: string
+          updated_at: string
+          updated_by: string | null
+          weekly_digest: boolean
+        }
+        Insert: {
+          assignment_notifications?: boolean
+          completion_updates?: boolean
+          due_date_reminders?: boolean
+          organization_id: string
+          updated_at?: string
+          updated_by?: string | null
+          weekly_digest?: boolean
+        }
+        Update: {
+          assignment_notifications?: boolean
+          completion_updates?: boolean
+          due_date_reminders?: boolean
+          organization_id?: string
+          updated_at?: string
+          updated_by?: string | null
+          weekly_digest?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_email_settings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_members: {
         Row: {
           created_at: string
@@ -463,6 +501,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_email_settings: {
+        Row: {
+          assignment_notifications: boolean | null
+          completion_updates: boolean | null
+          due_date_reminders: boolean | null
+          organization_id: string | null
+          updated_at: string
+          user_id: string
+          weekly_digest: boolean | null
+        }
+        Insert: {
+          assignment_notifications?: boolean | null
+          completion_updates?: boolean | null
+          due_date_reminders?: boolean | null
+          organization_id?: string | null
+          updated_at?: string
+          user_id: string
+          weekly_digest?: boolean | null
+        }
+        Update: {
+          assignment_notifications?: boolean | null
+          completion_updates?: boolean | null
+          due_date_reminders?: boolean | null
+          organization_id?: string | null
+          updated_at?: string
+          user_id?: string
+          weekly_digest?: boolean | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -506,6 +574,10 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      get_effective_email_pref: {
+        Args: { _key: string; _org_id: string; _user_id: string }
+        Returns: boolean
       }
       get_user_org_id: { Args: { _user_id: string }; Returns: string }
       get_user_org_role: {
