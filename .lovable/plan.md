@@ -1,58 +1,75 @@
-# Reply-To assigner + completion notifications
+## Goal
+Turn the Email Notifications card from a UI mock into real, persisted preferences that actually gate when emails are sent. Support an org-level default with per-user overrides.
 
-## Goals
+## Settings model
 
-1. When the owner (email B) replies to an action email, the reply must go to the assigner (email A), not the shared sending mailbox (email C, `info@nafarrosolutions.com`).
-2. When an action is marked complete by the owner, the assigner gets an email notifying them.
+Four functional toggles + one placeholder:
 
-## Changes
+| Setting | Effect | Default |
+|---|---|---|
+| Assignment notifications | Skip the "assigned" email in `createAction.ts` | on |
+| Completion updates | Skip the "completed" email in `QuickStatusUpdate` and `UpdateTask` | on |
+| Due date reminders / Automatic reminders | Skip the per-action reminder inside `send-due-date-reminders` | on |
+| Weekly digest | New Sunday email summarising the user's open/overdue actions | off |
+| Overdue alerts | Keep as visible placeholder, disabled with "Coming soon" badge | — |
 
-### 1. Reply-To becomes the assigner's email
+Resolution rule when sending: **user override (if set) else org default else built‑in default (on)**. The assigner's preference governs assignment/completion/digest emails (these are their notifications); the owner's preference governs due-date reminders (the reminder is for the owner).
 
-`send-action-notification` already receives `senderEmail` (the logged-in assigner) in its payload. Today it ignores it for `reply_to` and uses `info@nafarrosolutions.com`.
+## Database
 
-- Use `senderEmail` as `reply_to` on both the owner email and the follower (CC/BCC) email when it is a valid address. Fall back to `info@nafarrosolutions.com` only if `senderEmail` is missing/invalid.
-- Keep `from` as the verified sending domain (email C) — required for deliverability/DKIM. Only `reply_to` changes.
-- Add a short line in the email body telling the owner that hitting Reply will email the person who assigned the action (the assigner's address shown).
+New migration adds two tables (with grants + RLS):
 
-### 2. Notify assigner when the action is completed
+```text
+organization_email_settings
+  organization_id uuid PK -> organizations(id)
+  assignment_notifications  bool default true
+  completion_updates        bool default true
+  due_date_reminders        bool default true
+  weekly_digest             bool default false
+  updated_at, updated_by
 
-Trigger: an action transitions to completed (either `completed = true` or `progress_status = '100%'`) and was not already in that state.
+user_email_settings
+  user_id uuid PK
+  organization_id uuid       -- scope the override
+  assignment_notifications  bool null   -- null = inherit
+  completion_updates        bool null
+  due_date_reminders        bool null
+  weekly_digest             bool null
+  updated_at
+```
 
-Two entry points must both send the notification:
+RLS:
+- `organization_email_settings`: select for org members; insert/update only for org admins (`get_user_org_role = 'admin'`).
+- `user_email_settings`: each user manages their own row (`user_id = auth.uid()`).
 
-a. **Owner secure update flow** (`src/pages/UpdateTask.tsx`):
-   - After the successful update, if the new state is "completed" and the previous state wasn't, invoke `send-action-notification` with a new type `"completed"`.
-   - Because this page is token-gated and the visitor is not logged in, the edge function must accept this call without a user JWT for type `completed` only, and must look up the assigner's email server-side (see edge-function changes below). We will call it with the anon key from the page.
+Helper SQL function `public.get_effective_email_pref(_user_id uuid, _org_id uuid, _key text) returns bool` (SECURITY DEFINER) so edge functions can resolve preferences in one call.
 
-b. **In-app updates** (`updateAction.ts` / wherever progress is edited while logged in, e.g. `QuickStatusUpdate`):
-   - After update, compare old vs new; if it just became completed, call `sendActionNotification(action, "completed")` from the client. The edge function will route the email to the assigner.
+## Frontend
 
-### 3. Edge function `send-action-notification` updates
+`EmailIntegrationCard.tsx` becomes the real settings UI:
+- Load org defaults + my overrides via a new `useEmailSettings()` hook.
+- **Settings tab** lists the four functional toggles. Each shows: current effective value, override switch ("Use org default" / "On" / "Off") tri-state via a small select; admins see an extra "Org default" switch above it.
+- **Overdue alerts** row stays in Overview list but its Settings switch is disabled with a "Coming soon" badge.
+- Save on change; toast via `toast-wrapper`.
 
-- Accept new `type: "completed"`.
-- For `completed`:
-  - Look up the action's `user_id` (assigner) via the service-role client, then resolve their email via `auth.admin.getUserById(user_id)`.
-  - Send a single email **to the assigner** with subject like `Action completed by {ownerEmail}: {short description}` and a summary (description, owner, progress, notes, completion timestamp). No Accept/Reject/Update CTAs. No ICS.
-  - Set `reply_to` to the owner's email (so the assigner can reply directly to the person who completed it).
-  - Skip the existing owner/follower send paths for this type.
-- Relax auth for the `completed` type only: allow the call when the JWT is missing **and** the request includes a valid, unused `actionToken` matching the action (so the public UpdateTask page can trigger it). All other types keep the current Bearer-JWT requirement.
-- For all other types: set `reply_to = senderEmail` (assigner) when valid; keep `info@nafarrosolutions.com` as the From and as the fallback reply-to.
+`Settings.tsx` already renders Toast settings; add `EmailIntegrationCard` underneath so users reach it from /settings (currently it's only used elsewhere). No change to existing nav.
 
-### 4. Email copy tweak (minor)
+## Send-site gating
 
-In the owner email body, replace the line saying replies are not monitored with: "Replies to this email will go to the person who assigned this action ({assignerEmail})." Keep the "automated message" footer.
+- `src/lib/actions/createAction.ts`: before `sendActionNotification(..., "assigned")`, fetch assigner's effective `assignment_notifications`; skip if false.
+- `src/components/QuickStatusUpdate.tsx` + `src/pages/UpdateTask.tsx`: before completion notification, fetch assigner's effective `completion_updates` (UpdateTask is public — call a small new edge function `get-notification-pref` with the `actionToken` to look it up server-side; no client auth needed).
+- `supabase/functions/send-due-date-reminders/index.ts`: for each action, look up the owner's effective `due_date_reminders` via the helper and skip if false.
+
+## Weekly digest (new)
+
+- New edge function `send-weekly-digest` (Sundays 08:00 UTC via pg_cron). For every user with effective `weekly_digest = true`, query their open actions (assigned to them + assigned by them, grouped), render an HTML summary, send via existing Resend setup (`info@nafarrosolutions.com`, reply-to = user).
+- Cron entry added via the `insert` tool (not migration) so the URL/anon key stay project-specific.
 
 ## Out of scope
-
-- Changing the verified sending domain.
-- Notifying assigner on Accept/Reject (already handled separately).
-- Re-sending completion notices if the action is later re-opened and re-completed (we only fire on the not-completed → completed transition).
-- Backfilling notifications for historical completions.
+- Changing the sending domain
+- Overdue alerts behaviour (placeholder only)
+- Backfilling settings rows (defaults applied lazily)
 
 ## Files touched
-
-- `supabase/functions/send-action-notification/index.ts` — new `completed` branch, conditional auth, reply-to logic, assigner lookup.
-- `src/lib/notifications.ts` — extend `type` union with `"completed"`; allow optional override of recipient resolution for completion (assigner lookup happens server-side, so client just passes the action + type).
-- `src/pages/UpdateTask.tsx` — detect completion transition, invoke edge function with action token.
-- `src/lib/actions/updateAction.ts` (and `QuickStatusUpdate.tsx` if it updates progress) — detect completion transition for logged-in updates and trigger the notification.
+- New: `supabase/migrations/<ts>_email_settings.sql`, `src/hooks/useEmailSettings.ts`, `supabase/functions/get-notification-pref/index.ts`, `supabase/functions/send-weekly-digest/index.ts`
+- Edited: `src/components/EmailIntegrationCard.tsx`, `src/pages/Settings.tsx`, `src/lib/actions/createAction.ts`, `src/components/QuickStatusUpdate.tsx`, `src/pages/UpdateTask.tsx`, `supabase/functions/send-due-date-reminders/index.ts`
