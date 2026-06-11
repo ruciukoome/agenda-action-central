@@ -35,6 +35,7 @@ export interface ProjectStage {
   progress_status: ProgressStatus;
   notes: string | null;
   action_id: string | null;
+  depends_on_stage_id: string | null;
   created_at: string;
   updated_at: string;
 }
