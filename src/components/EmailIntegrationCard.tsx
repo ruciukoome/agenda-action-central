@@ -97,11 +97,22 @@ export function EmailIntegrationCard() {
     orgDefaults,
     userOverrides,
     effective,
+    complianceRule,
     isOrgAdmin,
     hasOrg,
     setUserOverride,
     setOrgDefault,
+    setComplianceRule,
   } = useEmailSettings();
+
+  const handleComplianceRuleChange = async (rule: "on_time" | "any_completion") => {
+    try {
+      await setComplianceRule(rule);
+      toast.success("Compliance rule updated");
+    } catch (e: any) {
+      toast.error("Failed to update rule", { description: e?.message });
+    }
+  };
 
   const handleUserChange = async (key: EmailPrefKey, value: boolean | null) => {
     try {
