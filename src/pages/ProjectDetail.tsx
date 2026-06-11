@@ -33,6 +33,17 @@ export default function ProjectDetail() {
   const [stages, setStages] = useState<ProjectStage[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentEmail, setCurrentEmail] = useState<string>("");
+  const { isOrgAdmin } = useOrganization();
+
+  const handleDependencyChange = async (stageId: string, value: string) => {
+    try {
+      await updateStageDependency(stageId, value === "__none__" ? null : value);
+      toast.success("Dependency updated");
+      load();
+    } catch (e: any) {
+      toast.error("Failed to update dependency", { description: e?.message });
+    }
+  };
 
   const load = async () => {
     if (!id) return;
