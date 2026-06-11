@@ -20,6 +20,8 @@ import SuperAdmin from './pages/SuperAdmin';
 import UsersAndRoles from './pages/UsersAndRoles';
 import Drafts from './pages/Drafts';
 import ComplianceReport from './pages/ComplianceReport';
+import Projects from './pages/Projects';
+import ProjectDetail from './pages/ProjectDetail';
 import { useIdleTimeout } from './hooks/useIdleTimeout';
 import { useAuth } from '@/lib/auth';
 import { AuthGuard } from '@/components/AuthGuard';
