@@ -3,7 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CheckCircle, Clock, Mail, CalendarClock, AlertTriangle, Newspaper } from "lucide-react";
+import { CheckCircle, Clock, Mail, CalendarClock, AlertTriangle, Newspaper, BarChart3 } from "lucide-react";
 import { toast } from "@/lib/toast-wrapper";
 import { EmailPrefKey, useEmailSettings } from "@/hooks/useEmailSettings";
 
@@ -14,6 +14,7 @@ type RowMeta = {
   icon: React.ComponentType<{ className?: string }>;
   iconBg: string;
   iconColor: string;
+  adminOnly?: boolean;
 };
 
 const ROWS: RowMeta[] = [
@@ -48,6 +49,15 @@ const ROWS: RowMeta[] = [
     icon: Newspaper,
     iconBg: "bg-purple-100",
     iconColor: "text-purple-600",
+  },
+  {
+    key: "monthly_compliance_report",
+    title: "Monthly Compliance Report (admins)",
+    description: "Monthly email listing compliant and non-compliant users in your organization, based on due-date adherence",
+    icon: BarChart3,
+    iconBg: "bg-indigo-100",
+    iconColor: "text-indigo-600",
+    adminOnly: true,
   },
 ];
 
