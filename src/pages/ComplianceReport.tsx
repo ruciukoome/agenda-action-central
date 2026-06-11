@@ -193,7 +193,10 @@ export default function ComplianceReport() {
           <CardHeader>
             <CardTitle>Per-user breakdown — {monthLabel}</CardTitle>
             <CardDescription>
-              Compliant = every action due in the month was completed on or before its due date.
+              Rule: <strong>{rule === "any_completion"
+                ? "any completion counts (even after due date)"
+                : "must be completed on or before due date"}</strong>.
+              {" "}Org admins can change this in Settings → Email Notifications.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -213,7 +216,7 @@ export default function ComplianceReport() {
                   <TableRow>
                     <TableHead>User</TableHead>
                     <TableHead className="text-center">Actions</TableHead>
-                    <TableHead className="text-center">On time</TableHead>
+                    <TableHead className="text-center">{rule === "any_completion" ? "Completed" : "On time"}</TableHead>
                     <TableHead className="text-center">Overdue / late</TableHead>
                     <TableHead className="text-center">Still open</TableHead>
                     <TableHead className="text-center">Status</TableHead>
