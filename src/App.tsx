@@ -64,6 +64,8 @@ function AppContent() {
         
         <Route path="/organization" element={<AuthGuard><OrgGuard><OrganizationSettings /></OrgGuard></AuthGuard>} />
         <Route path="/compliance-report" element={<AuthGuard><OrgGuard><ComplianceReport /></OrgGuard></AuthGuard>} />
+        <Route path="/projects" element={<AuthGuard><OrgGuard><Projects /></OrgGuard></AuthGuard>} />
+        <Route path="/projects/:id" element={<AuthGuard><OrgGuard><ProjectDetail /></OrgGuard></AuthGuard>} />
         <Route path="/super-admin" element={<AuthGuard><SuperAdmin /></AuthGuard>} />
         <Route path="/super-admin/users" element={<AuthGuard><UsersAndRoles /></AuthGuard>} />
         <Route path="*" element={<NotFound />} />
