@@ -481,6 +481,7 @@ export type Database = {
           actual_end_date: string | null
           actual_start_date: string | null
           created_at: string
+          depends_on_stage_id: string | null
           id: string
           notes: string | null
           owner_email: string
@@ -501,6 +502,7 @@ export type Database = {
           actual_end_date?: string | null
           actual_start_date?: string | null
           created_at?: string
+          depends_on_stage_id?: string | null
           id?: string
           notes?: string | null
           owner_email: string
@@ -521,6 +523,7 @@ export type Database = {
           actual_end_date?: string | null
           actual_start_date?: string | null
           created_at?: string
+          depends_on_stage_id?: string | null
           id?: string
           notes?: string | null
           owner_email?: string
@@ -542,6 +545,13 @@ export type Database = {
             columns: ["action_id"]
             isOneToOne: false
             referencedRelation: "actions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_stages_depends_on_stage_id_fkey"
+            columns: ["depends_on_stage_id"]
+            isOneToOne: false
+            referencedRelation: "project_stages"
             referencedColumns: ["id"]
           },
           {
