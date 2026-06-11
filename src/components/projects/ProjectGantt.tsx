@@ -95,7 +95,20 @@ export function ProjectGantt({ stages, rowLabels, compact = false }: Props) {
             );
           })}
         </div>
+
+        <div className="mt-4 pt-3 border-t flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] text-muted-foreground">
+          <span className="font-medium text-foreground">Legend:</span>
+          <span className="inline-flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded bg-blue-500" /> Ready</span>
+          <span className="inline-flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded bg-indigo-500" /> In progress</span>
+          <span className="inline-flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded bg-emerald-500" /> Completed</span>
+          <span className="inline-flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded bg-rose-500" /> Overdue</span>
+          <span className="inline-flex items-center gap-1.5"><Lock className="h-3 w-3" /> Locked (waiting on dependency)</span>
+          <span className="w-full sm:w-auto sm:ml-2 sm:pl-3 sm:border-l">
+            <strong className="text-foreground">Duration (days)</strong> sets each bar's length and determines its planned end date — the next stage's planned start date is the previous stage's end date.
+          </span>
+        </div>
       </div>
     </div>
   );
 }
+
