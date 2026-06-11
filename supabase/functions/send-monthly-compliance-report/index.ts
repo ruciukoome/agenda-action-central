@@ -4,10 +4,11 @@
  * Sends each opted-in org admin a monthly report of compliant vs non-compliant
  * users for actions due in the previous month.
  *
- * Compliance rule:
- *  - An owner is COMPLIANT if every action assigned to them with a due_date in
- *    the report month was completed on or before its due_date.
- *  - Otherwise (any overdue or incomplete action) they are NON-COMPLIANT.
+ * Compliance rule (configurable per org via organization_email_settings.compliance_rule):
+ *  - 'on_time' (default): owner is COMPLIANT only if every action due in the month
+ *    was completed on or before its due_date.
+ *  - 'any_completion': owner is COMPLIANT if every action due in the month was
+ *    completed at all (even late). Only still-open actions count against them.
  *
  * Triggered by pg_cron on the 1st of each month, secured via CRON_SECRET.
  * Can also be invoked manually by an org admin to preview (?orgId=&month=YYYY-MM).
@@ -27,6 +28,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+type ComplianceRule = "on_time" | "any_completion";
+
 interface OwnerStat {
   email: string;
   total: number;
@@ -38,10 +41,9 @@ interface OwnerStat {
 
 function getPreviousMonthRange(now = new Date()): { start: Date; end: Date; label: string } {
   const y = now.getUTCFullYear();
-  const m = now.getUTCMonth(); // 0-based current
-  // Previous month: m-1
+  const m = now.getUTCMonth();
   const start = new Date(Date.UTC(y, m - 1, 1, 0, 0, 0));
-  const end = new Date(Date.UTC(y, m, 1, 0, 0, 0)); // exclusive
+  const end = new Date(Date.UTC(y, m, 1, 0, 0, 0));
   const label = start.toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "UTC" });
   return { start, end, label };
 }
@@ -58,11 +60,31 @@ function parseMonthParam(month: string | null): { start: Date; end: Date; label:
   return { start, end, label };
 }
 
+function ruleLabel(rule: ComplianceRule): string {
+  return rule === "any_completion"
+    ? "any completion (even after the due date) counts as compliant"
+    : "completion on or before the due date";
+}
+
+async function getOrgComplianceRule(
+  supabase: ReturnType<typeof createClient>,
+  organizationId: string,
+): Promise<ComplianceRule> {
+  const { data } = await supabase
+    .from("organization_email_settings")
+    .select("compliance_rule")
+    .eq("organization_id", organizationId)
+    .maybeSingle();
+  const v = (data as any)?.compliance_rule;
+  return v === "any_completion" ? "any_completion" : "on_time";
+}
+
 async function computeOrgStats(
   supabase: ReturnType<typeof createClient>,
   organizationId: string,
   start: Date,
   end: Date,
+  rule: ComplianceRule,
 ): Promise<{ owners: OwnerStat[]; compliantCount: number; nonCompliantCount: number; totalActions: number }> {
   const { data: actions, error } = await supabase
     .from("actions")
@@ -90,12 +112,14 @@ async function computeOrgStats(
     stat.total += 1;
 
     if (a.completed) {
-      // Completed: check if it was completed on or before due date.
       const completedAt = a.updated_at ? new Date(a.updated_at) : null;
-      if (completedAt && completedAt <= due) {
+      const onTime = completedAt && completedAt <= due;
+      if (rule === "any_completion") {
+        // Any completion counts as on-time for compliance purposes
+        stat.completedOnTime += 1;
+      } else if (onTime) {
         stat.completedOnTime += 1;
       } else {
-        // Completed late
         stat.overdue += 1;
       }
     } else {
@@ -142,8 +166,9 @@ function buildEmail(opts: {
   compliantCount: number;
   nonCompliantCount: number;
   totalActions: number;
+  rule: ComplianceRule;
 }): { html: string; text: string; subject: string } {
-  const { orgName, monthLabel, owners, compliantCount, nonCompliantCount, totalActions } = opts;
+  const { orgName, monthLabel, owners, compliantCount, nonCompliantCount, totalActions, rule } = opts;
   const totalUsers = owners.length;
   const rate = totalUsers > 0 ? Math.round((compliantCount / totalUsers) * 100) : 0;
 
@@ -171,6 +196,8 @@ function buildEmail(opts: {
         .join("")
     : `<tr><td colspan="6" style="padding:16px;text-align:center;color:#666;">No actions were due in ${esc(monthLabel)}.</td></tr>`;
 
+  const onTimeHeader = rule === "any_completion" ? "Completed" : "On time";
+
   const html = `
   <!DOCTYPE html>
   <html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
@@ -183,6 +210,9 @@ function buildEmail(opts: {
     <div style="padding:20px;background:#ffffff;">
       <p>Hello,</p>
       <p>Below is the compliance summary of action items <strong>due in ${esc(monthLabel)}</strong> for your organization.</p>
+      <p style="font-size:12px;color:#6b7280;margin-top:-6px;">
+        Compliance rule: <strong>${esc(ruleLabel(rule))}</strong>.
+      </p>
 
       <table style="width:100%;border-collapse:collapse;margin:16px 0;">
         <tr>
@@ -214,8 +244,8 @@ function buildEmail(opts: {
           <tr style="background:#f3f4f6;">
             <th style="padding:8px;text-align:left;">User</th>
             <th style="padding:8px;">Actions</th>
-            <th style="padding:8px;">On time</th>
-            <th style="padding:8px;">Overdue / late</th>
+            <th style="padding:8px;">${onTimeHeader}</th>
+            <th style="padding:8px;">${rule === "any_completion" ? "Late (info)" : "Overdue / late"}</th>
             <th style="padding:8px;">Still open</th>
             <th style="padding:8px;">Status</th>
           </tr>
@@ -224,8 +254,8 @@ function buildEmail(opts: {
       </table>
 
       <p style="margin-top:24px;font-size:12px;color:#6b7280;">
-        Compliant = every action due in ${esc(monthLabel)} was completed on or before its due date.
-        Non-compliant = at least one action was overdue, completed late, or still incomplete.
+        Compliant = every action due in ${esc(monthLabel)} satisfied the org's rule (${esc(ruleLabel(rule))}).
+        Org admins can change this in Settings → Email Notifications.
       </p>
 
       <p style="margin-top:16px;">
@@ -239,6 +269,7 @@ function buildEmail(opts: {
 
   const lines = [
     `${monthLabel} Compliance Report — ${orgName}`,
+    `Rule: ${ruleLabel(rule)}`,
     ``,
     `Actions due: ${totalActions}`,
     `Compliant users: ${compliantCount}`,
@@ -248,7 +279,7 @@ function buildEmail(opts: {
     `Per-user breakdown:`,
     ...owners.map(
       (o) =>
-        `- ${o.email}: ${o.total} actions, ${o.completedOnTime} on time, ${o.overdue} overdue/late, ${o.incomplete} open — ${o.compliant ? "Compliant" : "Non-compliant"}`,
+        `- ${o.email}: ${o.total} actions, ${o.completedOnTime} ${rule === "any_completion" ? "completed" : "on time"}, ${o.overdue} overdue/late, ${o.incomplete} open — ${o.compliant ? "Compliant" : "Non-compliant"}`,
     ),
   ];
 
@@ -287,7 +318,6 @@ serve(async (req) => {
   const previewOrgId = url.searchParams.get("orgId");
   const previewMonth = url.searchParams.get("month");
 
-  // Auth: either CRON_SECRET (scheduled) or a logged-in org admin (preview)
   const cronSecret = Deno.env.get("CRON_SECRET");
   const authHeader = req.headers.get("Authorization") || "";
   const provided = authHeader.replace(/^Bearer\s+/i, "");
@@ -295,7 +325,6 @@ serve(async (req) => {
 
   let callerUserId: string | null = null;
   if (!isCronCall) {
-    // Try treat as user JWT
     const userClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
       global: { headers: { Authorization: authHeader } },
     });
@@ -312,7 +341,6 @@ serve(async (req) => {
   try {
     const range = parseMonthParam(previewMonth) ?? getPreviousMonthRange();
 
-    // Preview mode (single org, return JSON, do NOT send email unless explicit)
     if (!isCronCall) {
       if (!previewOrgId) {
         return new Response(JSON.stringify({ error: "orgId required for preview" }), {
@@ -320,7 +348,6 @@ serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      // Verify caller is an admin of the org (or super admin)
       const { data: mem } = await supabase
         .from("organization_members")
         .select("role")
@@ -347,20 +374,21 @@ serve(async (req) => {
         .eq("id", previewOrgId)
         .maybeSingle();
 
-      const stats = await computeOrgStats(supabase, previewOrgId, range.start, range.end);
+      const rule = await getOrgComplianceRule(supabase, previewOrgId);
+      const stats = await computeOrgStats(supabase, previewOrgId, range.start, range.end, rule);
       return new Response(
         JSON.stringify({
           organization: org,
           month: range.label,
           monthStart: range.start.toISOString(),
           monthEnd: range.end.toISOString(),
+          complianceRule: rule,
           ...stats,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    // Scheduled run: iterate all orgs
     const { data: orgs, error: orgsErr } = await supabase
       .from("organizations")
       .select("id, name");
@@ -377,7 +405,6 @@ serve(async (req) => {
 
       if (!admins || admins.length === 0) continue;
 
-      // Filter admins by their effective monthly_compliance_report preference
       const recipientUserIds: string[] = [];
       for (const a of admins) {
         const { data: allowed } = await supabase.rpc("get_effective_email_pref", {
@@ -389,7 +416,6 @@ serve(async (req) => {
       }
       if (recipientUserIds.length === 0) continue;
 
-      // Resolve admin emails via auth.admin.listUsers (paged)
       const emailById = new Map<string, string>();
       let page = 1;
       while (page <= 5) {
@@ -401,10 +427,12 @@ serve(async (req) => {
         page++;
       }
 
-      const stats = await computeOrgStats(supabase, org.id, range.start, range.end);
+      const rule = await getOrgComplianceRule(supabase, org.id);
+      const stats = await computeOrgStats(supabase, org.id, range.start, range.end, rule);
       const { subject, html, text } = buildEmail({
         orgName: org.name,
         monthLabel: range.label,
+        rule,
         ...stats,
       });
 
@@ -413,7 +441,7 @@ serve(async (req) => {
         if (!email) continue;
         try {
           await sendEmail(email, subject, html, text);
-          results.push({ orgId: org.id, to: email, status: "sent" });
+          results.push({ orgId: org.id, to: email, status: "sent", rule });
         } catch (e: any) {
           results.push({ orgId: org.id, to: email, status: "error", error: e?.message });
         }

@@ -45,6 +45,7 @@ export default function ComplianceReport() {
   const [owners, setOwners] = useState<OwnerStat[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [rule, setRule] = useState<"on_time" | "any_completion">("on_time");
 
   const allowed = isOrgAdmin || isSuperAdmin;
 
@@ -56,6 +57,15 @@ export default function ComplianceReport() {
     setError(null);
 
     (async () => {
+      const { data: settings } = await supabase
+        .from("organization_email_settings" as any)
+        .select("compliance_rule")
+        .eq("organization_id", organization.id)
+        .maybeSingle();
+      const orgRule: "on_time" | "any_completion" =
+        ((settings as any)?.compliance_rule as any) === "any_completion" ? "any_completion" : "on_time";
+      if (!cancelled) setRule(orgRule);
+
       const { data, error } = await supabase
         .from("actions")
         .select("owner_email, due_date, completed, updated_at")
@@ -86,8 +96,13 @@ export default function ComplianceReport() {
         s.total += 1;
         if ((a as any).completed) {
           const completedAt = (a as any).updated_at ? new Date((a as any).updated_at) : null;
-          if (completedAt && completedAt <= due) s.completedOnTime += 1;
-          else s.overdue += 1;
+          if (orgRule === "any_completion") {
+            s.completedOnTime += 1;
+          } else if (completedAt && completedAt <= due) {
+            s.completedOnTime += 1;
+          } else {
+            s.overdue += 1;
+          }
         } else {
           if (due < now) s.overdue += 1;
           else s.incomplete += 1;
@@ -178,7 +193,10 @@ export default function ComplianceReport() {
           <CardHeader>
             <CardTitle>Per-user breakdown — {monthLabel}</CardTitle>
             <CardDescription>
-              Compliant = every action due in the month was completed on or before its due date.
+              Rule: <strong>{rule === "any_completion"
+                ? "any completion counts (even after due date)"
+                : "must be completed on or before due date"}</strong>.
+              {" "}Org admins can change this in Settings → Email Notifications.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -198,7 +216,7 @@ export default function ComplianceReport() {
                   <TableRow>
                     <TableHead>User</TableHead>
                     <TableHead className="text-center">Actions</TableHead>
-                    <TableHead className="text-center">On time</TableHead>
+                    <TableHead className="text-center">{rule === "any_completion" ? "Completed" : "On time"}</TableHead>
                     <TableHead className="text-center">Overdue / late</TableHead>
                     <TableHead className="text-center">Still open</TableHead>
                     <TableHead className="text-center">Status</TableHead>

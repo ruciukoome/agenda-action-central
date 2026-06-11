@@ -10,6 +10,8 @@ export type EmailPrefKey =
   | "weekly_digest"
   | "monthly_compliance_report";
 
+export type ComplianceRule = "on_time" | "any_completion";
+
 export type EmailPrefValues = Record<EmailPrefKey, boolean>;
 export type UserPrefValues = Record<EmailPrefKey, boolean | null>;
 
@@ -33,6 +35,7 @@ export function useEmailSettings() {
   const { user } = useAuth();
   const { organization, isOrgAdmin } = useOrganization();
   const [orgDefaults, setOrgDefaults] = useState<EmailPrefValues>(DEFAULTS);
+  const [complianceRule, setComplianceRuleState] = useState<ComplianceRule>("on_time");
   const [userOverrides, setUserOverrides] = useState<UserPrefValues>({
     assignment_notifications: null,
     completion_updates: null,
@@ -60,8 +63,10 @@ export function useEmailSettings() {
             weekly_digest: (org as any).weekly_digest ?? DEFAULTS.weekly_digest,
             monthly_compliance_report: (org as any).monthly_compliance_report ?? DEFAULTS.monthly_compliance_report,
           });
+          setComplianceRuleState(((org as any).compliance_rule as ComplianceRule) ?? "on_time");
         } else {
           setOrgDefaults(DEFAULTS);
+          setComplianceRuleState("on_time");
         }
       }
       const { data: u } = await supabase
@@ -127,15 +132,33 @@ export function useEmailSettings() {
       );
   };
 
+  const setComplianceRule = async (rule: ComplianceRule) => {
+    if (!organization || !isOrgAdmin || !user) return;
+    setComplianceRuleState(rule);
+    await supabase
+      .from("organization_email_settings" as any)
+      .upsert(
+        {
+          organization_id: organization.id,
+          ...orgDefaults,
+          compliance_rule: rule,
+          updated_by: user.id,
+        },
+        { onConflict: "organization_id" }
+      );
+  };
+
   return {
     loading,
     orgDefaults,
     userOverrides,
     effective,
+    complianceRule,
     isOrgAdmin,
     hasOrg: !!organization,
     setUserOverride,
     setOrgDefault,
+    setComplianceRule,
     reload: load,
   };
 }

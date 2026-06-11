@@ -97,11 +97,22 @@ export function EmailIntegrationCard() {
     orgDefaults,
     userOverrides,
     effective,
+    complianceRule,
     isOrgAdmin,
     hasOrg,
     setUserOverride,
     setOrgDefault,
+    setComplianceRule,
   } = useEmailSettings();
+
+  const handleComplianceRuleChange = async (rule: "on_time" | "any_completion") => {
+    try {
+      await setComplianceRule(rule);
+      toast.success("Compliance rule updated");
+    } catch (e: any) {
+      toast.error("Failed to update rule", { description: e?.message });
+    }
+  };
 
   const handleUserChange = async (key: EmailPrefKey, value: boolean | null) => {
     try {
@@ -179,6 +190,27 @@ export function EmailIntegrationCard() {
                           disabled={!isOrgAdmin}
                           onCheckedChange={(c) => handleOrgChange(row.key, c)}
                         />
+                      </div>
+                    )}
+
+                    {row.key === "monthly_compliance_report" && hasOrg && (
+                      <div className="flex items-center justify-between pl-11">
+                        <span className="text-xs text-muted-foreground">
+                          Compliance rule {isOrgAdmin ? "" : "(admin only)"}
+                        </span>
+                        <Select
+                          value={complianceRule}
+                          disabled={!isOrgAdmin}
+                          onValueChange={(v) => handleComplianceRuleChange(v as "on_time" | "any_completion")}
+                        >
+                          <SelectTrigger className="w-[220px] h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="on_time">Completed by due date</SelectItem>
+                            <SelectItem value="any_completion">Any completion (even late)</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                     )}
                   </div>
