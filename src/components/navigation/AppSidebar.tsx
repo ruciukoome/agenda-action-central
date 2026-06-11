@@ -13,6 +13,7 @@ import {
   Target,
   FileText,
   BarChart3,
+  GitBranch,
 } from "lucide-react";
 import {
   Sidebar,
