@@ -248,6 +248,7 @@ export type Database = {
         Row: {
           assignment_notifications: boolean
           completion_updates: boolean
+          compliance_rule: string
           due_date_reminders: boolean
           monthly_compliance_report: boolean | null
           organization_id: string
@@ -258,6 +259,7 @@ export type Database = {
         Insert: {
           assignment_notifications?: boolean
           completion_updates?: boolean
+          compliance_rule?: string
           due_date_reminders?: boolean
           monthly_compliance_report?: boolean | null
           organization_id: string
@@ -268,6 +270,7 @@ export type Database = {
         Update: {
           assignment_notifications?: boolean
           completion_updates?: boolean
+          compliance_rule?: string
           due_date_reminders?: boolean
           monthly_compliance_report?: boolean | null
           organization_id?: string
