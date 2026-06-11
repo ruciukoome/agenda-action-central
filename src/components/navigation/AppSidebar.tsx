@@ -12,6 +12,7 @@ import {
   LogOut,
   Target,
   FileText,
+  BarChart3,
 } from "lucide-react";
 import {
   Sidebar,
@@ -117,14 +118,24 @@ export function AppSidebar() {
                 </SidebarMenuItem>
               ))}
               {organization && isOrgAdmin && (
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Organization">
-                    <NavLink to="/organization" className={linkClass("/organization")}>
-                      <Building2 className="h-4 w-4 shrink-0" />
-                      {!collapsed && <span>Organization</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                <>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild tooltip="Organization">
+                      <NavLink to="/organization" className={linkClass("/organization")}>
+                        <Building2 className="h-4 w-4 shrink-0" />
+                        {!collapsed && <span>Organization</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild tooltip="Compliance Report">
+                      <NavLink to="/compliance-report" className={linkClass("/compliance-report")}>
+                        <BarChart3 className="h-4 w-4 shrink-0" />
+                        {!collapsed && <span>Compliance Report</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </>
               )}
               {isSuperAdmin && (
                 <>

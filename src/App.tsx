@@ -19,6 +19,7 @@ import OrganizationSettings from './pages/OrganizationSettings';
 import SuperAdmin from './pages/SuperAdmin';
 import UsersAndRoles from './pages/UsersAndRoles';
 import Drafts from './pages/Drafts';
+import ComplianceReport from './pages/ComplianceReport';
 import { useIdleTimeout } from './hooks/useIdleTimeout';
 import { useAuth } from '@/lib/auth';
 import { AuthGuard } from '@/components/AuthGuard';
@@ -60,6 +61,7 @@ function AppContent() {
         <Route path="/settings" element={<AuthGuard><OrgGuard><Settings /></OrgGuard></AuthGuard>} />
         
         <Route path="/organization" element={<AuthGuard><OrgGuard><OrganizationSettings /></OrgGuard></AuthGuard>} />
+        <Route path="/compliance-report" element={<AuthGuard><OrgGuard><ComplianceReport /></OrgGuard></AuthGuard>} />
         <Route path="/super-admin" element={<AuthGuard><SuperAdmin /></AuthGuard>} />
         <Route path="/super-admin/users" element={<AuthGuard><UsersAndRoles /></AuthGuard>} />
         <Route path="*" element={<NotFound />} />

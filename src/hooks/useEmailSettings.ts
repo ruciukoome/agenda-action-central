@@ -7,7 +7,8 @@ export type EmailPrefKey =
   | "assignment_notifications"
   | "completion_updates"
   | "due_date_reminders"
-  | "weekly_digest";
+  | "weekly_digest"
+  | "monthly_compliance_report";
 
 export type EmailPrefValues = Record<EmailPrefKey, boolean>;
 export type UserPrefValues = Record<EmailPrefKey, boolean | null>;
@@ -17,6 +18,7 @@ const DEFAULTS: EmailPrefValues = {
   completion_updates: true,
   due_date_reminders: true,
   weekly_digest: false,
+  monthly_compliance_report: false,
 };
 
 const KEYS: EmailPrefKey[] = [
@@ -24,6 +26,7 @@ const KEYS: EmailPrefKey[] = [
   "completion_updates",
   "due_date_reminders",
   "weekly_digest",
+  "monthly_compliance_report",
 ];
 
 export function useEmailSettings() {
@@ -35,6 +38,7 @@ export function useEmailSettings() {
     completion_updates: null,
     due_date_reminders: null,
     weekly_digest: null,
+    monthly_compliance_report: null,
   });
   const [loading, setLoading] = useState(true);
 
@@ -50,10 +54,11 @@ export function useEmailSettings() {
           .maybeSingle();
         if (org) {
           setOrgDefaults({
-            assignment_notifications: (org as any).assignment_notifications,
-            completion_updates: (org as any).completion_updates,
-            due_date_reminders: (org as any).due_date_reminders,
-            weekly_digest: (org as any).weekly_digest,
+            assignment_notifications: (org as any).assignment_notifications ?? DEFAULTS.assignment_notifications,
+            completion_updates: (org as any).completion_updates ?? DEFAULTS.completion_updates,
+            due_date_reminders: (org as any).due_date_reminders ?? DEFAULTS.due_date_reminders,
+            weekly_digest: (org as any).weekly_digest ?? DEFAULTS.weekly_digest,
+            monthly_compliance_report: (org as any).monthly_compliance_report ?? DEFAULTS.monthly_compliance_report,
           });
         } else {
           setOrgDefaults(DEFAULTS);
@@ -70,6 +75,7 @@ export function useEmailSettings() {
           completion_updates: (u as any).completion_updates,
           due_date_reminders: (u as any).due_date_reminders,
           weekly_digest: (u as any).weekly_digest,
+          monthly_compliance_report: (u as any).monthly_compliance_report ?? null,
         });
       }
     } finally {
