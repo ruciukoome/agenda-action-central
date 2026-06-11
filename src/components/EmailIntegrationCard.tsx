@@ -192,6 +192,27 @@ export function EmailIntegrationCard() {
                         />
                       </div>
                     )}
+
+                    {row.key === "monthly_compliance_report" && hasOrg && (
+                      <div className="flex items-center justify-between pl-11">
+                        <span className="text-xs text-muted-foreground">
+                          Compliance rule {isOrgAdmin ? "" : "(admin only)"}
+                        </span>
+                        <Select
+                          value={complianceRule}
+                          disabled={!isOrgAdmin}
+                          onValueChange={(v) => handleComplianceRuleChange(v as "on_time" | "any_completion")}
+                        >
+                          <SelectTrigger className="w-[220px] h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="on_time">Completed by due date</SelectItem>
+                            <SelectItem value="any_completion">Any completion (even late)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
                   </div>
                 );
               })}
