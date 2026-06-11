@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import {
   CollaborativeProject, ProjectStage, ProgressStatus,
-  fetchProject, fetchStages, updateStageProgress,
+  fetchProject, fetchStages, updateStageProgress, updateStageDependency,
 } from "@/lib/projects";
 import { ProjectGantt } from "@/components/projects/ProjectGantt";
 import { Card } from "@/components/ui/card";
