@@ -112,13 +112,32 @@ export function CreateProjectDialog({ onCreated }: Props) {
                     </Button>
                   )}
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  <Input placeholder="Stage title" value={s.title} onChange={(e) => updateStage(i, { title: e.target.value })} />
-                  <Input type="email" placeholder="Owner email" value={s.owner_email} onChange={(e) => updateStage(i, { owner_email: e.target.value })} />
-                  <Input placeholder="Skill required (optional)" value={s.skill_required ?? ""} onChange={(e) => updateStage(i, { skill_required: e.target.value })} />
-                  <Input type="number" min={1} placeholder="Duration (days)" value={s.planned_duration_days}
-                    onChange={(e) => updateStage(i, { planned_duration_days: parseInt(e.target.value) || 1 })} />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Stage title</Label>
+                    <Input placeholder="e.g. Design review" value={s.title} onChange={(e) => updateStage(i, { title: e.target.value })} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Owner email</Label>
+                    <Input type="email" placeholder="owner@company.com" value={s.owner_email} onChange={(e) => updateStage(i, { owner_email: e.target.value })} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Skill required (optional)</Label>
+                    <Input placeholder="e.g. Legal review" value={s.skill_required ?? ""} onChange={(e) => updateStage(i, { skill_required: e.target.value })} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Duration (days)</Label>
+                    <Input
+                      type="number"
+                      min={1}
+                      placeholder="3"
+                      value={s.planned_duration_days}
+                      onChange={(e) => updateStage(i, { planned_duration_days: parseInt(e.target.value) || 1 })}
+                    />
+                    <p className="text-[10px] text-muted-foreground">How many days this stage is planned to take.</p>
+                  </div>
                 </div>
+
               </div>
             ))}
           </div>
