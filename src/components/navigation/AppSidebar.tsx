@@ -13,6 +13,7 @@ import {
   Target,
   FileText,
   BarChart3,
+  GitBranch,
 } from "lucide-react";
 import {
   Sidebar,
@@ -39,6 +40,7 @@ const mainItems = [
   { title: "Add Action", url: "/add-action", icon: PlusCircle },
   { title: "My Drafts", url: "/drafts", icon: FileText },
   { title: "Manage Actions", url: "/managed-actions", icon: ListChecks },
+  { title: "Projects", url: "/projects", icon: GitBranch },
 ];
 
 const settingsItems = [{ title: "Settings", url: "/settings", icon: Settings }];

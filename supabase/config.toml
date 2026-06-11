@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.respond-action]
 verify_jwt = false
+
+[functions.notify-stage-handoff]
+verify_jwt = false
