@@ -35,6 +35,7 @@ export interface ProjectStage {
   progress_status: ProgressStatus;
   notes: string | null;
   action_id: string | null;
+  depends_on_stage_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -184,8 +185,20 @@ export async function createProjectWithStages(input: NewProjectInput): Promise<s
     actionRows.push(action);
   }
 
-  const { error: stagesErr } = await supabase.from("project_stages").insert(stageRows);
+  const { data: insertedStages, error: stagesErr } = await supabase
+    .from("project_stages")
+    .insert(stageRows)
+    .select();
   if (stagesErr) throw stagesErr;
+
+  // Set default linear dependencies: stage N depends on stage N-1
+  const ordered = (insertedStages ?? []).slice().sort((a: any, b: any) => a.sequence - b.sequence);
+  for (let i = 1; i < ordered.length; i++) {
+    await supabase
+      .from("project_stages")
+      .update({ depends_on_stage_id: ordered[i - 1].id } as any)
+      .eq("id", ordered[i].id);
+  }
 
   return project.id as string;
 }
@@ -195,6 +208,19 @@ export async function updateStageProgress(stageId: string, progress: ProgressSta
     .from("project_stages")
     .update({ progress_status: progress as any })
     .eq("id", stageId);
+  if (error) throw error;
+}
+
+export async function updateStageDependency(
+  stageId: string,
+  dependsOnStageId: string | null,
+): Promise<void> {
+  const patch: any = {
+    depends_on_stage_id: dependsOnStageId,
+    // If dep cleared, this stage becomes immediately ready; otherwise lock until dep completes
+    status: dependsOnStageId ? "locked" : "ready",
+  };
+  const { error } = await supabase.from("project_stages").update(patch).eq("id", stageId);
   if (error) throw error;
 }
 

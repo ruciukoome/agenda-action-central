@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import {
   CollaborativeProject, ProjectStage, ProgressStatus,
-  fetchProject, fetchStages, updateStageProgress,
+  fetchProject, fetchStages, updateStageProgress, updateStageDependency,
 } from "@/lib/projects";
 import { ProjectGantt } from "@/components/projects/ProjectGantt";
 import { Card } from "@/components/ui/card";
@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "@/lib/toast-wrapper";
 import { ArrowLeft, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useOrganization } from "@/contexts/OrganizationContext";
 
 const PROGRESS_OPTIONS: ProgressStatus[] = ["Not Started", "25%", "50%", "75%", "100%"];
 
@@ -32,6 +33,17 @@ export default function ProjectDetail() {
   const [stages, setStages] = useState<ProjectStage[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentEmail, setCurrentEmail] = useState<string>("");
+  const { isOrgAdmin } = useOrganization();
+
+  const handleDependencyChange = async (stageId: string, value: string) => {
+    try {
+      await updateStageDependency(stageId, value === "__none__" ? null : value);
+      toast.success("Dependency updated");
+      load();
+    } catch (e: any) {
+      toast.error("Failed to update dependency", { description: e?.message });
+    }
+  };
 
   const load = async () => {
     if (!id) return;
@@ -112,34 +124,72 @@ export default function ProjectDetail() {
             {stages.map((s) => {
               const isMine = currentEmail && s.owner_email.toLowerCase() === currentEmail.toLowerCase();
               const canEdit = isMine && s.status !== "locked" && s.status !== "completed";
+              const dep = s.depends_on_stage_id ? stages.find((x) => x.id === s.depends_on_stage_id) : null;
+              const isLocked = s.status === "locked";
               return (
-                <div key={s.id} className="border rounded-md p-3 flex flex-col md:flex-row md:items-center gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">{s.sequence}. {s.title}</span>
-                      <span className={`text-[10px] uppercase tracking-wide px-2 py-0.5 rounded ${STATUS_BADGE[s.status]}`}>
-                        {s.status === "locked" && <Lock className="inline h-2.5 w-2.5 mr-1" />}
-                        {s.status.replace("_", " ")}
-                      </span>
+                <div
+                  key={s.id}
+                  className={`border rounded-md p-3 flex flex-col gap-3 ${isLocked ? "bg-muted/30 border-dashed" : ""}`}
+                >
+                  <div className="flex flex-col md:flex-row md:items-center gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-medium">{s.sequence}. {s.title}</span>
+                        <span className={`text-[10px] uppercase tracking-wide px-2 py-0.5 rounded inline-flex items-center ${STATUS_BADGE[s.status]}`}>
+                          {isLocked && <Lock className="h-2.5 w-2.5 mr-1" />}
+                          {s.status.replace("_", " ")}
+                        </span>
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-0.5 truncate">
+                        {s.owner_email}
+                        {s.skill_required && ` · ${s.skill_required}`}
+                        {s.planned_start_date && ` · ${s.planned_start_date} → ${s.planned_end_date}`}
+                      </div>
+                      {isLocked && dep && (
+                        <div className="mt-2 text-xs flex items-center gap-1.5 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 rounded px-2 py-1 w-fit">
+                          <Lock className="h-3 w-3" />
+                          Waiting on <strong>{dep.owner_email}</strong> to complete
+                          <span className="text-muted-foreground">— Stage {dep.sequence}: {dep.title}</span>
+                        </div>
+                      )}
                     </div>
-                    <div className="text-xs text-muted-foreground mt-0.5 truncate">
-                      {s.owner_email}
-                      {s.skill_required && ` · ${s.skill_required}`}
-                      {s.planned_start_date && ` · ${s.planned_start_date} → ${s.planned_end_date}`}
+                    <div className="shrink-0">
+                      {canEdit ? (
+                        <Select value={s.progress_status} onValueChange={(v) => handleProgress(s, v as ProgressStatus)}>
+                          <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {PROGRESS_OPTIONS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">{s.progress_status}</span>
+                      )}
                     </div>
                   </div>
-                  <div className="shrink-0">
-                    {canEdit ? (
-                      <Select value={s.progress_status} onValueChange={(v) => handleProgress(s, v as ProgressStatus)}>
-                        <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+
+                  {isOrgAdmin && s.status !== "completed" && (
+                    <div className="flex items-center gap-2 pt-2 border-t">
+                      <label className="text-xs text-muted-foreground shrink-0">Depends on:</label>
+                      <Select
+                        value={s.depends_on_stage_id ?? "__none__"}
+                        onValueChange={(v) => handleDependencyChange(s.id, v)}
+                      >
+                        <SelectTrigger className="h-8 text-xs flex-1 max-w-sm">
+                          <SelectValue />
+                        </SelectTrigger>
                         <SelectContent>
-                          {PROGRESS_OPTIONS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                          <SelectItem value="__none__">No dependency (starts immediately)</SelectItem>
+                          {stages
+                            .filter((other) => other.id !== s.id)
+                            .map((other) => (
+                              <SelectItem key={other.id} value={other.id}>
+                                Stage {other.sequence}: {other.title} ({other.owner_email})
+                              </SelectItem>
+                            ))}
                         </SelectContent>
                       </Select>
-                    ) : (
-                      <span className="text-sm text-muted-foreground">{s.progress_status}</span>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
               );
             })}
