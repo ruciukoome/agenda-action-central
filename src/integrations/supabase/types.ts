@@ -249,6 +249,7 @@ export type Database = {
           assignment_notifications: boolean
           completion_updates: boolean
           due_date_reminders: boolean
+          monthly_compliance_report: boolean | null
           organization_id: string
           updated_at: string
           updated_by: string | null
@@ -258,6 +259,7 @@ export type Database = {
           assignment_notifications?: boolean
           completion_updates?: boolean
           due_date_reminders?: boolean
+          monthly_compliance_report?: boolean | null
           organization_id: string
           updated_at?: string
           updated_by?: string | null
@@ -267,6 +269,7 @@ export type Database = {
           assignment_notifications?: boolean
           completion_updates?: boolean
           due_date_reminders?: boolean
+          monthly_compliance_report?: boolean | null
           organization_id?: string
           updated_at?: string
           updated_by?: string | null
@@ -506,6 +509,7 @@ export type Database = {
           assignment_notifications: boolean | null
           completion_updates: boolean | null
           due_date_reminders: boolean | null
+          monthly_compliance_report: boolean | null
           organization_id: string | null
           updated_at: string
           user_id: string
@@ -515,6 +519,7 @@ export type Database = {
           assignment_notifications?: boolean | null
           completion_updates?: boolean | null
           due_date_reminders?: boolean | null
+          monthly_compliance_report?: boolean | null
           organization_id?: string | null
           updated_at?: string
           user_id: string
@@ -524,6 +529,7 @@ export type Database = {
           assignment_notifications?: boolean | null
           completion_updates?: boolean | null
           due_date_reminders?: boolean | null
+          monthly_compliance_report?: boolean | null
           organization_id?: string | null
           updated_at?: string
           user_id?: string
