@@ -19,6 +19,7 @@ import OrganizationSettings from './pages/OrganizationSettings';
 import SuperAdmin from './pages/SuperAdmin';
 import UsersAndRoles from './pages/UsersAndRoles';
 import Drafts from './pages/Drafts';
+import ComplianceReport from './pages/ComplianceReport';
 import { useIdleTimeout } from './hooks/useIdleTimeout';
 import { useAuth } from '@/lib/auth';
 import { AuthGuard } from '@/components/AuthGuard';
