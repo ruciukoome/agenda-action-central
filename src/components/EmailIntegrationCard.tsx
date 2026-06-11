@@ -142,7 +142,7 @@ export function EmailIntegrationCard() {
               <p className="text-sm text-muted-foreground">Loading preferences…</p>
             )}
             {!loading &&
-              ROWS.map((row) => {
+              ROWS.filter((r) => !r.adminOnly || isOrgAdmin).map((row) => {
                 const Icon = row.icon;
                 return (
                   <div key={row.key} className="border rounded-md p-3 space-y-3">
