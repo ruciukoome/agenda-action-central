@@ -206,7 +206,7 @@ export function EmailIntegrationCard() {
 
           {/* OVERVIEW */}
           <TabsContent value="overview" className="space-y-4 pt-4">
-            {ROWS.map((row) => {
+            {ROWS.filter((r) => !r.adminOnly || isOrgAdmin).map((row) => {
               const Icon = row.icon;
               return (
                 <div key={row.key} className="flex items-start space-x-4">
