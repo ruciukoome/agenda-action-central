@@ -12,6 +12,7 @@ import {
   LogOut,
   Target,
   FileText,
+  BarChart3,
 } from "lucide-react";
 import {
   Sidebar,
