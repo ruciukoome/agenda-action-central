@@ -191,6 +191,48 @@ export type Database = {
           },
         ]
       }
+      collaborative_projects: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          organization_id: string
+          owner_email: string
+          owner_user_id: string | null
+          start_date: string
+          status: Database["public"]["Enums"]["project_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          organization_id: string
+          owner_email: string
+          owner_user_id?: string | null
+          start_date?: string
+          status?: Database["public"]["Enums"]["project_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          organization_id?: string
+          owner_email?: string
+          owner_user_id?: string | null
+          start_date?: string
+          status?: Database["public"]["Enums"]["project_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       meetings: {
         Row: {
           created_at: string
@@ -252,6 +294,9 @@ export type Database = {
           due_date_reminders: boolean
           monthly_compliance_report: boolean | null
           organization_id: string
+          project_handoff: boolean | null
+          project_overrun: boolean | null
+          project_stage_assignment: boolean | null
           updated_at: string
           updated_by: string | null
           weekly_digest: boolean
@@ -263,6 +308,9 @@ export type Database = {
           due_date_reminders?: boolean
           monthly_compliance_report?: boolean | null
           organization_id: string
+          project_handoff?: boolean | null
+          project_overrun?: boolean | null
+          project_stage_assignment?: boolean | null
           updated_at?: string
           updated_by?: string | null
           weekly_digest?: boolean
@@ -274,6 +322,9 @@ export type Database = {
           due_date_reminders?: boolean
           monthly_compliance_report?: boolean | null
           organization_id?: string
+          project_handoff?: boolean | null
+          project_overrun?: boolean | null
+          project_stage_assignment?: boolean | null
           updated_at?: string
           updated_by?: string | null
           weekly_digest?: boolean
@@ -424,6 +475,84 @@ export type Database = {
         }
         Relationships: []
       }
+      project_stages: {
+        Row: {
+          action_id: string | null
+          actual_end_date: string | null
+          actual_start_date: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          owner_email: string
+          owner_user_id: string | null
+          planned_duration_days: number
+          planned_end_date: string | null
+          planned_start_date: string | null
+          progress_status: Database["public"]["Enums"]["action_progress"]
+          project_id: string
+          sequence: number
+          skill_required: string | null
+          status: Database["public"]["Enums"]["stage_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          action_id?: string | null
+          actual_end_date?: string | null
+          actual_start_date?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          owner_email: string
+          owner_user_id?: string | null
+          planned_duration_days?: number
+          planned_end_date?: string | null
+          planned_start_date?: string | null
+          progress_status?: Database["public"]["Enums"]["action_progress"]
+          project_id: string
+          sequence: number
+          skill_required?: string | null
+          status?: Database["public"]["Enums"]["stage_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          action_id?: string | null
+          actual_end_date?: string | null
+          actual_start_date?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          owner_email?: string
+          owner_user_id?: string | null
+          planned_duration_days?: number
+          planned_end_date?: string | null
+          planned_start_date?: string | null
+          progress_status?: Database["public"]["Enums"]["action_progress"]
+          project_id?: string
+          sequence?: number
+          skill_required?: string | null
+          status?: Database["public"]["Enums"]["stage_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_stages_action_id_fkey"
+            columns: ["action_id"]
+            isOneToOne: false
+            referencedRelation: "actions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_stages_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "collaborative_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscriptions: {
         Row: {
           created_at: string
@@ -514,6 +643,9 @@ export type Database = {
           due_date_reminders: boolean | null
           monthly_compliance_report: boolean | null
           organization_id: string | null
+          project_handoff: boolean | null
+          project_overrun: boolean | null
+          project_stage_assignment: boolean | null
           updated_at: string
           user_id: string
           weekly_digest: boolean | null
@@ -524,6 +656,9 @@ export type Database = {
           due_date_reminders?: boolean | null
           monthly_compliance_report?: boolean | null
           organization_id?: string | null
+          project_handoff?: boolean | null
+          project_overrun?: boolean | null
+          project_stage_assignment?: boolean | null
           updated_at?: string
           user_id: string
           weekly_digest?: boolean | null
@@ -534,6 +669,9 @@ export type Database = {
           due_date_reminders?: boolean | null
           monthly_compliance_report?: boolean | null
           organization_id?: string | null
+          project_handoff?: boolean | null
+          project_overrun?: boolean | null
+          project_stage_assignment?: boolean | null
           updated_at?: string
           user_id?: string
           weekly_digest?: boolean | null
@@ -624,6 +762,8 @@ export type Database = {
       app_role: "super_admin" | "admin" | "moderator"
       org_role: "admin" | "member"
       owner_response_status: "pending" | "accepted" | "rejected"
+      project_status: "planning" | "active" | "completed" | "cancelled"
+      stage_status: "locked" | "ready" | "in_progress" | "completed" | "overdue"
       subscription_plan: "free" | "basic" | "premium"
       subscription_status: "active" | "expired" | "cancelled"
       todo_priority: "low" | "medium" | "high"
@@ -780,6 +920,8 @@ export const Constants = {
       app_role: ["super_admin", "admin", "moderator"],
       org_role: ["admin", "member"],
       owner_response_status: ["pending", "accepted", "rejected"],
+      project_status: ["planning", "active", "completed", "cancelled"],
+      stage_status: ["locked", "ready", "in_progress", "completed", "overdue"],
       subscription_plan: ["free", "basic", "premium"],
       subscription_status: ["active", "expired", "cancelled"],
       todo_priority: ["low", "medium", "high"],
