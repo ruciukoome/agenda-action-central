@@ -137,7 +137,7 @@ export default function Landing() {
           </div>
           <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
             <ProblemCard title="Lost in minutes" desc="Action items live in Word docs and PDFs no one re-opens until the next meeting." />
-            <ProblemCard title="No clear owner" desc='"Someone should follow up" becomes nobody''s job. Deadlines slip silently.' />
+            <ProblemCard title="No clear owner" desc={`"Someone should follow up" becomes nobody's job. Deadlines slip silently.`} />
             <ProblemCard title="No visibility" desc="Leaders can't answer 'what's the status?' without chasing people on email and WhatsApp." />
           </div>
         </div>
