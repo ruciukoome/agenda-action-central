@@ -179,19 +179,44 @@ export default function ProjectDetail() {
                         </div>
                       )}
                     </div>
-                    <div className="shrink-0">
+                    <div className="shrink-0 w-full md:w-72">
                       {canEdit ? (
-                        <Select value={s.progress_status} onValueChange={(v) => handleProgress(s, v as ProgressStatus)}>
-                          <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            {PROGRESS_OPTIONS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {PROGRESS_OPTIONS.map((o) => {
+                              const active = s.progress_status === o;
+                              const isSaving = savingStageId === s.id && active;
+                              return (
+                                <button
+                                  key={o}
+                                  type="button"
+                                  disabled={savingStageId === s.id}
+                                  onClick={() => handleProgress(s, o)}
+                                  className={cn(
+                                    "px-2 py-1 rounded-md text-xs font-medium border transition-colors inline-flex items-center gap-1",
+                                    active
+                                      ? "bg-primary text-primary-foreground border-primary"
+                                      : "bg-background hover:bg-accent border-border",
+                                    savingStageId === s.id && !active && "opacity-60"
+                                  )}
+                                >
+                                  {isSaving && <Loader2 className="h-3 w-3 animate-spin" />}
+                                  {o}
+                                </button>
+                              );
+                            })}
+                          </div>
+                          <Progress value={progressPct(s.progress_status)} className="h-1.5" />
+                        </div>
                       ) : (
-                        <span className="text-sm text-muted-foreground">{s.progress_status}</span>
+                        <div className="space-y-1">
+                          <span className="text-sm text-muted-foreground">{s.progress_status}</span>
+                          <Progress value={progressPct(s.progress_status)} className="h-1.5" />
+                        </div>
                       )}
                     </div>
                   </div>
+
 
                   {isOrgAdmin && s.status !== "completed" && (
                     <div className="flex items-center gap-2 pt-2 border-t">
