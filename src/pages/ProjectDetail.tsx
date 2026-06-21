@@ -35,6 +35,7 @@ export default function ProjectDetail() {
   const [stages, setStages] = useState<ProjectStage[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentEmail, setCurrentEmail] = useState<string>("");
+  const [savingStageId, setSavingStageId] = useState<string | null>(null);
   const { isOrgAdmin } = useOrganization();
 
   const handleDependencyChange = async (stageId: string, value: string) => {
@@ -67,12 +68,35 @@ export default function ProjectDetail() {
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [id]);
 
   const handleProgress = async (stage: ProjectStage, value: ProgressStatus) => {
+    if (savingStageId) return;
+    if (stage.progress_status === value) return;
+    setSavingStageId(stage.id);
+    // Optimistic update so the UI stays responsive for repeated clicks
+    setStages((prev) =>
+      prev.map((s) => (s.id === stage.id ? { ...s, progress_status: value } : s))
+    );
     try {
       await updateStageProgress(stage.id, value);
-      toast.success("Stage updated");
-      load();
+      toast.success(`Progress set to ${value}`);
+      await load();
     } catch (e: any) {
       toast.error("Update failed", { description: e?.message });
+      // Revert on failure
+      setStages((prev) =>
+        prev.map((s) => (s.id === stage.id ? { ...s, progress_status: stage.progress_status } : s))
+      );
+    } finally {
+      setSavingStageId(null);
+    }
+  };
+
+  const progressPct = (p: ProgressStatus): number => {
+    switch (p) {
+      case "25%": return 25;
+      case "50%": return 50;
+      case "75%": return 75;
+      case "100%": return 100;
+      default: return 0;
     }
   };
 
