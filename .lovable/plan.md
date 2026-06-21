@@ -1,59 +1,39 @@
-## Collaborative Projects with Gantt
+## Issues confirmed
 
-Introduce a new "Collaborative Project" entity made up of ordered **stages**, each assigned upfront to a different owner. All participants see their stage from day one, but a stage is **locked** until the previous one is marked 100%. On handoff: the next owner is emailed, the project owner is CC'd, and overrun alerts fire when a stage exceeds its planned duration.
+**1. No email sent when a project stage is assigned.**
+`createProjectWithStages` (src/lib/projects/index.ts) inserts `actions` rows directly with the DB client — it bypasses `createAction`, which is the only place that calls `sendActionNotification`. So stage owners (including stage 1) never get the "you've been assigned" email, and the existing `send-due-date-reminders` cron can't help if they don't even know the task exists.
 
-### Data model (new tables)
+**2. "tuple to be updated was already modified…" error on second progress update.**
+The two DB triggers fight each other:
 
-- `collaborative_projects`
-  - `organization_id`, `created_by`, `owner_user_id` (project lead), `title`, `description`, `start_date`, `status` ('planning' | 'active' | 'completed' | 'cancelled')
-- `project_stages`
-  - `project_id`, `sequence` (int, 1..N), `title`, `skill_required`, `owner_email`, `owner_user_id` (nullable), `planned_duration_days`, `planned_start_date`, `planned_end_date`, `actual_start_date`, `actual_end_date`, `status` ('locked' | 'ready' | 'in_progress' | 'completed' | 'overdue'), `progress_status` (reuse existing enum), `notes`, `action_id` (FK → `actions`, nullable)
-- Reuse existing `actions` table: one action row is created per stage at project creation, linked back via `project_stages.action_id`. This keeps the Kanban/My Actions views working unchanged.
+- `handle_stage_progress_change` runs BEFORE UPDATE on `project_stages`. When a stage hits 100% it updates the linked row in `actions`.
+- `sync_action_to_stage` runs on `actions` updates and writes back into `project_stages` — including the same stage row whose BEFORE trigger is still executing. Postgres aborts with "tuple to be updated was already modified by an operation triggered by the current command".
 
-RLS: org-scoped via `is_org_member`, mirroring `actions`. Standard GRANTs for `authenticated` + `service_role`.
+This is why the very first update of stage 1 (Not Started → 50%) works, but the next change fails — by then the action row exists in a state that makes `sync_action_to_stage` want to write back.
 
-### Lifecycle / handoff logic
+## Plan
 
-Implemented in a Postgres trigger on `project_stages` (and a small companion trigger on `actions` so existing UI completion flows propagate):
+### A. Send assignment emails when a project is created
 
-1. Project creation: all stages inserted, sequence 1 → `ready`, sequence > 1 → `locked`. Planned dates computed from `start_date` + cumulative `planned_duration_days` (hybrid model). Matching `actions` rows are created and linked.
-2. When a stage's `progress_status` becomes `100%` (or the linked action is marked completed):
-   - Stage → `completed`, `actual_end_date = now()`.
-   - Next stage → `ready`, `actual_start_date = now()`, planned end recomputed from its planned duration so downstream stages shift (hybrid behavior).
-   - Edge function `notify-stage-handoff` is invoked: emails next owner (assignment-style) and CCs project owner.
-3. Daily cron (extend existing `send-due-date-reminders` schedule) flags stages where `now() > planned_end_date AND status <> 'completed'` → `overdue`, emails current owner + project owner.
+In `src/lib/projects/index.ts` `createProjectWithStages`, after stages are inserted, call `sendActionNotification(createdAction, "assigned")` for every stage owner using the action rows already created. Wrap in try/catch so an email failure never aborts project creation. This immediately gives stage owners the same assignment email standalone actions get, and `send-due-date-reminders` will then pick them up for upcoming-deadline notices.
 
-The action linked to a locked stage is marked read-only in the UI (badge "Waiting on <previous owner>") so dependent owners see context but can't tick it off early.
+### B. Stop the trigger recursion
 
-### Edge functions
+Add a migration that hardens both functions with `pg_trigger_depth()` guards so neither re-enters the other:
 
-- `notify-stage-handoff` (new): sends handoff + project-owner CC emails (reuses existing SendGrid/Resend setup and `get_effective_email_pref`).
-- `check-stage-overruns` (new, cron): nightly scan + alert emails.
-- `send-action-notification` (existing): no change; stage 1 owners get the standard assignment email via the linked action.
+- `public.sync_action_to_stage()` — at the top, `IF pg_trigger_depth() > 1 THEN RETURN NEW; END IF;` so it only runs when a user/app changes `actions` directly, not when our stage trigger cascaded into it.
+- `public.handle_stage_progress_change()` — wrap the `UPDATE public.actions …` in the same guard so a cascade from `sync_action_to_stage` can't bounce back.
 
-### UI
+Keep both triggers' real work intact (status flip to completed, unlocking dependents, calling `notify-stage-handoff`, syncing the linked action when the user edits the action card directly).
 
-- **New page `/projects`**: list of collaborative projects with status, owner, % complete, next handoff date. "New Project" wizard collects title, project owner, start date, then a repeatable stage row (title, skill, owner email, planned days). Edit + reorder before activation.
-- **Project detail page `/projects/:id`**: Gantt chart (per-project) showing each stage as a bar — planned bar (light) overlaid with actual bar (solid), color-coded by status (locked/ready/in-progress/completed/overdue). Click bar → opens linked action drawer.
-- **Org-wide Gantt** on Dashboard: new "Project Timeline" section under existing stats, swimlane per project, same bar styling, filter by owner/status.
-- **Action card enhancement**: actions tied to a stage show a small "Project · Stage X of N" chip and (when locked) a lock badge with the previous owner's name.
-- **Sidebar**: add "Projects" nav entry between "Managed Actions" and "Compliance Report".
+### C. Verify
 
-Gantt rendered with a lightweight custom SVG/flex implementation (no new heavy dep) using design tokens; horizontal scroll on mobile.
+1. Create a fresh project with 2–3 stages → confirm stage 1 owner receives the assignment email; project owner sees toast.
+2. Stage 1 owner moves progress 25% → 50% → 75% → 100% in sequence with no "tuple… already modified" error.
+3. On 100%, stage 2 unlocks and its owner receives the handoff email (existing `notify-stage-handoff`).
+4. Repeat for stage 2 → stage 3 to confirm the chain works end-to-end.
 
-### Notifications & preferences
+## Out of scope
 
-- New email-pref keys: `project_stage_assignment`, `project_handoff`, `project_overrun`. Defaults: all `true`. Surface toggles in existing `EmailIntegrationCard` (user) and org email settings (admin).
-
-### Out of scope (not in this iteration)
-
-- Parallel/branching dependencies (only strict sequential chains).
-- Drag-to-reschedule on the Gantt (read-only timeline first; edit via stage form).
-- File attachments per stage.
-
-### Technical notes
-
-- New tables + enums (`project_status`, `stage_status`) created in a single migration with GRANTs and RLS as specified.
-- Update of `src/integrations/supabase/types.ts` happens automatically after migration approval.
-- New hook `useCollaborativeProjects` and lib folder `src/lib/projects/` mirroring `src/lib/actions/` patterns.
-- All toasts go through `toast-wrapper`; multi-tenancy enforced by `organization_id` + RLS per existing conventions.
+- Reworking `updateAction` permissions (only the action creator can update standalone actions). Project stages are updated via `updateStageProgress` on `project_stages` directly, so that path is unaffected.
+- Changes to the Resend/Lovable email connector configuration — assumed already working since standalone action assignments already send.
