@@ -1,4 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
+import { sendActionNotification } from "@/lib/notifications";
+import { mapDbActionToActionItem, DbAction } from "@/lib/actions/types";
 
 export type ProjectStatus = "planning" | "active" | "completed" | "cancelled";
 export type StageStatus = "locked" | "ready" | "in_progress" | "completed" | "overdue";
@@ -198,6 +200,19 @@ export async function createProjectWithStages(input: NewProjectInput): Promise<s
       .from("project_stages")
       .update({ depends_on_stage_id: ordered[i - 1].id } as any)
       .eq("id", ordered[i].id);
+  }
+
+  // Send assignment emails to every stage owner so they know a task is
+  // waiting on them (locked stages will get a separate handoff email when
+  // their dependency completes). Failures must not abort project creation.
+  for (const action of actionRows) {
+    if (!action) continue;
+    try {
+      const item = mapDbActionToActionItem(action as DbAction);
+      await sendActionNotification(item, "assigned");
+    } catch (e) {
+      console.error("[createProjectWithStages] notify failed", e);
+    }
   }
 
   return project.id as string;
