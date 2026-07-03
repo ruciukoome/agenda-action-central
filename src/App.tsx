@@ -49,6 +49,8 @@ function AppContent() {
         <Route path="/update-task/:id" element={<UpdateTask />} />
         <Route path="/update-success" element={<UpdateSuccess />} />
         <Route path="/respond/:actionId" element={<RespondAction />} />
+        <Route path="/privacy" element={<LegalDocument slug="privacy" />} />
+        <Route path="/terms" element={<LegalDocument slug="terms" />} />
         
         {/* Protected routes requiring auth + org */}
         <Route path="/dashboard" element={<AuthGuard><OrgGuard><Dashboard /></OrgGuard></AuthGuard>} />
