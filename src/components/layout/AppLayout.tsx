@@ -45,6 +45,16 @@ export function AppLayout({ children, title, actions }: AppLayoutProps) {
           </header>
 
           <main className="flex-1 min-w-0 w-full overflow-x-hidden">{children}</main>
+
+          <footer className="border-t py-4 px-4">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted-foreground">
+              <span>ActionsPoint © {new Date().getFullYear()}</span>
+              <div className="flex gap-4">
+                <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
+                <Link to="/terms" className="hover:text-foreground transition-colors">Terms &amp; Conditions</Link>
+              </div>
+            </div>
+          </footer>
         </div>
       </div>
     </SidebarProvider>
