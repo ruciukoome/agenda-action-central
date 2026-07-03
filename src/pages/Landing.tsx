@@ -277,10 +277,12 @@ export default function Landing() {
             </div>
             <span>ActionsPoint © {new Date().getFullYear()}</span>
           </div>
-          <div className="flex gap-6">
+          <div className="flex flex-wrap gap-x-6 gap-y-2 justify-center">
             <a href="#features" className="hover:text-foreground transition-colors">Features</a>
             <a href="#who" className="hover:text-foreground transition-colors">Who it's for</a>
             <a href="#how-it-works" className="hover:text-foreground transition-colors">How it works</a>
+            <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
+            <Link to="/terms" className="hover:text-foreground transition-colors">Terms</Link>
             <Link to="/auth" className="hover:text-foreground transition-colors">Sign in</Link>
           </div>
         </div>
