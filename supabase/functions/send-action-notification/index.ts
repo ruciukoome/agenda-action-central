@@ -63,23 +63,61 @@ serve(async (req) => {
     const authHeader = req.headers.get("Authorization") || "";
     const hasBearer = authHeader.toLowerCase().startsWith("bearer ");
     let authorized = false;
+    let callerId: string | null = null;
 
     if (hasBearer) {
       const jwt = authHeader.replace(/^Bearer\s+/i, "");
       const { data: claims, error: authError } = await supabaseAuth.auth.getClaims(jwt);
-      if (!authError && claims?.claims?.sub) authorized = true;
+      if (!authError && claims?.claims?.sub) {
+        authorized = true;
+        callerId = claims.claims.sub as string;
+      }
     }
 
+    let tokenAuthorized = false;
     if (!authorized && type === "completed" && actionToken) {
       const { data: tokens } = await supabaseAdmin.rpc("get_action_token_by_id_and_token", {
         p_action_id: action.id, p_token: actionToken,
       });
-      if (tokens && (Array.isArray(tokens) ? tokens.length > 0 : true)) authorized = true;
+      if (tokens && (Array.isArray(tokens) ? tokens.length > 0 : true)) {
+        authorized = true;
+        tokenAuthorized = true;
+      }
     }
 
     if (!authorized) {
       return new Response(JSON.stringify({ success: false, error: "Unauthorized" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // Ownership check: if authenticated via JWT, the caller must own the action
+    // (user_id) or be an admin of the action's organization. This prevents cross-tenant
+    // token forging via arbitrary action.id in the request body.
+    if (callerId && !tokenAuthorized) {
+      const { data: actionOwnership, error: ownErr } = await supabaseAdmin
+        .from("actions")
+        .select("user_id, organization_id")
+        .eq("id", action.id)
+        .maybeSingle();
+
+      if (ownErr || !actionOwnership) {
+        return new Response(JSON.stringify({ success: false, error: "Action not found" }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      let allowed = (actionOwnership as any).user_id === callerId;
+      if (!allowed && (actionOwnership as any).organization_id) {
+        const { data: role } = await supabaseAdmin.rpc("get_user_org_role", {
+          _user_id: callerId,
+          _org_id: (actionOwnership as any).organization_id,
+        });
+        if (role === "admin") allowed = true;
+      }
+
+      if (!allowed) {
+        return new Response(JSON.stringify({ success: false, error: "Forbidden" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
     }
 
     // ===== Preference gating: skip silently if the assigner has disabled this type =====
