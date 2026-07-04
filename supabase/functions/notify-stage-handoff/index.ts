@@ -25,9 +25,9 @@ serve(async (req) => {
   // Shared-secret gate: this function is only invoked from the DB trigger via pg_net,
   // which sends the CRON_SECRET as x-cron-secret. Reject anything else to prevent
   // unauthenticated email spam / record-existence probing.
-  const cronSecret = Deno.env.get("CRON_SECRET");
-  const provided = req.headers.get("x-cron-secret");
-  if (!cronSecret || provided !== cronSecret) {
+  const expectedSecret = Deno.env.get("STAGE_HANDOFF_SECRET");
+  const provided = req.headers.get("x-stage-handoff-secret");
+  if (!expectedSecret || provided !== expectedSecret) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
