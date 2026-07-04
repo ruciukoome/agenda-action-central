@@ -22,6 +22,17 @@ const esc = (v: unknown) =>
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
+  // Shared-secret gate: this function is only invoked from the DB trigger via pg_net,
+  // which sends the CRON_SECRET as x-cron-secret. Reject anything else to prevent
+  // unauthenticated email spam / record-existence probing.
+  const cronSecret = Deno.env.get("CRON_SECRET");
+  const provided = req.headers.get("x-cron-secret");
+  if (!cronSecret || provided !== cronSecret) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
   try {
     const { project_id, completed_stage_id, next_stage_id } = await req.json();
     if (!project_id || !next_stage_id) {
