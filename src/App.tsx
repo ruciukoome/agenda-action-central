@@ -23,6 +23,7 @@ import ComplianceReport from './pages/ComplianceReport';
 import Projects from './pages/Projects';
 import ProjectDetail from './pages/ProjectDetail';
 import LegalDocument from './pages/LegalDocument';
+import Docs from './pages/Docs';
 import { useIdleTimeout } from './hooks/useIdleTimeout';
 import { useAuth } from '@/lib/auth';
 import { AuthGuard } from '@/components/AuthGuard';
@@ -51,6 +52,8 @@ function AppContent() {
         <Route path="/respond/:actionId" element={<RespondAction />} />
         <Route path="/privacy" element={<LegalDocument slug="privacy" />} />
         <Route path="/terms" element={<LegalDocument slug="terms" />} />
+        <Route path="/docs" element={<Docs />} />
+        <Route path="/docs/:section" element={<Docs />} />
         
         {/* Protected routes requiring auth + org */}
         <Route path="/dashboard" element={<AuthGuard><OrgGuard><Dashboard /></OrgGuard></AuthGuard>} />

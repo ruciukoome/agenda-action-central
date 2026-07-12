@@ -1,39 +1,60 @@
-## Issues confirmed
 
-**1. No email sent when a project stage is assigned.**
-`createProjectWithStages` (src/lib/projects/index.ts) inserts `actions` rows directly with the DB client — it bypasses `createAction`, which is the only place that calls `sendActionNotification`. So stage owners (including stage 1) never get the "you've been assigned" email, and the existing `send-due-date-reminders` cron can't help if they don't even know the task exists.
+## Goal
 
-**2. "tuple to be updated was already modified…" error on second progress update.**
-The two DB triggers fight each other:
+Add a public, professional `/docs` documentation page that explains what ActionsPoint (the SaaS) is, how it works, and how to use its main features. Navigation between topics uses a **left sidebar** (not a top nav).
 
-- `handle_stage_progress_change` runs BEFORE UPDATE on `project_stages`. When a stage hits 100% it updates the linked row in `actions`.
-- `sync_action_to_stage` runs on `actions` updates and writes back into `project_stages` — including the same stage row whose BEFORE trigger is still executing. Postgres aborts with "tuple to be updated was already modified by an operation triggered by the current command".
+## Scope
 
-This is why the very first update of stage 1 (Not Started → 50%) works, but the next change fails — by then the action row exists in a state that makes `sync_action_to_stage` want to write back.
+- Public route, no auth required (like `/privacy` and `/terms`).
+- Static, hand-written content (no DB, no Super Admin editing for now — the previous Legal Documents pattern can be reused later if the user wants editable docs).
+- Linked from the app footer alongside Privacy / Terms, and from the Landing page.
 
-## Plan
+## Route & Files
 
-### A. Send assignment emails when a project is created
+- New route `/docs` (and `/docs/:section` for deep links) in `src/App.tsx`, public.
+- New page `src/pages/Docs.tsx` — layout shell with sidebar + content area.
+- New folder `src/components/docs/`:
+  - `DocsSidebar.tsx` — sticky left sidebar listing topics, active-state highlighting, mobile collapsible (Sheet on small screens).
+  - `DocsLayout.tsx` — 2-column layout (sidebar + article), header with logo/back-to-app link, footer reused.
+  - `sections/` — one component per topic so content stays maintainable:
+    - `Introduction.tsx` — what ActionsPoint is, who it's for.
+    - `GettingStarted.tsx` — sign up, create organization, invite members.
+    - `Organizations.tsx` — multi-tenant model, roles (member / org admin / super admin).
+    - `Actions.tsx` — creating actions, priorities, deadlines, statuses (Not Started → 25/50/75% → Completed, Continuous).
+    - `MyActionsAndDrafts.tsx` — personal views and drafts.
+    - `Projects.tsx` — projects + Gantt view.
+    - `Dashboard.tsx` — charts, upcoming deadlines, notes stats.
+    - `Notifications.tsx` — email notifications, toast toggle, due-date reminders.
+    - `ComplianceReport.tsx` — monthly compliance report.
+    - `Security.tsx` — RLS, org isolation, best practices.
+    - `Faq.tsx` — common questions.
+- Section registry (`src/components/docs/sections/index.ts`) exporting an ordered array `{ id, title, component }` — drives both sidebar and routing.
 
-In `src/lib/projects/index.ts` `createProjectWithStages`, after stages are inserted, call `sendActionNotification(createdAction, "assigned")` for every stage owner using the action rows already created. Wrap in try/catch so an email failure never aborts project creation. This immediately gives stage owners the same assignment email standalone actions get, and `send-due-date-reminders` will then pick them up for upcoming-deadline notices.
+## Navigation Behavior
 
-### B. Stop the trigger recursion
+- Sidebar shows the ordered topic list, grouped under headings: **Overview**, **Core features**, **Admin**, **Help**.
+- Clicking an item updates the URL to `/docs/<section-id>` and scrolls the article into view (single-page with anchor-style sections, using `useLocation` + `scrollIntoView`).
+- Active section highlighted via `NavLink` + `IntersectionObserver` for scroll-spy.
+- On mobile (<768px): sidebar becomes a `Sheet` triggered by a "Topics" button in the docs header.
+- Sidebar is independent from the app's `AppSidebar` — this page uses its own minimal layout so it works for logged-out visitors too.
 
-Add a migration that hardens both functions with `pg_trigger_depth()` guards so neither re-enters the other:
+## Content Tone
 
-- `public.sync_action_to_stage()` — at the top, `IF pg_trigger_depth() > 1 THEN RETURN NEW; END IF;` so it only runs when a user/app changes `actions` directly, not when our stage trigger cascaded into it.
-- `public.handle_stage_progress_change()` — wrap the `UPDATE public.actions …` in the same guard so a cascade from `sync_action_to_stage` can't bounce back.
+Professional, concise, product-marketing-meets-user-guide. Each section: short intro paragraph, bullet points for capabilities, a "Tips" callout where useful. No lorem ipsum. Uses semantic tokens only (no hardcoded colors).
 
-Keep both triggers' real work intact (status flip to completed, unlocking dependents, calling `notify-stage-handoff`, syncing the linked action when the user edits the action card directly).
+## Footer & Landing Links
 
-### C. Verify
+- `src/components/layout/AppLayout.tsx` footer: add `<Link to="/docs">Documentation</Link>` next to Privacy / Terms.
+- `src/pages/Landing.tsx`: add a "Docs" link in the header nav and a CTA in the footer area.
 
-1. Create a fresh project with 2–3 stages → confirm stage 1 owner receives the assignment email; project owner sees toast.
-2. Stage 1 owner moves progress 25% → 50% → 75% → 100% in sequence with no "tuple… already modified" error.
-3. On 100%, stage 2 unlocks and its owner receives the handoff email (existing `notify-stage-handoff`).
-4. Repeat for stage 2 → stage 3 to confirm the chain works end-to-end.
+## Out of Scope (for now)
 
-## Out of scope
+- No Super Admin editing UI or DB-backed content for docs. If the user later wants that, we'd mirror the `legal_documents` table pattern.
+- No search-in-docs, no versioning.
 
-- Reworking `updateAction` permissions (only the action creator can update standalone actions). Project stages are updated via `updateStageProgress` on `project_stages` directly, so that path is unaffected.
-- Changes to the Resend/Lovable email connector configuration — assumed already working since standalone action assignments already send.
+## Technical Notes
+
+- Uses existing shadcn primitives: `ScrollArea`, `Sheet`, `Separator`, `Button`, `Card`.
+- Typography via Tailwind `prose` (already available through project styles) or custom classes using semantic tokens; no `text-white` / `bg-black` literals.
+- Route added as **public** in `src/App.tsx` (same tier as `/privacy`, `/terms`).
+- Section IDs are stable slugs to keep deep links working.
