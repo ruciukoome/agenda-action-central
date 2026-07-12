@@ -23,6 +23,7 @@ import ComplianceReport from './pages/ComplianceReport';
 import Projects from './pages/Projects';
 import ProjectDetail from './pages/ProjectDetail';
 import LegalDocument from './pages/LegalDocument';
+import Docs from './pages/Docs';
 import { useIdleTimeout } from './hooks/useIdleTimeout';
 import { useAuth } from '@/lib/auth';
 import { AuthGuard } from '@/components/AuthGuard';
