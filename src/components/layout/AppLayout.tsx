@@ -50,6 +50,7 @@ export function AppLayout({ children, title, actions }: AppLayoutProps) {
             <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted-foreground">
               <span>ActionsPoint © {new Date().getFullYear()}</span>
               <div className="flex gap-4">
+                <Link to="/docs" className="hover:text-foreground transition-colors">Documentation</Link>
                 <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
                 <Link to="/terms" className="hover:text-foreground transition-colors">Terms &amp; Conditions</Link>
               </div>
