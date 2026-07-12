@@ -52,6 +52,8 @@ function AppContent() {
         <Route path="/respond/:actionId" element={<RespondAction />} />
         <Route path="/privacy" element={<LegalDocument slug="privacy" />} />
         <Route path="/terms" element={<LegalDocument slug="terms" />} />
+        <Route path="/docs" element={<Docs />} />
+        <Route path="/docs/:section" element={<Docs />} />
         
         {/* Protected routes requiring auth + org */}
         <Route path="/dashboard" element={<AuthGuard><OrgGuard><Dashboard /></OrgGuard></AuthGuard>} />
