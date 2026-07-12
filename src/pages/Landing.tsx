@@ -61,6 +61,7 @@ export default function Landing() {
             <a href="#who" className="text-muted-foreground hover:text-foreground transition-colors">Who it's for</a>
             <a href="#how-it-works" className="text-muted-foreground hover:text-foreground transition-colors">How it works</a>
             <a href="#roles" className="text-muted-foreground hover:text-foreground transition-colors">Roles</a>
+            <Link to="/docs" className="text-muted-foreground hover:text-foreground transition-colors">Docs</Link>
           </nav>
           <div className="flex items-center gap-2">
             {user ? (
