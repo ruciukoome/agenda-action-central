@@ -24,23 +24,29 @@ export type DocsSection = {
 
 function Tip({ children }: { children: ReactNode }) {
   return (
-    <div className="my-4 rounded-lg border border-primary/20 bg-primary/5 p-4 text-sm">
-      <span className="font-semibold text-primary">Tip · </span>
+    <div className="my-5 rounded-lg border-l-2 border-brand bg-brand/5 px-4 py-3 text-sm">
+      <span className="font-semibold text-brand">Tip · </span>
       <span className="text-foreground/90">{children}</span>
     </div>
   );
 }
 
 function P({ children }: { children: ReactNode }) {
-  return <p className="leading-relaxed text-foreground/85">{children}</p>;
+  return <p className="leading-relaxed text-foreground/80">{children}</p>;
 }
 
 function H2({ children }: { children: ReactNode }) {
-  return <h3 className="mt-6 mb-2 text-lg font-semibold tracking-tight">{children}</h3>;
+  return (
+    <h3 className="mt-8 mb-3 text-lg font-semibold tracking-tight text-foreground">{children}</h3>
+  );
 }
 
 function UL({ children }: { children: ReactNode }) {
-  return <ul className="my-3 ml-5 list-disc space-y-1.5 text-foreground/85">{children}</ul>;
+  return (
+    <ul className="my-3 ml-5 list-disc space-y-2 text-foreground/80 marker:text-muted-foreground">
+      {children}
+    </ul>
+  );
 }
 
 export const docsSections: DocsSection[] = [
