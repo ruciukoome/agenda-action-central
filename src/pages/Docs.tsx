@@ -51,7 +51,7 @@ export default function Docs() {
           {/* Sidebar (desktop) */}
           <aside className="hidden lg:block w-64 shrink-0">
             <div className="sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto pr-2">
-              <DocsSidebar activeId={activeId} />
+              <DocsSidebar activeId={activeId} onNavigate={(id) => scrollToSection(id)} />
             </div>
           </aside>
 
