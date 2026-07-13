@@ -24,7 +24,7 @@ export default function Docs() {
               </SheetTrigger>
               <SheetContent side="left" className="w-72 overflow-y-auto p-4">
                 <SheetTitle className="mb-4 text-base">Topics</SheetTitle>
-                <DocsSidebar activeId={activeId} onNavigate={() => setMobileOpen(false)} />
+                <DocsSidebar activeId={activeId} onNavigate={(id) => { setMobileOpen(false); scrollToSection(id); }} />
               </SheetContent>
             </Sheet>
 
