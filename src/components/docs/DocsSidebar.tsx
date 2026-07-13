@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { docsSections, docsGroups } from "./sections";
 
 interface DocsSidebarProps {
   activeId: string;
-  onNavigate?: () => void;
+  onNavigate?: (id: string) => void;
 }
 
 export function DocsSidebar({ activeId, onNavigate }: DocsSidebarProps) {
@@ -27,11 +27,11 @@ export function DocsSidebar({ activeId, onNavigate }: DocsSidebarProps) {
                   <li key={s.id}>
                     <NavLink
                       to={`/docs/${s.id}`}
-                      onClick={onNavigate}
+                      onClick={() => onNavigate?.(s.id)}
                       className={cn(
                         "flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors",
                         active
-                          ? "bg-primary/10 text-primary font-medium"
+                          ? "bg-brand/10 text-brand font-medium"
                           : "text-foreground/70 hover:bg-muted hover:text-foreground",
                       )}
                     >
@@ -49,25 +49,40 @@ export function DocsSidebar({ activeId, onNavigate }: DocsSidebarProps) {
   );
 }
 
-export function useActiveSection(): string {
+export function useActiveSection() {
   const { pathname } = useLocation();
   const [active, setActive] = useState<string>(() => {
     const fromPath = pathname.split("/docs/")[1];
     return fromPath || docsSections[0].id;
   });
+  // While true, ignore intersection observer updates (e.g. during a click-driven smooth scroll)
+  const lockRef = useRef(false);
+  const lockTimer = useRef<number | null>(null);
+
+  const scrollToSection = (id: string) => {
+    const el = document.getElementById(`section-${id}`);
+    if (!el) return;
+    lockRef.current = true;
+    if (lockTimer.current) window.clearTimeout(lockTimer.current);
+    setActive(id);
+    // Offset for sticky header (~56px) + breathing room
+    const y = el.getBoundingClientRect().top + window.scrollY - 72;
+    window.scrollTo({ top: y, behavior: "smooth" });
+    lockTimer.current = window.setTimeout(() => {
+      lockRef.current = false;
+    }, 800);
+  };
 
   useEffect(() => {
     const fromPath = pathname.split("/docs/")[1];
-    if (fromPath) {
-      setActive(fromPath);
-      const el = document.getElementById(`section-${fromPath}`);
-      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
+    if (fromPath) scrollToSection(fromPath);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
+        if (lockRef.current) return;
         const visible = entries
           .filter((e) => e.isIntersecting)
           .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
@@ -76,7 +91,7 @@ export function useActiveSection(): string {
           setActive(id);
         }
       },
-      { rootMargin: "-20% 0px -60% 0px", threshold: [0, 0.25, 0.5, 1] },
+      { rootMargin: "-30% 0px -60% 0px", threshold: [0, 0.25, 0.5, 1] },
     );
     docsSections.forEach((s) => {
       const el = document.getElementById(`section-${s.id}`);
@@ -85,5 +100,5 @@ export function useActiveSection(): string {
     return () => observer.disconnect();
   }, []);
 
-  return active;
+  return { active, scrollToSection };
 }

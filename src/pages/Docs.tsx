@@ -7,7 +7,7 @@ import { DocsSidebar, useActiveSection } from "@/components/docs/DocsSidebar";
 import { docsSections } from "@/components/docs/sections";
 
 export default function Docs() {
-  const activeId = useActiveSection();
+  const { active: activeId, scrollToSection } = useActiveSection();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
@@ -24,7 +24,7 @@ export default function Docs() {
               </SheetTrigger>
               <SheetContent side="left" className="w-72 overflow-y-auto p-4">
                 <SheetTitle className="mb-4 text-base">Topics</SheetTitle>
-                <DocsSidebar activeId={activeId} onNavigate={() => setMobileOpen(false)} />
+                <DocsSidebar activeId={activeId} onNavigate={(id) => { setMobileOpen(false); scrollToSection(id); }} />
               </SheetContent>
             </Sheet>
 
@@ -51,14 +51,14 @@ export default function Docs() {
           {/* Sidebar (desktop) */}
           <aside className="hidden lg:block w-64 shrink-0">
             <div className="sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto pr-2">
-              <DocsSidebar activeId={activeId} />
+              <DocsSidebar activeId={activeId} onNavigate={(id) => scrollToSection(id)} />
             </div>
           </aside>
 
           {/* Article */}
           <article className="min-w-0 flex-1 max-w-3xl">
             <header className="mb-10 border-b pb-8">
-              <p className="mb-2 text-sm font-medium uppercase tracking-widest text-primary">
+              <p className="mb-2 text-sm font-medium uppercase tracking-widest text-brand">
                 ActionsPoint Documentation
               </p>
               <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
@@ -81,7 +81,7 @@ export default function Docs() {
                     aria-labelledby={`heading-${s.id}`}
                   >
                     <div className="mb-4 flex items-center gap-3">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand/10 text-brand">
                         <Icon className="h-5 w-5" />
                       </div>
                       <h2 id={`heading-${s.id}`} className="text-2xl font-semibold tracking-tight">
