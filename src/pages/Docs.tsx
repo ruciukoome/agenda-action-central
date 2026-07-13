@@ -81,7 +81,7 @@ export default function Docs() {
                     aria-labelledby={`heading-${s.id}`}
                   >
                     <div className="mb-4 flex items-center gap-3">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand/10 text-brand">
                         <Icon className="h-5 w-5" />
                       </div>
                       <h2 id={`heading-${s.id}`} className="text-2xl font-semibold tracking-tight">
