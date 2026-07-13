@@ -7,7 +7,7 @@ import { DocsSidebar, useActiveSection } from "@/components/docs/DocsSidebar";
 import { docsSections } from "@/components/docs/sections";
 
 export default function Docs() {
-  const activeId = useActiveSection();
+  const { active: activeId, scrollToSection } = useActiveSection();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
