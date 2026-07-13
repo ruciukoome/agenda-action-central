@@ -58,7 +58,7 @@ export default function Docs() {
           {/* Article */}
           <article className="min-w-0 flex-1 max-w-3xl">
             <header className="mb-10 border-b pb-8">
-              <p className="mb-2 text-sm font-medium uppercase tracking-widest text-primary">
+              <p className="mb-2 text-sm font-medium uppercase tracking-widest text-brand">
                 ActionsPoint Documentation
               </p>
               <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
