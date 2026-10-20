@@ -18,6 +18,17 @@ export default {
 			}
 		},
 		extend: {
+			fontFamily: {
+				sans: ['Inter', 'system-ui', 'sans-serif'],
+			},
+			boxShadow: {
+				card: 'var(--shadow-card)',
+				glow: 'var(--shadow-glow)',
+			},
+			backgroundImage: {
+				'gradient-hero': 'var(--gradient-hero)',
+				'gradient-subtle': 'var(--gradient-subtle)',
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
@@ -32,6 +43,28 @@ export default {
 					DEFAULT: 'hsl(var(--brand))',
 					foreground: 'hsl(var(--brand-foreground))',
 					glow: 'hsl(var(--brand-glow))'
+				},
+				success: {
+					DEFAULT: 'hsl(var(--success))',
+					foreground: 'hsl(var(--success-foreground))',
+					soft: 'hsl(var(--success-soft))'
+				},
+				warning: {
+					DEFAULT: 'hsl(var(--warning))',
+					foreground: 'hsl(var(--warning-foreground))',
+					soft: 'hsl(var(--warning-soft))'
+				},
+				info: {
+					DEFAULT: 'hsl(var(--info))',
+					foreground: 'hsl(var(--info-foreground))',
+					soft: 'hsl(var(--info-soft))'
+				},
+				chart: {
+					1: 'hsl(var(--chart-1))',
+					2: 'hsl(var(--chart-2))',
+					3: 'hsl(var(--chart-3))',
+					4: 'hsl(var(--chart-4))',
+					5: 'hsl(var(--chart-5))'
 				},
 				secondary: {
 					DEFAULT: 'hsl(var(--secondary))',
