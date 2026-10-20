@@ -9,6 +9,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ActionDashboard } from "@/components/ActionDashboard";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { PageContainer } from "@/components/layout/primitives";
 import { ActionItem } from "@/types/action";
 import { EmailIntegrationCard } from "@/components/EmailIntegrationCard";
 import { fetchActions } from "@/lib/actions";
@@ -93,14 +94,14 @@ export default function Index() {
         </div>
       }
     >
-      <div className="container py-6 space-y-6">
+      <PageContainer>
         <ActionDashboard
           actions={actions}
           onEditAction={handleEditAction}
           onActionUpdated={handleActionUpdated}
           isLoading={isLoading}
         />
-      </div>
+      </PageContainer>
     </AppLayout>
   );
 }

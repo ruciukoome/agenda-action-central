@@ -1,4 +1,5 @@
 import { AppLayout } from "@/components/layout/AppLayout";
+import { PageContainer } from "@/components/layout/primitives";
 import { DashboardContent } from "@/components/dashboard/DashboardContent";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -33,9 +34,9 @@ export default function Dashboard() {
         </div>
       }
     >
-      <div className="container py-6">
+      <PageContainer>
         <DashboardContent />
-      </div>
+      </PageContainer>
     </AppLayout>
   );
 }

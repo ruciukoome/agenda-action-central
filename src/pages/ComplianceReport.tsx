@@ -169,22 +169,22 @@ export default function ComplianceReport() {
               <CardTitle className="text-3xl">{totalActions}</CardTitle>
             </CardHeader>
           </Card>
-          <Card className="border-green-200">
+          <Card className="border-success/30">
             <CardHeader className="pb-2">
-              <CardDescription className="text-green-700">Compliant users</CardDescription>
-              <CardTitle className="text-3xl text-green-700">{compliantCount}</CardTitle>
+              <CardDescription className="text-success">Compliant users</CardDescription>
+              <CardTitle className="text-3xl text-success">{compliantCount}</CardTitle>
             </CardHeader>
           </Card>
-          <Card className="border-red-200">
+          <Card className="border-destructive/30">
             <CardHeader className="pb-2">
-              <CardDescription className="text-red-700">Non-compliant users</CardDescription>
-              <CardTitle className="text-3xl text-red-700">{nonCompliantCount}</CardTitle>
+              <CardDescription className="text-destructive">Non-compliant users</CardDescription>
+              <CardTitle className="text-3xl text-destructive">{nonCompliantCount}</CardTitle>
             </CardHeader>
           </Card>
-          <Card className="border-blue-200">
+          <Card className="border-info/30">
             <CardHeader className="pb-2">
-              <CardDescription className="text-blue-700">Compliance rate</CardDescription>
-              <CardTitle className="text-3xl text-blue-700">{rate}%</CardTitle>
+              <CardDescription className="text-info">Compliance rate</CardDescription>
+              <CardTitle className="text-3xl text-info">{rate}%</CardTitle>
             </CardHeader>
           </Card>
         </div>
@@ -227,16 +227,16 @@ export default function ComplianceReport() {
                     <TableRow key={o.email}>
                       <TableCell className="font-medium">{o.email}</TableCell>
                       <TableCell className="text-center">{o.total}</TableCell>
-                      <TableCell className="text-center text-green-700">{o.completedOnTime}</TableCell>
-                      <TableCell className="text-center text-red-700">{o.overdue}</TableCell>
-                      <TableCell className="text-center text-amber-700">{o.incomplete}</TableCell>
+                      <TableCell className="text-center text-success">{o.completedOnTime}</TableCell>
+                      <TableCell className="text-center text-destructive">{o.overdue}</TableCell>
+                      <TableCell className="text-center text-warning">{o.incomplete}</TableCell>
                       <TableCell className="text-center">
                         {o.compliant ? (
-                          <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
+                          <Badge variant="success-soft">
                             <CheckCircle2 className="h-3 w-3 mr-1" />Compliant
                           </Badge>
                         ) : (
-                          <Badge className="bg-red-100 text-red-800 hover:bg-red-100">
+                          <Badge variant="destructive-soft">
                             <AlertCircle className="h-3 w-3 mr-1" />Non-compliant
                           </Badge>
                         )}
