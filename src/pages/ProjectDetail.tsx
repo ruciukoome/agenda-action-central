@@ -103,7 +103,7 @@ export default function ProjectDetail() {
   if (loading) {
     return (
       <AppLayout title="Project">
-        <div className="container py-6 space-y-4">
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
           <Skeleton className="h-8 w-64" />
           <Skeleton className="h-48 w-full" />
         </div>
@@ -114,14 +114,14 @@ export default function ProjectDetail() {
   if (!project) {
     return (
       <AppLayout title="Project">
-        <div className="container py-6">Project not found.</div>
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">Project not found.</div>
       </AppLayout>
     );
   }
 
   return (
     <AppLayout title={project.title}>
-      <div className="container py-6 space-y-6">
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
         <Button variant="ghost" size="sm" onClick={() => navigate("/projects")} className="gap-1">
           <ArrowLeft className="h-4 w-4" /> Back to projects
         </Button>

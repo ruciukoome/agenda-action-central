@@ -103,7 +103,7 @@ export default function Drafts() {
         </Button>
       }
     >
-      <div className="container max-w-6xl py-6 space-y-6">
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
         {/* Hero */}
         <Card className="overflow-hidden border-0 shadow-lg">
           <div className="relative p-6 sm:p-8 bg-info text-white">
