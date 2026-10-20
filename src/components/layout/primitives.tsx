@@ -92,15 +92,16 @@ export function LoadingState({ label }: { label?: string }) {
   );
 }
 
-export function PublicShell({ children }: { children: ReactNode }) {
+export function PublicShell({ children, headerAction }: { children: ReactNode; headerAction?: ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col bg-gradient-subtle">
       <header className="border-b border-border/60 bg-background/80 backdrop-blur">
-        <div className="mx-auto flex h-14 max-w-7xl items-center px-4 sm:px-6">
+        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
           <Link to="/" className="flex items-center gap-2 font-semibold">
             <img src="/icon-32.png" alt="" className="h-7 w-7" />
             <span>ActionsPoint</span>
           </Link>
+          {headerAction}
         </div>
       </header>
       <main className="flex flex-1 items-center justify-center px-4 py-10">{children}</main>

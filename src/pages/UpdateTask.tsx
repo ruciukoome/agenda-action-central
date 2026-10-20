@@ -1,3 +1,4 @@
+import { PublicShell } from "@/components/layout/primitives";
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
@@ -174,19 +175,19 @@ export default function UpdateTask() {
 
   if (isLoading) {
     return (
-      <div className="container flex items-center justify-center h-screen">
+      <PublicShell>
         <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
           <div>Loading action details...</div>
         </div>
-      </div>
+      </PublicShell>
     );
   }
 
   if (error || !tokenIsValid) {
     return (
-      <div className="container py-8">
-        <Card className="w-full max-w-lg mx-auto">
+      <PublicShell>
+        <Card className="w-full max-w-lg mx-auto shadow-card">
           <CardHeader className="text-center">
             <AlertTriangle className="h-10 w-10 text-warning mx-auto mb-2" />
             <h1 className="text-2xl font-semibold leading-none tracking-tight text-destructive">Access Error</h1>
@@ -201,13 +202,13 @@ export default function UpdateTask() {
             <Button variant="outline" onClick={() => window.close()}>Close Window</Button>
           </CardFooter>
         </Card>
-      </div>
+      </PublicShell>
     );
   }
 
   return (
-    <div className="container py-8">
-      <Card className="w-full max-w-lg mx-auto">
+    <PublicShell>
+      <Card className="w-full max-w-lg mx-auto shadow-card">
         <CardHeader>
           <h1 className="text-2xl font-semibold leading-none tracking-tight">Update Action Item</h1>
           <CardDescription>
@@ -291,6 +292,6 @@ export default function UpdateTask() {
           </Button>
         </CardFooter>
       </Card>
-    </div>
+    </PublicShell>
   );
 }

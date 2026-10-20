@@ -1,3 +1,4 @@
+import { PublicShell } from "@/components/layout/primitives";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -90,48 +91,22 @@ export default function Auth() {
     errorMessage?.includes("Email logins are disabled") || errorMessage?.includes("Email signups are disabled");
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden flex flex-col">
-      {/* Soft gradient backdrop */}
-      <div
-        className="absolute inset-0 opacity-20 pointer-events-none"
-        style={{ background: "var(--gradient-hero)" }}
-        aria-hidden
-      />
-      <div
-        className="absolute -top-40 -right-40 h-96 w-96 rounded-full opacity-30 blur-3xl pointer-events-none"
-        style={{ background: "var(--gradient-hero)" }}
-        aria-hidden
-      />
-      <div
-        className="absolute -bottom-40 -left-40 h-96 w-96 rounded-full opacity-20 blur-3xl pointer-events-none"
-        style={{ background: "var(--gradient-hero)" }}
-        aria-hidden
-      />
-
-      {/* Top bar */}
-      <header className="relative z-10">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-[image:var(--gradient-hero)] flex items-center justify-center">
-              <Target className="h-4 w-4 text-white" />
-            </div>
-            <span className="font-bold text-lg">ActionsPoint</span>
+    <PublicShell
+      headerAction={
+        <Button variant="ghost" size="sm" asChild>
+          <Link to="/" className="gap-2">
+            <ArrowLeft className="h-4 w-4" />
+            Back to home
           </Link>
-          <Button variant="ghost" size="sm" asChild>
-            <Link to="/" className="gap-2">
-              <ArrowLeft className="h-4 w-4" />
-              Back to home
-            </Link>
-          </Button>
-        </div>
-      </header>
-
+        </Button>
+      }
+    >
       {/* Main */}
-      <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-10">
+      <div className="flex w-full items-center justify-center">
         <div className="w-full max-w-md">
           <div className="text-center mb-8 space-y-3">
-            <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-[image:var(--gradient-hero)] shadow-[var(--shadow-glow)]">
-              {isLogin ? <LogIn className="h-6 w-6 text-white" /> : <UserPlus className="h-6 w-6 text-white" />}
+            <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-gradient-hero shadow-glow">
+              {isLogin ? <LogIn className="h-6 w-6 text-brand-foreground" /> : <UserPlus className="h-6 w-6 text-brand-foreground" />}
             </div>
             <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
               {isLogin ? "Welcome back" : "Create your account"}
@@ -243,7 +218,7 @@ export default function Auth() {
             Free to start · No credit card required · Set up in minutes
           </p>
         </div>
-      </main>
+      </div>
 
       {/* Email confirmation dialog after signup */}
       <Dialog
@@ -258,8 +233,8 @@ export default function Auth() {
       >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <div className="mx-auto h-14 w-14 rounded-2xl bg-[image:var(--gradient-hero)] flex items-center justify-center shadow-[var(--shadow-glow)] mb-2">
-              <Mail className="h-6 w-6 text-white" />
+            <div className="mx-auto h-14 w-14 rounded-2xl bg-gradient-hero flex items-center justify-center shadow-glow mb-2">
+              <Mail className="h-6 w-6 text-brand-foreground" />
             </div>
             <DialogTitle className="text-center text-xl">Confirm your email</DialogTitle>
             <DialogDescription className="text-center pt-2">
@@ -288,6 +263,6 @@ export default function Auth() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </PublicShell>
   );
 }

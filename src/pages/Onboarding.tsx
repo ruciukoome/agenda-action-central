@@ -1,3 +1,4 @@
+import { PublicShell } from "@/components/layout/primitives";
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -144,13 +145,14 @@ export default function Onboarding() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4 relative">
-      <div className="absolute top-4 right-4">
+    <PublicShell
+      headerAction={
         <Button variant="ghost" size="sm" onClick={handleSignOutAndGoAuth} className="gap-2">
           <LogOut className="h-4 w-4" />
           Sign out
         </Button>
-      </div>
+      }
+    >
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <h1 className="text-2xl font-semibold leading-none tracking-tight">Welcome to Action Central</h1>
@@ -221,6 +223,6 @@ export default function Onboarding() {
           </Tabs>
         </CardContent>
       </Card>
-    </div>
+    </PublicShell>
   );
 }
