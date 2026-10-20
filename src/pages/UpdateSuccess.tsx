@@ -1,10 +1,12 @@
+import { PublicShell } from "@/components/layout/primitives";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function UpdateSuccess() {
   return (
-    <div className="container flex items-center justify-center h-screen">
+    <PublicShell>
+<div className="flex w-full items-center justify-center">
       <Card className="w-full max-w-lg">
         <CardHeader className="text-center">
           <h1 className="text-2xl font-semibold leading-none tracking-tight text-success">Update Successful</h1>
@@ -21,5 +23,6 @@ export default function UpdateSuccess() {
         </CardFooter>
       </Card>
     </div>
+    </PublicShell>
   );
 }
