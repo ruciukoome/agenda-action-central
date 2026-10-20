@@ -433,7 +433,7 @@ function AccessPermissionsCard({
             <div
               className={`p-2 rounded-md ${
                 allPass
-                  ? 'bg-green-500/10 text-green-600'
+                  ? 'bg-success/10 text-success'
                   : anyFail
                   ? 'bg-destructive/10 text-destructive'
                   : 'bg-muted text-muted-foreground'
@@ -449,7 +449,7 @@ function AccessPermissionsCard({
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {allPass && <Badge className="bg-green-500/15 text-green-700 hover:bg-green-500/20">All checks passing</Badge>}
+            {allPass && <Badge className="bg-success/15 text-success hover:bg-success/20">All checks passing</Badge>}
             {anyFail && <Badge variant="destructive">Issues detected</Badge>}
             <Button variant="outline" size="sm" onClick={onRerun} disabled={checking}>
               {checking ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
@@ -493,7 +493,7 @@ function AccessPermissionsCard({
             <div key={c.key} className="p-3 flex items-start gap-3">
               <div className="mt-0.5 shrink-0">
                 {c.status === 'pass' ? (
-                  <CheckCircle2 className="h-5 w-5 text-green-600" />
+                  <CheckCircle2 className="h-5 w-5 text-success" />
                 ) : c.status === 'fail' ? (
                   <XCircle className="h-5 w-5 text-destructive" />
                 ) : (

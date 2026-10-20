@@ -120,9 +120,9 @@ export default function AddAction() {
   return (
     <AppLayout title={draftId ? "Resume Draft" : "Add New Action Item"}>
       <div className="container max-w-3xl py-6 space-y-6">
-        <div className="relative overflow-hidden rounded-2xl p-6 sm:p-7 text-white shadow-lg bg-sky-600">
+        <div className="relative overflow-hidden rounded-2xl p-6 sm:p-7 text-white shadow-lg bg-info">
           <div className="absolute -top-16 -right-16 h-48 w-48 rounded-full bg-white/10 blur-3xl" />
-          <div className="absolute -bottom-16 -left-10 h-48 w-48 rounded-full bg-pink-400/30 blur-3xl" />
+          <div className="absolute -bottom-16 -left-10 h-48 w-48 rounded-full bg-primary/30 blur-3xl" />
           <div className="relative flex items-start gap-4">
             <div className="rounded-2xl bg-white/20 backdrop-blur p-3 ring-1 ring-white/30 shrink-0">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>

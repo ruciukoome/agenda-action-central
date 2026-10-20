@@ -47,9 +47,9 @@ export function ActionCard({ action, onEdit }: ActionCardProps) {
               <Clock className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
               <span className={`truncate ${
                 dueStatus === "overdue" 
-                  ? "text-red-500 font-medium" 
+                  ? "text-destructive font-medium" 
                   : dueStatus === "upcoming" 
-                    ? "text-amber-500 font-medium" 
+                    ? "text-warning font-medium" 
                     : "text-muted-foreground"
               }`}>
                 Due: {formatDate(action.dueDate)}

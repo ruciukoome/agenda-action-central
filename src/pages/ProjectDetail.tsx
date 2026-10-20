@@ -22,10 +22,10 @@ const PROGRESS_OPTIONS: ProgressStatus[] = ["Not Started", "25%", "50%", "75%", 
 
 const STATUS_BADGE: Record<string, string> = {
   locked: "bg-muted text-muted-foreground",
-  ready: "bg-blue-500 text-white",
-  in_progress: "bg-indigo-500 text-white",
-  completed: "bg-emerald-500 text-white",
-  overdue: "bg-rose-500 text-white",
+  ready: "bg-info text-white",
+  in_progress: "bg-info text-white",
+  completed: "bg-success text-white",
+  overdue: "bg-destructive text-white",
 };
 
 export default function ProjectDetail() {
@@ -172,7 +172,7 @@ export default function ProjectDetail() {
                         {s.planned_start_date && ` · ${s.planned_start_date} → ${s.planned_end_date}`}
                       </div>
                       {isLocked && dep && (
-                        <div className="mt-2 text-xs flex items-center gap-1.5 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 rounded px-2 py-1 w-fit">
+                        <div className="mt-2 text-xs flex items-center gap-1.5 text-warning dark:text-warning bg-warning-soft dark:bg-warning/40 border border-warning/30 dark:border-warning/30 rounded px-2 py-1 w-fit">
                           <Lock className="h-3 w-3" />
                           Waiting on <strong>{dep.owner_email}</strong> to complete
                           <span className="text-muted-foreground">— Stage {dep.sequence}: {dep.title}</span>

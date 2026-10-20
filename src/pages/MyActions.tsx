@@ -15,11 +15,11 @@ import { cn } from '@/lib/utils';
 import { ProgressStatus } from '@/types/action';
 
 const ACTION_COLUMNS: { key: ProgressStatus | "Not Started"; label: string; headerClass: string; dotClass: string }[] = [
-  { key: "Not Started", label: "Not Started", headerClass: "bg-slate-100", dotClass: "bg-slate-400" },
-  { key: "25%", label: "25%", headerClass: "bg-amber-100", dotClass: "bg-amber-500" },
-  { key: "50%", label: "50%", headerClass: "bg-orange-100", dotClass: "bg-orange-500" },
-  { key: "75%", label: "75%", headerClass: "bg-blue-100", dotClass: "bg-blue-500" },
-  { key: "100%", label: "Complete", headerClass: "bg-emerald-100", dotClass: "bg-emerald-500" },
+  { key: "Not Started", label: "Not Started", headerClass: "bg-muted", dotClass: "bg-muted-foreground" },
+  { key: "25%", label: "25%", headerClass: "bg-warning-soft", dotClass: "bg-warning" },
+  { key: "50%", label: "50%", headerClass: "bg-warning-soft", dotClass: "bg-warning" },
+  { key: "75%", label: "75%", headerClass: "bg-info-soft", dotClass: "bg-info" },
+  { key: "100%", label: "Complete", headerClass: "bg-success-soft", dotClass: "bg-success" },
 ];
 
 export default function MyActions() {

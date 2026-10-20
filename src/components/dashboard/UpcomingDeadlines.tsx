@@ -90,22 +90,22 @@ export function UpcomingDeadlines({ actions, isLoading }: UpcomingDeadlinesProps
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-2 gap-4 mb-5">
-          <div className="bg-blue-50 rounded-lg p-3 flex justify-between items-center">
+          <div className="bg-info-soft rounded-lg p-3 flex justify-between items-center">
             <div>
-              <p className="text-sm text-blue-600 font-medium">Due Today</p>
+              <p className="text-sm text-info font-medium">Due Today</p>
               <p className="text-2xl font-bold">{dueTodayCount}</p>
             </div>
-            <div className="bg-blue-100 p-2 rounded-full">
-              <Clock className="h-5 w-5 text-blue-600" />
+            <div className="bg-info-soft p-2 rounded-full">
+              <Clock className="h-5 w-5 text-info" />
             </div>
           </div>
-          <div className="bg-amber-50 rounded-lg p-3 flex justify-between items-center">
+          <div className="bg-warning-soft rounded-lg p-3 flex justify-between items-center">
             <div>
-              <p className="text-sm text-amber-600 font-medium">Due This Week</p>
+              <p className="text-sm text-warning font-medium">Due This Week</p>
               <p className="text-2xl font-bold">{dueThisWeekCount}</p>
             </div>
-            <div className="bg-amber-100 p-2 rounded-full">
-              <Calendar className="h-5 w-5 text-amber-600" />
+            <div className="bg-warning-soft p-2 rounded-full">
+              <Calendar className="h-5 w-5 text-warning" />
             </div>
           </div>
         </div>
@@ -141,8 +141,8 @@ export function UpcomingDeadlines({ actions, isLoading }: UpcomingDeadlinesProps
                         </div>
                         
                         <div className="flex items-center">
-                          <Clock className={`h-3 w-3 mr-1 ${isToday ? 'text-red-500' : 'text-amber-500'}`} />
-                          <span className={`text-xs font-medium ${isToday ? 'text-red-500' : 'text-amber-500'}`}>
+                          <Clock className={`h-3 w-3 mr-1 ${isToday ? 'text-destructive' : 'text-warning'}`} />
+                          <span className={`text-xs font-medium ${isToday ? 'text-destructive' : 'text-warning'}`}>
                             {formatDate(action.dueDate || "")}
                           </span>
                         </div>

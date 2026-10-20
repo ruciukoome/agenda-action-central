@@ -585,12 +585,12 @@ export function ActionForm({ actionToEdit, draftId, initialDraft, onSave, onSave
                   control={form.control}
                   name="allowCompletionException"
                   render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border border-amber-300 bg-amber-50 p-3 shadow-sm">
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border border-warning/30 bg-warning-soft p-3 shadow-sm">
                       <div className="space-y-0.5 pr-3">
-                        <FormLabel className="text-amber-900">
+                        <FormLabel className="text-warning">
                           Allow completion exception
                         </FormLabel>
-                        <FormDescription className="text-amber-800">
+                        <FormDescription className="text-warning">
                           This action is marked completed but progress is{" "}
                           <strong>{form.watch("progressStatus")}</strong>. Enable
                           to explicitly allow this mismatch.

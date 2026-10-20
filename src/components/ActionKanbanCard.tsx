@@ -13,9 +13,9 @@ interface ActionKanbanCardProps {
 }
 
 const priorityStyles: Record<string, string> = {
-  high: "bg-rose-100 text-rose-700 border-rose-200",
-  medium: "bg-amber-100 text-amber-700 border-amber-200",
-  low: "bg-emerald-100 text-emerald-700 border-emerald-200",
+  high: "bg-destructive-soft text-destructive border-destructive/30",
+  medium: "bg-warning-soft text-warning border-warning/30",
+  low: "bg-success-soft text-success border-success/30",
 };
 
 function getInitial(email: string) {
@@ -80,7 +80,7 @@ export function ActionKanbanCard({ action, onEdit, onUpdated }: ActionKanbanCard
           <span />
         )}
         {action.completed && (
-          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-700">
+          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-success">
             <CheckCircle2 className="h-3 w-3" /> Done
           </span>
         )}
