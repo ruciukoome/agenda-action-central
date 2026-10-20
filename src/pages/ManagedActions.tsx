@@ -4,6 +4,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { PageContainer } from "@/components/layout/primitives";
 import { fetchActions } from "@/lib/actions";
 import { toast } from "@/lib/toast-wrapper";
 import { ManagedActionsContent } from "@/components/actions/ManagedActionsContent";
@@ -37,9 +38,9 @@ export default function ManagedActions() {
 
   return (
     <AppLayout title="Manage Actions">
-      <div className="container py-6">
+      <PageContainer>
         <ManagedActionsContent actions={actions} isLoading={isLoading} onActionUpdated={loadActions} />
-      </div>
+      </PageContainer>
     </AppLayout>
   );
 }

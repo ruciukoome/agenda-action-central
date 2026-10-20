@@ -34,36 +34,11 @@ interface ActionDashboardProps {
 type ColumnKey = "Not Started" | "25%" | "50%" | "75%" | "100%";
 
 const COLUMNS: { key: ColumnKey; label: string; headerClass: string; dotClass: string }[] = [
-  {
-    key: "Not Started",
-    label: "Not Started",
-    headerClass: "bg-blue-100/70 text-blue-900 border-blue-200",
-    dotClass: "bg-blue-500",
-  },
-  {
-    key: "25%",
-    label: "25%",
-    headerClass: "bg-indigo-100/70 text-indigo-900 border-indigo-200",
-    dotClass: "bg-indigo-500",
-  },
-  {
-    key: "50%",
-    label: "50%",
-    headerClass: "bg-violet-100/70 text-violet-900 border-violet-200",
-    dotClass: "bg-violet-500",
-  },
-  {
-    key: "75%",
-    label: "75%",
-    headerClass: "bg-teal-100/70 text-teal-900 border-teal-200",
-    dotClass: "bg-teal-500",
-  },
-  {
-    key: "100%",
-    label: "Complete",
-    headerClass: "bg-pink-100/70 text-pink-900 border-pink-200",
-    dotClass: "bg-pink-500",
-  },
+  { key: "Not Started", label: "Not Started", headerClass: "bg-muted text-foreground border-border", dotClass: "bg-muted-foreground" },
+  { key: "25%", label: "25%", headerClass: "bg-warning-soft text-foreground border-warning/20", dotClass: "bg-warning" },
+  { key: "50%", label: "50%", headerClass: "bg-warning-soft text-foreground border-warning/20", dotClass: "bg-warning" },
+  { key: "75%", label: "75%", headerClass: "bg-warning-soft text-foreground border-warning/20", dotClass: "bg-warning" },
+  { key: "100%", label: "Complete", headerClass: "bg-success-soft text-foreground border-success/20", dotClass: "bg-success" },
 ];
 
 export function ActionDashboard({
@@ -169,22 +144,22 @@ export function ActionDashboard({
       label: "In Progress",
       value: `${stats.inProgressPct}%`,
       icon: Loader2,
-      gradient: "from-indigo-500/15 to-indigo-500/5",
-      iconClass: "bg-indigo-500/15 text-indigo-600",
+      gradient: "from-warning/15 to-warning/5",
+      iconClass: "bg-warning/15 text-warning",
     },
     {
       label: "Completed",
       value: `${stats.completedPct}%`,
       icon: CheckCircle2,
-      gradient: "from-emerald-500/15 to-emerald-500/5",
-      iconClass: "bg-emerald-500/15 text-emerald-600",
+      gradient: "from-success/15 to-success/5",
+      iconClass: "bg-success/15 text-success",
     },
     {
       label: "Due Soon",
       value: stats.dueSoon,
       icon: AlarmClock,
-      gradient: "from-rose-500/15 to-rose-500/5",
-      iconClass: "bg-rose-500/15 text-rose-600",
+      gradient: "from-destructive/15 to-destructive/5",
+      iconClass: "bg-destructive/15 text-destructive",
     },
   ];
 
