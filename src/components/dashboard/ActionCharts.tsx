@@ -30,7 +30,7 @@ export function ActionCharts({ actions, isLoading }: ActionChartsProps) {
   ];
   
   // Colors for pie chart
-  const COLORS = ["#0088FE", "#AAAAAA"];
+  const COLORS = ["hsl(var(--chart-1))", "hsl(var(--muted-foreground))"];
   
   // Data for department distribution bar chart
   const departmentMap: Record<string, number> = {};
@@ -48,9 +48,9 @@ export function ActionCharts({ actions, isLoading }: ActionChartsProps) {
     .slice(0, isMobile ? 5 : 10); // Show fewer departments on mobile
     
   const chartConfig = {
-    completed: { label: "Completed", color: "#0088FE" },
-    pending: { label: "Pending", color: "#AAAAAA" },
-    department: { label: "Tasks by Department", color: "#2563EB" }
+    completed: { label: "Completed", color: "hsl(var(--chart-1))" },
+    pending: { label: "Pending", color: "hsl(var(--muted-foreground))" },
+    department: { label: "Tasks by Department", color: "hsl(var(--chart-1))" }
   };
 
   if (isLoading) {
@@ -83,7 +83,7 @@ export function ActionCharts({ actions, isLoading }: ActionChartsProps) {
                     cy="50%"
                     labelLine={!isMobile}
                     outerRadius={isMobile ? 60 : 100}
-                    fill="#8884d8"
+                    fill="hsl(var(--chart-4))"
                     dataKey="value"
                     label={!isMobile ? ({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%` : undefined}
                   >
@@ -173,7 +173,7 @@ export function ActionCharts({ actions, isLoading }: ActionChartsProps) {
                       ) : null
                     )}
                   />
-                  <Bar dataKey="value" fill="#2563EB" />
+                  <Bar dataKey="value" fill="hsl(var(--chart-1))" />
                 </BarChart>
               </ResponsiveContainer>
             </ChartContainer>

@@ -188,8 +188,8 @@ export default function UpdateTask() {
       <div className="container py-8">
         <Card className="w-full max-w-lg mx-auto">
           <CardHeader className="text-center">
-            <AlertTriangle className="h-10 w-10 text-amber-500 mx-auto mb-2" />
-            <h1 className="text-2xl font-semibold leading-none tracking-tight text-red-500">Access Error</h1>
+            <AlertTriangle className="h-10 w-10 text-warning mx-auto mb-2" />
+            <h1 className="text-2xl font-semibold leading-none tracking-tight text-destructive">Access Error</h1>
           </CardHeader>
           <CardContent>
             <p className="text-center mb-4">{error || "Invalid or expired link"}</p>
@@ -223,9 +223,9 @@ export default function UpdateTask() {
             <div className="flex items-center justify-between">
               <span className="font-medium">Priority:</span>
               <span className={`
-                ${action?.priority === 'high' ? 'text-red-500' : ''} 
-                ${action?.priority === 'medium' ? 'text-amber-500' : ''} 
-                ${action?.priority === 'low' ? 'text-green-500' : ''}
+                ${action?.priority === 'high' ? 'text-destructive' : ''} 
+                ${action?.priority === 'medium' ? 'text-warning' : ''} 
+                ${action?.priority === 'low' ? 'text-success' : ''}
               `}>
                 {action?.priority}
               </span>

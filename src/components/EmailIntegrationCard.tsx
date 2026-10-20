@@ -23,40 +23,40 @@ const ROWS: RowMeta[] = [
     title: "Assignment Notifications",
     description: "Email the owner when a new action is assigned",
     icon: Mail,
-    iconBg: "bg-blue-100",
-    iconColor: "text-blue-600",
+    iconBg: "bg-info-soft",
+    iconColor: "text-info",
   },
   {
     key: "due_date_reminders",
     title: "Due Date Reminders",
     description: "Reminder email one day before an action is due",
     icon: Clock,
-    iconBg: "bg-amber-100",
-    iconColor: "text-amber-600",
+    iconBg: "bg-warning-soft",
+    iconColor: "text-warning",
   },
   {
     key: "completion_updates",
     title: "Completion Updates",
     description: "Notify the assigner when their action is marked complete",
     icon: CheckCircle,
-    iconBg: "bg-green-100",
-    iconColor: "text-green-600",
+    iconBg: "bg-success-soft",
+    iconColor: "text-success",
   },
   {
     key: "weekly_digest",
     title: "Weekly Digest",
     description: "Sunday summary of your open and overdue actions",
     icon: Newspaper,
-    iconBg: "bg-purple-100",
-    iconColor: "text-purple-600",
+    iconBg: "bg-accent",
+    iconColor: "text-primary",
   },
   {
     key: "monthly_compliance_report",
     title: "Monthly Compliance Report (admins)",
     description: "Monthly email listing compliant and non-compliant users in your organization, based on due-date adherence",
     icon: BarChart3,
-    iconBg: "bg-indigo-100",
-    iconColor: "text-indigo-600",
+    iconBg: "bg-info-soft",
+    iconColor: "text-info",
     adminOnly: true,
   },
 ];
@@ -220,8 +220,8 @@ export function EmailIntegrationCard() {
             {/* Overdue alerts placeholder */}
             <div className="border rounded-md p-3 opacity-60">
               <div className="flex items-start gap-3">
-                <div className="mt-0.5 bg-red-100 p-2 rounded-full">
-                  <AlertTriangle className="h-4 w-4 text-red-600" />
+                <div className="mt-0.5 bg-destructive-soft p-2 rounded-full">
+                  <AlertTriangle className="h-4 w-4 text-destructive" />
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
@@ -253,8 +253,8 @@ export function EmailIntegrationCard() {
               );
             })}
             <div className="flex items-start space-x-4 opacity-60">
-              <div className="mt-0.5 bg-red-100 p-2 rounded-full">
-                <CalendarClock className="h-5 w-5 text-red-600" />
+              <div className="mt-0.5 bg-destructive-soft p-2 rounded-full">
+                <CalendarClock className="h-5 w-5 text-destructive" />
               </div>
               <div>
                 <h3 className="text-sm font-medium">Overdue Alerts (coming soon)</h3>

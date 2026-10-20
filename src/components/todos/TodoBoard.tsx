@@ -21,9 +21,9 @@ import { Plus, Search, ListTodo, Loader2, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const COLUMNS: { key: TodoStatus; label: string; headerClass: string; dotClass: string }[] = [
-  { key: "todo", label: "To Do", headerClass: "bg-slate-100", dotClass: "bg-slate-400" },
-  { key: "in_progress", label: "In Progress", headerClass: "bg-blue-100", dotClass: "bg-blue-500" },
-  { key: "done", label: "Done", headerClass: "bg-emerald-100", dotClass: "bg-emerald-500" },
+  { key: "todo", label: "To Do", headerClass: "bg-muted", dotClass: "bg-muted-foreground" },
+  { key: "in_progress", label: "In Progress", headerClass: "bg-info-soft", dotClass: "bg-info" },
+  { key: "done", label: "Done", headerClass: "bg-success-soft", dotClass: "bg-success" },
 ];
 
 export function TodoBoard() {

@@ -40,8 +40,8 @@ export function NotesStatistics({ actions, isLoading }: NotesStatisticsProps) {
       <CardContent className="pt-6">
         <div className="space-y-4">
           <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
-              <FileText className="h-6 w-6 text-blue-600" />
+            <div className="h-12 w-12 rounded-full bg-info-soft flex items-center justify-center">
+              <FileText className="h-6 w-6 text-info" />
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Total Meetings</p>
@@ -50,8 +50,8 @@ export function NotesStatistics({ actions, isLoading }: NotesStatisticsProps) {
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
-              <CheckCircle className="h-6 w-6 text-green-600" />
+            <div className="h-12 w-12 rounded-full bg-success-soft flex items-center justify-center">
+              <CheckCircle className="h-6 w-6 text-success" />
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Completed Notes</p>
@@ -60,8 +60,8 @@ export function NotesStatistics({ actions, isLoading }: NotesStatisticsProps) {
           </div>
           
           <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-full bg-purple-100 flex items-center justify-center">
-              <BarChart className="h-6 w-6 text-purple-600" />
+            <div className="h-12 w-12 rounded-full bg-accent flex items-center justify-center">
+              <BarChart className="h-6 w-6 text-primary" />
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Completion Rate</p>
@@ -69,9 +69,9 @@ export function NotesStatistics({ actions, isLoading }: NotesStatisticsProps) {
             </div>
           </div>
 
-          <div className="h-2 bg-gray-200 rounded-full mt-4">
+          <div className="h-2 bg-muted rounded-full mt-4">
             <div 
-              className="h-2 bg-blue-600 rounded-full" 
+              className="h-2 bg-info rounded-full" 
               style={{ width: `${completionPercentage}%` }}
             />
           </div>

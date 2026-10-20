@@ -42,12 +42,12 @@ const PROGRESS_OPTIONS: ProgressStatus[] = [
 ];
 
 const progressStyles: Record<string, string> = {
-  "Not Started": "bg-blue-100 text-blue-700 hover:bg-blue-200",
-  "25%": "bg-indigo-100 text-indigo-700 hover:bg-indigo-200",
-  "50%": "bg-violet-100 text-violet-700 hover:bg-violet-200",
-  "75%": "bg-teal-100 text-teal-700 hover:bg-teal-200",
-  "100%": "bg-emerald-100 text-emerald-700 hover:bg-emerald-200",
-  Continuous: "bg-sky-100 text-sky-700 hover:bg-sky-200",
+  "Not Started": "bg-info-soft text-info hover:bg-info-soft",
+  "25%": "bg-info-soft text-info hover:bg-info-soft",
+  "50%": "bg-accent text-primary hover:bg-accent",
+  "75%": "bg-success-soft text-success hover:bg-success-soft",
+  "100%": "bg-success-soft text-success hover:bg-success-soft",
+  Continuous: "bg-info-soft text-info hover:bg-info-soft",
 };
 
 export function QuickStatusUpdate({
@@ -185,7 +185,7 @@ export function QuickStatusUpdate({
                 })}
               </div>
               {completed && (
-                <p className="text-[11px] text-amber-700 mt-2">
+                <p className="text-[11px] text-warning mt-2">
                   Action is completed. Lowering progress requires confirmation.
                 </p>
               )}
@@ -201,7 +201,7 @@ export function QuickStatusUpdate({
                 htmlFor={`completed-${action.id}`}
                 className="text-sm flex items-center gap-1.5 cursor-pointer"
               >
-                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                <CheckCircle2 className="h-3.5 w-3.5 text-success" />
                 Mark as completed
               </Label>
             </div>

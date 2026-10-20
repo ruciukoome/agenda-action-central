@@ -22,7 +22,7 @@ export function NavigationActions() {
             <NavigationMenuLink asChild>
               <Link
                 to="/"
-                className="relative flex aspect-square items-center justify-center rounded-md bg-gradient-to-br from-sky-500 to-violet-500 text-white no-underline outline-none focus:shadow-md"
+                className="relative flex aspect-square items-center justify-center rounded-md bg-gradient-to-br from-info to-primary text-white no-underline outline-none focus:shadow-md"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"

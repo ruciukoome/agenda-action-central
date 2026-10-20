@@ -31,14 +31,12 @@ type ViewMode = "large" | "medium" | "list" | "details";
 const VIEW_STORAGE_KEY = "drafts:view-mode";
 
 const meetingPalette = [
-  "from-fuchsia-500 to-pink-500",
-  "from-sky-500 to-indigo-500",
-  "from-emerald-500 to-teal-500",
-  "from-amber-500 to-orange-500",
-  "from-violet-500 to-purple-500",
-  "from-rose-500 to-red-500",
-  "from-cyan-500 to-blue-500",
-  "from-lime-500 to-green-500",
+  "from-chart-1 to-chart-4",
+  "from-chart-2 to-chart-1",
+  "from-chart-3 to-chart-5",
+  "from-chart-4 to-chart-5",
+  "from-chart-5 to-chart-3",
+  "from-chart-1 to-chart-2",
 ];
 const colorFor = (key: string) => {
   let h = 0;
@@ -99,7 +97,7 @@ export default function Drafts() {
         <Button
           size="sm"
           onClick={() => navigate("/add-action")}
-          className="gap-2 bg-sky-600 hover:bg-sky-700 text-white border-0 shadow-md"
+          className="gap-2 bg-info hover:bg-info text-white border-0 shadow-md"
         >
           <Plus className="h-4 w-4" /> New Action
         </Button>
@@ -108,16 +106,16 @@ export default function Drafts() {
       <div className="container max-w-6xl py-6 space-y-6">
         {/* Hero */}
         <Card className="overflow-hidden border-0 shadow-lg">
-          <div className="relative p-6 sm:p-8 bg-sky-600 text-white">
+          <div className="relative p-6 sm:p-8 bg-info text-white">
             <div className="absolute -top-16 -right-16 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
-            <div className="absolute -bottom-20 -left-10 h-56 w-56 rounded-full bg-pink-400/30 blur-3xl" />
+            <div className="absolute -bottom-20 -left-10 h-56 w-56 rounded-full bg-primary/30 blur-3xl" />
             <div className="relative flex items-start gap-4">
               <div className="rounded-2xl bg-white/20 backdrop-blur p-3 ring-1 ring-white/30 shrink-0">
                 <FileText className="h-6 w-6" />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-yellow-200" />
+                  <Sparkles className="h-4 w-4 text-warning-foreground" />
                   <span className="text-xs font-medium uppercase tracking-wider text-white/80">
                     Private workspace
                   </span>
@@ -167,7 +165,7 @@ export default function Drafts() {
                       <ToggleGroupItem
                         value={v}
                         aria-label={label}
-                        className="data-[state=on]:bg-sky-600 data-[state=on]:text-white"
+                        className="data-[state=on]:bg-info data-[state=on]:text-white"
                       >
                         <Icon className="h-4 w-4" />
                       </ToggleGroupItem>
@@ -192,9 +190,9 @@ export default function Drafts() {
             ))}
           </div>
         ) : drafts.length === 0 ? (
-          <Card className="border-dashed border-2 border-sky-200 bg-sky-50/40">
+          <Card className="border-dashed border-2 border-info/30 bg-info-soft/40">
             <CardContent className="py-16 flex flex-col items-center text-center">
-              <div className="rounded-full bg-sky-600 p-4 mb-4 shadow-lg">
+              <div className="rounded-full bg-info p-4 mb-4 shadow-lg">
                 <FileText className="h-7 w-7 text-white" />
               </div>
               <h3 className="font-semibold text-lg">No drafts yet</h3>
@@ -202,7 +200,7 @@ export default function Drafts() {
                 Pause any in-progress action item with "Save as Draft" and pick it up here later.
               </p>
               <Button
-                className="mt-5 gap-2 bg-sky-600 hover:bg-sky-700 text-white border-0"
+                className="mt-5 gap-2 bg-info hover:bg-info text-white border-0"
                 onClick={() => navigate("/add-action")}
               >
                 <Plus className="h-4 w-4" /> Create your first action
@@ -318,7 +316,7 @@ function DraftsView({
             <Button size="sm" variant="ghost" onClick={() => onDelete(d.id)} className="text-muted-foreground hover:text-destructive">
               <Trash2 className="h-4 w-4" />
             </Button>
-            <Button size="sm" onClick={() => onResume(d.id)} className="bg-sky-600 hover:bg-sky-700 text-white border-0">
+            <Button size="sm" onClick={() => onResume(d.id)} className="bg-info hover:bg-info text-white border-0">
               <Pencil className="h-4 w-4 mr-1" /> Resume
             </Button>
           </div>
@@ -381,7 +379,7 @@ function DraftsView({
             <Button
               size="sm"
               onClick={() => onResume(d.id)}
-              className="bg-sky-600 hover:bg-sky-700 text-white border-0"
+              className="bg-info hover:bg-info text-white border-0"
             >
               <Pencil className="h-4 w-4 mr-1" /> Resume
             </Button>

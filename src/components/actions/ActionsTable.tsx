@@ -100,9 +100,9 @@ export function ActionsTable({
                 <TableCell>{formatDate(action.meetingDate)}</TableCell>
                 <TableCell>
                   <div className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
-                    action.priority === "high" ? "bg-red-100 text-red-800" :
-                    action.priority === "medium" ? "bg-amber-100 text-amber-800" :
-                    "bg-green-100 text-green-800"
+                    action.priority === "high" ? "bg-destructive-soft text-destructive" :
+                    action.priority === "medium" ? "bg-warning-soft text-warning" :
+                    "bg-success-soft text-success"
                   }`}>
                     {action.priority}
                   </div>
@@ -110,7 +110,7 @@ export function ActionsTable({
                 <TableCell>{action.ownerEmail}</TableCell>
                 <TableCell>
                   <div className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
-                    action.completed ? "bg-green-100 text-green-800" : "bg-blue-100 text-blue-800"
+                    action.completed ? "bg-success-soft text-success" : "bg-info-soft text-info"
                   }`}>
                     {action.completed ? "Completed" : action.progressStatus}
                   </div>

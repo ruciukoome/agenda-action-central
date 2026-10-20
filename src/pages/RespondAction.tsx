@@ -51,9 +51,9 @@ export default function RespondAction() {
         <CardHeader className="text-center">
           <div className="flex justify-center mb-3">
             {status === "loading" && <Loader2 className="h-10 w-10 animate-spin text-muted-foreground" />}
-            {status === "success" && isAccept && <CheckCircle2 className="h-10 w-10 text-green-600" />}
-            {status === "success" && !isAccept && <XCircle className="h-10 w-10 text-red-600" />}
-            {status === "error" && <AlertTriangle className="h-10 w-10 text-amber-600" />}
+            {status === "success" && isAccept && <CheckCircle2 className="h-10 w-10 text-success" />}
+            {status === "success" && !isAccept && <XCircle className="h-10 w-10 text-destructive" />}
+            {status === "error" && <AlertTriangle className="h-10 w-10 text-warning" />}
           </div>
           <h1 className="text-2xl font-semibold leading-none tracking-tight">
             {status === "loading"
