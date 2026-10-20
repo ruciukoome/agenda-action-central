@@ -81,7 +81,7 @@ export default function EditAction() {
   if (isLoading) {
     return (
       <AppLayout title="Loading...">
-        <div className="container max-w-3xl py-6" />
+        <div className="mx-auto w-full max-w-3xl px-4 sm:px-6 py-6 sm:py-8 space-y-6" />
       </AppLayout>
     );
   }
@@ -89,7 +89,7 @@ export default function EditAction() {
   if (error || !action) {
     return (
       <AppLayout title="Action Not Found">
-        <div className="container max-w-3xl py-6">
+        <div className="mx-auto w-full max-w-3xl px-4 sm:px-6 py-6 sm:py-8 space-y-6">
           <p>{error || "The action you're looking for could not be found."}</p>
         </div>
       </AppLayout>
@@ -98,7 +98,7 @@ export default function EditAction() {
 
   return (
     <AppLayout title="Edit Action Item">
-      <div className="container max-w-3xl py-6">
+      <div className="mx-auto w-full max-w-3xl px-4 sm:px-6 py-6 sm:py-8 space-y-6">
         <ActionForm actionToEdit={action} onSave={handleSave} />
       </div>
     </AppLayout>

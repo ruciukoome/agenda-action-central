@@ -188,7 +188,7 @@ export default function UsersAndRoles() {
 
   return (
     <AppLayout title="Users & Roles">
-      <div className="container mx-auto px-4 py-6 space-y-6">
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">

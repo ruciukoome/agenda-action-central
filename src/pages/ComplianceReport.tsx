@@ -139,7 +139,7 @@ export default function ComplianceReport() {
 
   return (
     <AppLayout title="Compliance Report">
-      <div className="container mx-auto px-4 py-6 space-y-6">
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">

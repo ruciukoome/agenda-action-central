@@ -35,7 +35,7 @@ export default function Projects() {
 
   return (
     <AppLayout title="Collaborative Projects">
-      <div className="container py-6 space-y-6">
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
             Multi-stage projects where each owner picks up after the previous one completes.

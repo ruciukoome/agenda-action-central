@@ -104,7 +104,7 @@ export default function MyActions() {
 
   return (
     <AppLayout title="My Actions">
-      <div className="container mx-auto px-3 sm:px-4 py-6 space-y-8 min-w-0">
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
         {/* Assigned Actions Kanban */}
         <section className="space-y-4">
           <div className="flex flex-col lg:flex-row lg:items-center gap-3">

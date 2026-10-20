@@ -112,14 +112,14 @@ export default function AddAction() {
   if (loadingDraft) {
     return (
       <AppLayout title="Loading draft...">
-        <div className="container max-w-3xl py-6" />
+        <div className="mx-auto w-full max-w-3xl px-4 sm:px-6 py-6 sm:py-8 space-y-6" />
       </AppLayout>
     );
   }
 
   return (
     <AppLayout title={draftId ? "Resume Draft" : "Add New Action Item"}>
-      <div className="container max-w-3xl py-6 space-y-6">
+      <div className="mx-auto w-full max-w-3xl px-4 sm:px-6 py-6 sm:py-8 space-y-6">
         <div className="relative overflow-hidden rounded-2xl p-6 sm:p-7 text-white shadow-lg bg-info">
           <div className="absolute -top-16 -right-16 h-48 w-48 rounded-full bg-white/10 blur-3xl" />
           <div className="absolute -bottom-16 -left-10 h-48 w-48 rounded-full bg-primary/30 blur-3xl" />

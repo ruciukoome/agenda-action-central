@@ -1,3 +1,4 @@
+import { PublicShell } from "@/components/layout/primitives";
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -46,7 +47,8 @@ export default function RespondAction() {
   const isAccept = decision === "accept";
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <PublicShell>
+<div className="flex w-full items-center justify-center">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-3">
@@ -73,5 +75,6 @@ export default function RespondAction() {
         </CardContent>
       </Card>
     </div>
+    </PublicShell>
   );
 }
