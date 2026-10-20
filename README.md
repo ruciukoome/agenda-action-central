@@ -166,3 +166,15 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Design system
+
+All styling uses semantic tokens defined in `src/index.css` and exposed in `tailwind.config.ts`:
+- Core: `background`, `foreground`, `card`, `primary` (brand blue), `secondary`, `muted`, `accent`, `border`, `ring`
+- Status: `success`, `warning`, `info`, `destructive` (each with `-foreground` and `-soft`)
+- Charts: `chart-1` … `chart-5`
+- Shadows: `shadow-card` (cards), `shadow-glow` (marketing only); one `--radius`; font: Inter
+- Status mapping: high/overdue = destructive, medium/in progress = warning, low/not started = muted, completed = success, informational = info
+- Layout primitives: `PageContainer`, `PageHeader`, `SectionCard`, `EmptyState`, `LoadingState`, `PublicShell` (`src/components/layout/primitives.tsx`)
+
+Rule: never use raw colour classes (`bg-green-100`, `text-red-600`…) or hex values in components — only semantic tokens.
