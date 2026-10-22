@@ -8,6 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ImportActionsDialog } from "@/components/actions/ImportActionsDialog";
 
 interface ActionsToolbarProps {
   activeTab: "all" | "completed" | "pending";
@@ -15,6 +16,7 @@ interface ActionsToolbarProps {
   selectedCount: number;
   onExport: (format: "csv" | "excel") => void;
   onDelete: () => void;
+  onImported?: () => void;
 }
 
 export function ActionsToolbar({
@@ -23,6 +25,7 @@ export function ActionsToolbar({
   selectedCount,
   onExport,
   onDelete,
+  onImported,
 }: ActionsToolbarProps) {
   return (
     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
@@ -37,6 +40,7 @@ export function ActionsToolbar({
       </Tabs>
       
       <div className="flex items-center space-x-2">
+        {onImported && <ImportActionsDialog onImported={onImported} />}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button 
