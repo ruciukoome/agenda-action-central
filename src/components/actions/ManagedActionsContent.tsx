@@ -55,6 +55,7 @@ export function ManagedActionsContent({ actions, isLoading, onActionUpdated }: M
         selectedCount={selectedActions.length}
         onExport={handleExport}
         onDelete={() => handleDeleteSelected(selectedActions)}
+        onImported={onActionUpdated}
       />
       
       <ActionFilters filters={filters} onFilterChange={setFilters} />
