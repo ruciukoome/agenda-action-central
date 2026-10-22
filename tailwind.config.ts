@@ -24,6 +24,7 @@ export default {
 			boxShadow: {
 				card: 'var(--shadow-card)',
 				glow: 'var(--shadow-glow)',
+				lift: 'var(--shadow-lift)',
 			},
 			backgroundImage: {
 				'gradient-hero': 'var(--gradient-hero)',

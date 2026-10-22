@@ -45,7 +45,7 @@ export function SectionCard({
   className?: string;
 }) {
   return (
-    <section className={cn("rounded-lg border border-border/60 bg-card text-card-foreground shadow-card", className)}>
+    <section className={cn("animate-fade-up rounded-xl border border-border/60 bg-card text-card-foreground shadow-card", className)}>
       {(title || actions) && (
         <div className="flex items-start justify-between gap-3 border-b border-border/60 px-5 py-4">
           <div>

@@ -52,7 +52,8 @@
     --gradient-hero: linear-gradient(135deg, hsl(217 91% 60%) 0%, hsl(199 89% 60%) 50%, hsl(262 83% 65%) 100%);
     --gradient-subtle: linear-gradient(180deg, hsl(210 40% 98%) 0%, hsl(0 0% 100%) 100%);
     --shadow-glow: 0 20px 60px -15px hsl(217 91% 60% / 0.35);
-    --shadow-card: 0 4px 20px -4px hsl(222 47% 11% / 0.08);
+    --shadow-card: 0 1px 2px hsl(222 47% 11% / 0.06), 0 8px 24px hsl(222 47% 11% / 0.08);
+    --shadow-lift: 0 12px 32px hsl(222 47% 11% / 0.16);
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 222 47% 20%;
@@ -109,7 +110,8 @@
     --brand-glow: 199 89% 62%;
     --gradient-subtle: linear-gradient(180deg, hsl(222 47% 9%) 0%, hsl(222 47% 7%) 100%);
     --shadow-glow: 0 20px 60px -15px hsl(217 91% 60% / 0.45);
-    --shadow-card: 0 4px 20px -4px hsl(0 0% 0% / 0.4);
+    --shadow-card: 0 1px 2px hsl(0 0% 0% / 0.3), 0 8px 24px hsl(0 0% 0% / 0.35);
+    --shadow-lift: 0 12px 32px hsl(0 0% 0% / 0.5);
 
     --sidebar-background: 222 47% 9%;
     --sidebar-foreground: 210 40% 90%;
@@ -180,4 +182,19 @@
 
 [data-sonner-toaster][data-position="top-right"] [data-sonner-toast] {
   pointer-events: auto;
+}
+
+/* Motion (adapted from Foi's Kitchen) */
+@keyframes ap-fade-up { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+@keyframes ap-swap-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes ap-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@layer utilities {
+  .animate-fade-up { animation: ap-fade-up 420ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .animate-swap-in { animation: ap-swap-in 280ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .animate-fade-in { animation: ap-fade-in 250ms ease-out both; }
+  .card-lift { transition: transform 300ms ease-out, box-shadow 300ms ease-out; }
+  .card-lift:hover { transform: translateY(-4px); box-shadow: var(--shadow-lift); }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
