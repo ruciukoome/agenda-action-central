@@ -56,20 +56,38 @@ export default function Landing() {
             <span className="font-bold text-lg">ActionsPoint</span>
           </Link>
           <nav className="hidden md:flex items-center gap-6 text-sm">
-            <a href="#problem" className="text-muted-foreground hover:text-foreground transition-colors">Why</a>
-            <a href="#features" className="text-muted-foreground hover:text-foreground transition-colors">Features</a>
-            <a href="#who" className="text-muted-foreground hover:text-foreground transition-colors">Who it's for</a>
-            <a href="#how-it-works" className="text-muted-foreground hover:text-foreground transition-colors">How it works</a>
-            <a href="#roles" className="text-muted-foreground hover:text-foreground transition-colors">Roles</a>
-            <Link to="/docs" className="text-muted-foreground hover:text-foreground transition-colors">Docs</Link>
+            <a href="#problem" className="text-muted-foreground hover:text-foreground transition-colors">
+              Why
+            </a>
+            <a href="#features" className="text-muted-foreground hover:text-foreground transition-colors">
+              Features
+            </a>
+            <a href="#who" className="text-muted-foreground hover:text-foreground transition-colors">
+              Who it's for
+            </a>
+            <a href="#how-it-works" className="text-muted-foreground hover:text-foreground transition-colors">
+              How it works
+            </a>
+            <a href="#roles" className="text-muted-foreground hover:text-foreground transition-colors">
+              Roles
+            </a>
+            <Link to="/docs" className="text-muted-foreground hover:text-foreground transition-colors">
+              Docs
+            </Link>
           </nav>
           <div className="flex items-center gap-2">
             {user ? (
-              <Button onClick={() => navigate(ctaTarget)} size="sm">{ctaLabel}</Button>
+              <Button onClick={() => navigate(ctaTarget)} size="sm">
+                {ctaLabel}
+              </Button>
             ) : (
               <>
-                <Button variant="ghost" size="sm" onClick={() => navigate("/auth")}>Sign in</Button>
-                <Button size="sm" onClick={() => navigate("/auth")}>Get started</Button>
+                <Button variant="ghost" size="sm" onClick={() => navigate("/auth")}>
+                  Sign in
+                </Button>
+                <Button size="sm" onClick={() => navigate("/auth")}>
+                  Get started
+                </Button>
               </>
             )}
           </div>
@@ -78,7 +96,11 @@ export default function Landing() {
 
       {/* Hero */}
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ background: "var(--gradient-hero)" }} aria-hidden />
+        <div
+          className="absolute inset-0 opacity-20 pointer-events-none"
+          style={{ background: "var(--gradient-hero)" }}
+          aria-hidden
+        />
         <div className="container mx-auto px-4 py-16 md:py-24 relative">
           <div className="max-w-3xl mx-auto text-center space-y-6">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border bg-background/50 backdrop-blur text-xs font-medium text-muted-foreground">
@@ -86,8 +108,10 @@ export default function Landing() {
               The accountability layer for modern organizations
             </div>
             <h1 className="text-4xl md:text-6xl font-bold tracking-tight leading-tight">
-              Every decision, every owner, every deadline —{" "}
-              <span className="bg-[image:var(--gradient-hero)] bg-clip-text text-transparent">tracked to completion</span>
+              Every decision, every owner, every deadline -{" "}
+              <span className="bg-[image:var(--gradient-hero)] bg-clip-text text-transparent">
+                tracked to completion
+              </span>
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
               ActionsPoint turns meeting decisions, board resolutions, audit findings and project tasks into trackable
@@ -108,8 +132,15 @@ export default function Landing() {
           </div>
 
           <div className="mt-14 md:mt-20 max-w-6xl mx-auto relative">
-            <div className="absolute -inset-4 md:-inset-8 rounded-3xl opacity-40 blur-3xl pointer-events-none" style={{ background: "var(--gradient-hero)" }} aria-hidden />
-            <div className="relative rounded-2xl overflow-hidden border bg-background" style={{ boxShadow: "var(--shadow-glow)" }}>
+            <div
+              className="absolute -inset-4 md:-inset-8 rounded-3xl opacity-40 blur-3xl pointer-events-none"
+              style={{ background: "var(--gradient-hero)" }}
+              aria-hidden
+            />
+            <div
+              className="relative rounded-2xl overflow-hidden border bg-background"
+              style={{ boxShadow: "var(--shadow-glow)" }}
+            >
               <img
                 src={heroDashboard}
                 alt="ActionsPoint dashboard showing action items grouped by progress status with assigned team members"
@@ -137,9 +168,18 @@ export default function Landing() {
             </p>
           </div>
           <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            <ProblemCard title="Lost in minutes" desc="Action items live in Word docs and PDFs no one re-opens until the next meeting." />
-            <ProblemCard title="No clear owner" desc={`"Someone should follow up" becomes nobody's job. Deadlines slip silently.`} />
-            <ProblemCard title="No visibility" desc="Leaders can't answer 'what's the status?' without chasing people on email and WhatsApp." />
+            <ProblemCard
+              title="Lost in minutes"
+              desc="Action items live in Word docs and PDFs no one re-opens until the next meeting."
+            />
+            <ProblemCard
+              title="No clear owner"
+              desc={`"Someone should follow up" becomes nobody's job. Deadlines slip silently.`}
+            />
+            <ProblemCard
+              title="No visibility"
+              desc="Leaders can't answer 'what's the status?' without chasing people on email and WhatsApp."
+            />
           </div>
         </div>
       </section>
@@ -154,15 +194,51 @@ export default function Landing() {
             </p>
           </div>
           <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
-            <FeatureCard icon={<ClipboardList className="h-5 w-5" />} title="Capture from any meeting" desc="Log action items with owner, department, due date, priority and source meeting — in seconds." />
-            <FeatureCard icon={<Users className="h-5 w-5" />} title="Assign with clarity" desc="Every item has one accountable owner and optional collaborators. No more diffused responsibility." />
-            <FeatureCard icon={<BarChart3 className="h-5 w-5" />} title="Live progress dashboards" desc="Not Started → 25% → 50% → 75% → Complete. See the health of every initiative at a glance." />
-            <FeatureCard icon={<FolderKanban className="h-5 w-5" />} title="Projects & Gantt view" desc="Group related actions into projects with timelines, dependencies and durations." />
-            <FeatureCard icon={<Calendar className="h-5 w-5" />} title="Deadlines & reminders" desc="Automatic email nudges to owners before due dates and escalations when items slip." />
-            <FeatureCard icon={<FileSpreadsheet className="h-5 w-5" />} title="Compliance reports" desc="One-click monthly reports showing what was committed, completed, overdue and outstanding." />
-            <FeatureCard icon={<Mail className="h-5 w-5" />} title="Email updates from owners" desc="Owners update progress straight from email — no login required for quick status changes." />
-            <FeatureCard icon={<Building2 className="h-5 w-5" />} title="Multi-organization" desc="Each organization is fully isolated. Perfect for groups, agencies and parent companies." />
-            <FeatureCard icon={<Layers className="h-5 w-5" />} title="Embed in your platform" desc="Drop ActionsPoint into your existing client portal so users never have to leave to track work." />
+            <FeatureCard
+              icon={<ClipboardList className="h-5 w-5" />}
+              title="Capture from any meeting"
+              desc="Log action items with owner, department, due date, priority and source meeting — in seconds."
+            />
+            <FeatureCard
+              icon={<Users className="h-5 w-5" />}
+              title="Assign with clarity"
+              desc="Every item has one accountable owner and optional collaborators. No more diffused responsibility."
+            />
+            <FeatureCard
+              icon={<BarChart3 className="h-5 w-5" />}
+              title="Live progress dashboards"
+              desc="Not Started → 25% → 50% → 75% → Complete. See the health of every initiative at a glance."
+            />
+            <FeatureCard
+              icon={<FolderKanban className="h-5 w-5" />}
+              title="Projects & Gantt view"
+              desc="Group related actions into projects with timelines, dependencies and durations."
+            />
+            <FeatureCard
+              icon={<Calendar className="h-5 w-5" />}
+              title="Deadlines & reminders"
+              desc="Automatic email nudges to owners before due dates and escalations when items slip."
+            />
+            <FeatureCard
+              icon={<FileSpreadsheet className="h-5 w-5" />}
+              title="Compliance reports"
+              desc="One-click monthly reports showing what was committed, completed, overdue and outstanding."
+            />
+            <FeatureCard
+              icon={<Mail className="h-5 w-5" />}
+              title="Email updates from owners"
+              desc="Owners update progress straight from email — no login required for quick status changes."
+            />
+            <FeatureCard
+              icon={<Building2 className="h-5 w-5" />}
+              title="Multi-organization"
+              desc="Each organization is fully isolated. Perfect for groups, agencies and parent companies."
+            />
+            <FeatureCard
+              icon={<Layers className="h-5 w-5" />}
+              title="Embed in your platform"
+              desc="Drop ActionsPoint into your existing client portal so users never have to leave to track work."
+            />
           </div>
         </div>
       </section>
@@ -177,12 +253,36 @@ export default function Landing() {
             </p>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-            <MarketCard icon={<Landmark className="h-5 w-5" />} market="Government & Public Sector" desc="Track cabinet decisions, parliamentary resolutions, donor commitments and inter-ministerial action points." />
-            <MarketCard icon={<Briefcase className="h-5 w-5" />} market="NGOs & Development" desc="Manage board resolutions, project deliverables, donor reporting and field-team action items." />
-            <MarketCard icon={<HeartPulse className="h-5 w-5" />} market="Healthcare" desc="Close out clinical audit findings, accreditation gaps and quality-improvement actions across departments." />
-            <MarketCard icon={<GraduationCap className="h-5 w-5" />} market="Education & Universities" desc="Senate, council and committee resolutions tracked from minute to completion across faculties." />
-            <MarketCard icon={<Factory className="h-5 w-5" />} market="Enterprise Operations" desc="Cross-functional initiatives, internal audit responses, EHS findings and management-review actions." />
-            <MarketCard icon={<Globe2 className="h-5 w-5" />} market="Professional Services" desc="Client commitments, engagement action logs and partner-meeting follow-ups across teams." />
+            <MarketCard
+              icon={<Landmark className="h-5 w-5" />}
+              market="Government & Public Sector"
+              desc="Track cabinet decisions, parliamentary resolutions, donor commitments and inter-ministerial action points."
+            />
+            <MarketCard
+              icon={<Briefcase className="h-5 w-5" />}
+              market="NGOs & Development"
+              desc="Manage board resolutions, project deliverables, donor reporting and field-team action items."
+            />
+            <MarketCard
+              icon={<HeartPulse className="h-5 w-5" />}
+              market="Healthcare"
+              desc="Close out clinical audit findings, accreditation gaps and quality-improvement actions across departments."
+            />
+            <MarketCard
+              icon={<GraduationCap className="h-5 w-5" />}
+              market="Education & Universities"
+              desc="Senate, council and committee resolutions tracked from minute to completion across faculties."
+            />
+            <MarketCard
+              icon={<Factory className="h-5 w-5" />}
+              market="Enterprise Operations"
+              desc="Cross-functional initiatives, internal audit responses, EHS findings and management-review actions."
+            />
+            <MarketCard
+              icon={<Globe2 className="h-5 w-5" />}
+              market="Professional Services"
+              desc="Client commitments, engagement action logs and partner-meeting follow-ups across teams."
+            />
           </div>
         </div>
       </section>
@@ -195,10 +295,26 @@ export default function Landing() {
             <p className="text-muted-foreground text-lg">Live in your workflow within a day.</p>
           </div>
           <div className="grid md:grid-cols-4 gap-6 max-w-6xl mx-auto">
-            <StepCard n="1" title="Create your workspace" desc="Sign up and spin up your organization. You become the admin automatically." />
-            <StepCard n="2" title="Invite your team" desc="Add members by email and group them by department. Assign admin or member roles." />
-            <StepCard n="3" title="Log actions & projects" desc="Capture decisions from meetings or import a backlog. Assign owners and due dates." />
-            <StepCard n="4" title="Track to completion" desc="Owners update progress, dashboards refresh live, reminders chase the rest." />
+            <StepCard
+              n="1"
+              title="Create your workspace"
+              desc="Sign up and spin up your organization. You become the admin automatically."
+            />
+            <StepCard
+              n="2"
+              title="Invite your team"
+              desc="Add members by email and group them by department. Assign admin or member roles."
+            />
+            <StepCard
+              n="3"
+              title="Log actions & projects"
+              desc="Capture decisions from meetings or import a backlog. Assign owners and due dates."
+            />
+            <StepCard
+              n="4"
+              title="Track to completion"
+              desc="Owners update progress, dashboards refresh live, reminders chase the rest."
+            />
           </div>
         </div>
       </section>
@@ -211,9 +327,25 @@ export default function Landing() {
             <p className="text-muted-foreground text-lg">From staff on the ground to platform owners.</p>
           </div>
           <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
-            <RoleCard icon={<Users className="h-5 w-5" />} role="Org Member" desc="Update progress on actions assigned to you. Add notes, mark complete, stay accountable." perks={["View assigned actions", "Update progress", "Add notes & comments"]} />
-            <RoleCard icon={<Building2 className="h-5 w-5" />} role="Org Admin" desc="Run your organization. Invite members, assign work, see everything across departments." perks={["Invite & manage members", "Assign & reassign actions", "Generate compliance reports"]} highlighted />
-            <RoleCard icon={<Shield className="h-5 w-5" />} role="Super Admin" desc="Platform owner. Manage all organizations, subscriptions and platform-wide statistics." perks={["View all organizations", "Manage subscriptions", "Platform analytics"]} />
+            <RoleCard
+              icon={<Users className="h-5 w-5" />}
+              role="Org Member"
+              desc="Update progress on actions assigned to you. Add notes, mark complete, stay accountable."
+              perks={["View assigned actions", "Update progress", "Add notes & comments"]}
+            />
+            <RoleCard
+              icon={<Building2 className="h-5 w-5" />}
+              role="Org Admin"
+              desc="Run your organization. Invite members, assign work, see everything across departments."
+              perks={["Invite & manage members", "Assign & reassign actions", "Generate compliance reports"]}
+              highlighted
+            />
+            <RoleCard
+              icon={<Shield className="h-5 w-5" />}
+              role="Super Admin"
+              desc="Platform owner. Manage all organizations, subscriptions and platform-wide statistics."
+              perks={["View all organizations", "Manage subscriptions", "Platform analytics"]}
+            />
           </div>
         </div>
       </section>
@@ -225,7 +357,8 @@ export default function Landing() {
             <div className="space-y-4">
               <h2 className="text-3xl md:text-4xl font-bold">Why teams pick ActionsPoint</h2>
               <p className="text-muted-foreground text-lg">
-                Generic project tools weren't built for resolutions, audit findings or board commitments. ActionsPoint is.
+                Generic project tools weren't built for resolutions, audit findings or board commitments. ActionsPoint
+                is.
               </p>
               <ul className="space-y-3 pt-2">
                 {[
@@ -256,7 +389,10 @@ export default function Landing() {
       {/* Final CTA */}
       <section className="py-20 border-t">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto rounded-2xl p-10 md:p-16 text-center relative overflow-hidden" style={{ background: "var(--gradient-hero)", boxShadow: "var(--shadow-glow)" }}>
+          <div
+            className="max-w-4xl mx-auto rounded-2xl p-10 md:p-16 text-center relative overflow-hidden"
+            style={{ background: "var(--gradient-hero)", boxShadow: "var(--shadow-glow)" }}
+          >
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Ready to stop dropping the ball?</h2>
             <p className="text-white/90 text-lg mb-8 max-w-xl mx-auto">
               Join organizations using ActionsPoint to keep their commitments visible, owned and delivered.
@@ -279,12 +415,24 @@ export default function Landing() {
             <span>ActionsPoint © {new Date().getFullYear()}</span>
           </div>
           <div className="flex flex-wrap gap-x-6 gap-y-2 justify-center">
-            <a href="#features" className="hover:text-foreground transition-colors">Features</a>
-            <a href="#who" className="hover:text-foreground transition-colors">Who it's for</a>
-            <a href="#how-it-works" className="hover:text-foreground transition-colors">How it works</a>
-            <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
-            <Link to="/terms" className="hover:text-foreground transition-colors">Terms</Link>
-            <Link to="/auth" className="hover:text-foreground transition-colors">Sign in</Link>
+            <a href="#features" className="hover:text-foreground transition-colors">
+              Features
+            </a>
+            <a href="#who" className="hover:text-foreground transition-colors">
+              Who it's for
+            </a>
+            <a href="#how-it-works" className="hover:text-foreground transition-colors">
+              How it works
+            </a>
+            <Link to="/privacy" className="hover:text-foreground transition-colors">
+              Privacy
+            </Link>
+            <Link to="/terms" className="hover:text-foreground transition-colors">
+              Terms
+            </Link>
+            <Link to="/auth" className="hover:text-foreground transition-colors">
+              Sign in
+            </Link>
           </div>
         </div>
       </footer>
@@ -334,7 +482,9 @@ function StepCard({ n, title, desc }: { n: string; title: string; desc: string }
   return (
     <Card className="border-border/50">
       <CardContent className="p-6 space-y-3">
-        <div className="h-10 w-10 rounded-full bg-[image:var(--gradient-hero)] text-white flex items-center justify-center font-bold">{n}</div>
+        <div className="h-10 w-10 rounded-full bg-[image:var(--gradient-hero)] text-white flex items-center justify-center font-bold">
+          {n}
+        </div>
         <h3 className="font-semibold text-lg">{title}</h3>
         <p className="text-muted-foreground text-sm leading-relaxed">{desc}</p>
       </CardContent>
@@ -351,7 +501,19 @@ function Stat({ n, label }: { n: string; label: string }) {
   );
 }
 
-function RoleCard({ icon, role, desc, perks, highlighted }: { icon: React.ReactNode; role: string; desc: string; perks: string[]; highlighted?: boolean }) {
+function RoleCard({
+  icon,
+  role,
+  desc,
+  perks,
+  highlighted,
+}: {
+  icon: React.ReactNode;
+  role: string;
+  desc: string;
+  perks: string[];
+  highlighted?: boolean;
+}) {
   return (
     <Card className={highlighted ? "border-primary shadow-[var(--shadow-card)] relative" : "border-border/50"}>
       {highlighted && (
